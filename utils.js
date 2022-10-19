@@ -1,4 +1,4 @@
-const EasingFunctions = {
+export const EasingFunctions = {
   // no easing, no acceleration
   linear: (t) => t,
   // accelerating from zero velocity
@@ -29,5 +29,3 @@ const EasingFunctions = {
   easeInOutQuint: (t) =>
     t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t,
 };
-
-export default EasingFunctions;
