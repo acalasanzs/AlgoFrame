@@ -15,6 +15,10 @@ let animation = new AlgoFrame(
 document.querySelector("h2").textContent =
   "(" + bezierValues.join(", ") + ")" + " + " + delay + "ms";
 
-animation.run((value) => {
-  box.style.left = `calc(${value}% - ${box.offsetWidth * (value / 100)}px)`;
-});
+animation
+  .run((value) => {
+    box.classList.add("run");
+    box.style.left = `calc(${value}% - ${box.offsetWidth * (value / 100)}px)`;
+    box.textContent = value.toFixed(1) + "%";
+  })
+  .finally((_) => box.classList.remove("run"));
