@@ -4,14 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "webpack --mode=development",
+    "build": "webpack --mode=production",
     "dev": "webpack serve --mode=development"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "algoframe": "^1.0.7",
+    "algoframe": "^1.1.0",
+    "bezier-easing": "^2.1.0",
     "css-loader": "^6.7.1"
   },
   "devDependencies": {
