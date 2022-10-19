@@ -1,0 +1,24 @@
+{
+  "name": "algoframe",
+  "version": "1.0.5",
+  "description": "A lightweight package for doing algebraic animation with requestAnimatioFrame natively, even with Bezier",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acalasanzs/AlgoFrame.git"
+  },
+  "keywords": [
+    "Bezier",
+    "requestAnimationFrame",
+    "callback"
+  ],
+  "author": "Albert Calasanz Sallen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/acalasanzs/AlgoFrame/issues"
+  },
+  "homepage": "https://github.com/acalasanzs/AlgoFrame#readme"
+}
