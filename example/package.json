@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "algoframe": "^1.2.0",
+    "algoframe": "^2.1.0",
     "bezier-easing": "^2.1.0",
     "css-loader": "^6.7.1"
   },
