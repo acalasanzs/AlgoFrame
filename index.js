@@ -27,6 +27,7 @@ class AlgoFrame {
     this.frameDelay = 1000 / this._FPS;
     this.frameRate = 0;
     this.frame = -1;
+    this.animationFrame = -1;
 
     this.loop = loop;
   }
@@ -64,8 +65,6 @@ class AlgoFrame {
         condition = Boolean(seg > this.frame);
       } else {
         condition = true;
-        this.frame++;
-        seg = this.frame;
       }
 
       const runtime = timestamp - this.startanimationtime;
@@ -73,6 +72,7 @@ class AlgoFrame {
 
       const easedProgress = this.easing(relativeProgress);
       if (!this.startanimationtime && this.starttime === 0) {
+        this.starttimeBefore = timestamp;
         this.startanimationtime = timestamp;
       } else if (this.starttime > 0) {
         this.startanimationtime = timestamp;
@@ -84,12 +84,13 @@ class AlgoFrame {
 
       if (condition) {
         this.frame = seg;
+        this.animationFrame++;
 
         left = (this.endX - this.startX) * Math.min(easedProgress, 1);
         callback(left + this.startX, easedProgress, {
           lastFrame: last,
           currentTime: currenttime,
-          frame: this.frame,
+          frame: this.animationFrame,
         });
       }
       if (!this.stop) {
@@ -99,7 +100,7 @@ class AlgoFrame {
           callback(this.endX, 1, {
             lastFrame: last,
             currentTime: currenttime,
-            frame: this.frame,
+            frame: this.animationFrame,
           });
           this.next?.();
         } else {
