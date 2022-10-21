@@ -14,7 +14,6 @@ let animation = new AlgoFrame(
 );
 document.querySelector("h2").textContent =
   "(" + bezierValues.join(", ") + ")" + " + " + delay + "ms";
-
 animation
   .run((value) => {
     box.classList.add("run");
