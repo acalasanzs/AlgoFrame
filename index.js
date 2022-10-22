@@ -49,23 +49,39 @@ class AlgoFrame {
     return this.run(callback);
   }
   run(callback) {
+    class refresher {
+      constructor(precision = 1) {
+        this.history = new Array(precision).fill(0);
+        this.last = 0;
+        this.currenttime = 0;
+      }
+      refresh(timestamp) {
+        this.history.unshift(0);
+        this.history.pop();
+        this.history[0] = timestamp - this.currenttime;
+        this.last = this.history.includes(0)
+          ? "Calculating..."
+          : this.history.reduce((prev, curr) => prev + curr) /
+            this.history.length;
+        this.currenttime = timestamp;
+      }
+    }
     let left;
-    let currenttime = 0;
-    let last = 0;
+    let condition, seg;
+    const last = new refresher();
+    const lastFrameRate = new refresher(10);
 
     if (this.loop) {
       this.next = this.restart.bind(this, callback);
     }
     function animate(timestamp) {
-      last = last + (timestamp - last) - currenttime;
-      currenttime = timestamp;
-      let condition, seg;
       if (this._FPS) {
         seg = Math.floor((timestamp - this.starttime) / this.frameDelay); // calc frame no.
         condition = Boolean(seg > this.frame);
       } else {
         condition = true;
       }
+      last.refresh(timestamp);
 
       const runtime = timestamp - this.startanimationtime;
       const relativeProgress = runtime / this.duration;
@@ -77,7 +93,9 @@ class AlgoFrame {
       } else if (this.starttime > 0) {
         this.startanimationtime = timestamp;
         this.starttime =
-          this.starttime - last < last * 0.7 ? 0 : this.starttime - last;
+          this.starttime - last.last < last.last * 0.7
+            ? 0
+            : this.starttime - last.last;
         requestAnimationFrame(animate.bind(this));
         return;
       }
@@ -85,21 +103,23 @@ class AlgoFrame {
       if (condition) {
         this.frame = seg;
         this.animationFrame++;
+        lastFrameRate.refresh(timestamp);
 
         left = (this.endX - this.startX) * Math.min(easedProgress, 1);
         callback(left + this.startX, easedProgress, {
-          lastFrame: last,
-          currentTime: currenttime,
+          lastFrame: lastFrameRate.last,
+          currentTime: lastFrameRate.currentTime,
           frame: this.animationFrame,
         });
       }
       if (!this.stop) {
         if (runtime < this.duration) {
           requestAnimationFrame(animate.bind(this));
-        } else if (runtime - last * 0.7 < this.duration) {
+        } else if (runtime - last.last * 0.7 < this.duration) {
+          this.animationFrame++;
           callback(this.endX, 1, {
-            lastFrame: last,
-            currentTime: currenttime,
+            lastFrame: lastFrameRate.last,
+            currentTime: lastFrameRate.currenttime,
             frame: this.animationFrame,
           });
           this.next?.();
