@@ -1,6 +1,6 @@
 {
   "name": "algoframe",
-  "version": "2.1.0",
+  "version": "2.4.1",
   "description": "A lightweight package for doing algebraic animation with requestAnimatioFrame natively, even with Bezier",
   "main": "index.js",
   "directories": {

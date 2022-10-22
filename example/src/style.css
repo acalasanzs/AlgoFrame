@@ -40,3 +40,6 @@ body {
   background-color: #ff7675;
   transition: background-color 0.3s;
 }
+.title p {
+  font-size: 2rem;
+}

@@ -48,8 +48,11 @@ class AlgoFrame {
     this.starttime = null;
     return this.run(callback);
   }
-  run(callback) {
-    class refresher {
+  run(callback, precision = this._FPS) {
+    let left;
+    let condition, seg;
+
+    class Refresher {
       constructor(precision = 1) {
         this.history = new Array(precision).fill(0);
         this.last = 0;
@@ -66,10 +69,13 @@ class AlgoFrame {
         this.currenttime = timestamp;
       }
     }
-    let left;
-    let condition, seg;
-    const last = new refresher();
-    const lastFrameRate = new refresher(10);
+
+    const last = new Refresher();
+    if (isNaN(precision)) {
+      console.log(new Error(`${precision} is NaN`));
+      precision = this._FPS;
+    }
+    const lastFrameRate = new Refresher(precision);
 
     if (this.loop) {
       this.next = this.restart.bind(this, callback);
