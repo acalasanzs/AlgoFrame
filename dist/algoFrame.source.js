@@ -73,7 +73,7 @@ class AlgoFrame {
       if (!this.stop) {
         if (runtime < this.duration) {
           requestAnimationFrame(animate.bind(this));
-        } else if (runtime - last * 0.7 < this.duration) {
+        } else if (runtime - last * 0.9 < this.duration) {
           callback(this.endX, 1, last, currenttime);
           this.next?.();
         } else {
