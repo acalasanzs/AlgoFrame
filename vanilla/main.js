@@ -9,6 +9,7 @@ animation.FPS = 12;
 
 const timeline = [];
 box.parentNode.childNodes.forEach((node, i) => {
+  if (node.className !== 'box') return;
   const duration = 500;
 
   timeline.push({
@@ -17,15 +18,18 @@ box.parentNode.childNodes.forEach((node, i) => {
     easing: null,
     startX: null,
     endX: null,
-    run(value) {
-      node.classList.add('run');
-      node.style.left = `calc(${value}% - ${
-        node.offsetWidth * (value / 100)
+    run: function (value) {
+      this.classList.add('run');
+      this.style.left = `calc(${value}% - ${
+        this.offsetWidth * (value / 100)
       }px)`;
-      node.textContent = value.toFixed(1) + '%';
-    },
+      this.textContent = value.toFixed(1) + '%';
+    }.bind(node),
     finally: _ => node.classList.remove('run'),
   });
 });
 // console.log(timeline);
-animation.timeline(timeline).run();
+function theRealCallback(value) {
+  console.log(value);
+}
+animation.timeline(timeline, theRealCallback).run();

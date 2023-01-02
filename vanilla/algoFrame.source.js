@@ -45,7 +45,7 @@ class AlgoFrame {
     this.endX = endX;
     this.next = undefined;
   }
-  timeline(array) {
+  timeline(array, real) {
     this._timeline = [];
     const nextTime = () => {
       this._next = this._timeline.reduce((previousValue, currentValue) =>
@@ -62,12 +62,15 @@ class AlgoFrame {
           event.endX ? event.endX : this.endX
         ).finally(event.finally),
         time: event.time,
+        callback: event.run,
       });
     });
     nextTime();
     this.callback = function (X, ...params) {
+      real(X, ...params);
       if (X >= this._next.time) {
-        this._next.run(X, ...params);
+        this._next._.run(this._next.callback);
+        this._timeline.shift();
         nextTime();
       }
     };
@@ -77,7 +80,7 @@ class AlgoFrame {
     let left;
     let currenttime = 0;
     let last = 0;
-    this.callback = callback;
+    this.callback = callback ? callback : this.callback;
     function animate(timestamp) {
       last = last + (timestamp - last) - currenttime;
       currenttime = timestamp;
