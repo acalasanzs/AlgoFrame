@@ -3,9 +3,9 @@ const delay = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
-let animation = new AlgoFrame(1500, delay, 'easeInQuad', 0, 100);
+let animation = new AlgoFrame(1500, delay, 'linear', 0, 100);
 document.querySelector('h2').textContent = 'easeInQuad';
-animation.FPS = 12;
+animation.FPS = 60;
 
 const timeline = [];
 box.parentNode.childNodes.forEach((node, i) => {

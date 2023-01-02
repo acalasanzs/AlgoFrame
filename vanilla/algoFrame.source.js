@@ -48,6 +48,7 @@ class AlgoFrame {
   timeline(array, real) {
     this._timeline = [];
     const nextTime = () => {
+      if (!this._timeline.length) return;
       this._next = this._timeline.reduce((previousValue, currentValue) =>
         currentValue < previousValue ? currentValue : previousValue
       );
@@ -66,9 +67,9 @@ class AlgoFrame {
       });
     });
     nextTime();
-    this.callback = function (X, ...params) {
-      real(X, ...params);
-      if (X >= this._next.time) {
+    this.callback = function (X, easedProgress, ...params) {
+      real(X, easedProgress, ...params);
+      if (easedProgress >= this._next.time) {
         this._next._.run(this._next.callback);
         this._timeline.shift();
         nextTime();
