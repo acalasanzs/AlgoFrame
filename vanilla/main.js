@@ -1,57 +1,31 @@
-function FpsCtrl(fps, callback) {
-  var delay = 1000 / fps, // calc. time per frame
-    time = null, // start time
-    frame = -1, // frame count
-    tref; // rAF time reference
+const delay = 500;
 
-  function loop(timestamp) {
-    if (time === null) time = timestamp; // init start time
-    var seg = Math.floor((timestamp - time) / delay); // calc frame no.
-    if (seg > frame) {
-      // moved to next frame?
-      frame = seg; // update
-      callback({
-        // callback function
-        time: timestamp,
-        frame: frame,
-      });
-    }
-    tref = requestAnimationFrame(loop);
-  }
+const box = document.querySelector('.container .box');
+const stats = document.querySelector('p');
 
-  // play status
-  this.isPlaying = false;
+let animation = new AlgoFrame(1500, delay, 'easeInQuad', 0, 100);
+document.querySelector('h2').textContent = 'easeInQuad';
+animation.FPS = 12;
 
-  // set frame-rate
-  this.frameRate = function (newfps) {
-    if (!arguments.length) return fps;
-    fps = newfps;
-    delay = 1000 / fps;
-    frame = -1;
-    time = null;
-  };
+const timeline = [];
+box.parentNode.childNodes.forEach((node, i) => {
+  const duration = 500;
 
-  // enable starting/pausing of the object
-  this.start = function () {
-    if (!this.isPlaying) {
-      this.isPlaying = true;
-      tref = requestAnimationFrame(loop);
-    }
-  };
-
-  this.pause = function () {
-    if (this.isPlaying) {
-      cancelAnimationFrame(tref);
-      this.isPlaying = false;
-      time = null;
-      frame = -1;
-    }
-  };
-}
-
-const box = document.querySelector(".container .box");
-
-let fc = new FpsCtrl(24, function (op) {
-  console.log(op.time);
+  timeline.push({
+    time: (i + 1) / (box.parentNode.childNodes.length + 1),
+    duration,
+    easing: null,
+    startX: null,
+    endX: null,
+    run(value) {
+      node.classList.add('run');
+      node.style.left = `calc(${value}% - ${
+        node.offsetWidth * (value / 100)
+      }px)`;
+      node.textContent = value.toFixed(1) + '%';
+    },
+    finally: _ => node.classList.remove('run'),
+  });
 });
-fc.start();
+// console.log(timeline);
+animation.timeline(timeline).run();

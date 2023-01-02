@@ -17,17 +17,21 @@ body {
 }
 .container {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   width: 100vw;
-  height: var(--size);
+  height: 100%;
 }
 .title {
   margin-bottom: calc(var(--size) / 2);
   text-align: center;
 }
 .container .box {
-  position: absolute;
+  position: relative;
   height: 100%;
   width: var(--size);
+  height: var(--size);
   background-color: cornflowerblue;
   font-size: calc(var(--size) / 4);
   color: #fff;
@@ -39,4 +43,7 @@ body {
 .box.run {
   background-color: #ff7675;
   transition: background-color 0.3s;
+}
+.title p {
+  font-size: 2rem;
 }
