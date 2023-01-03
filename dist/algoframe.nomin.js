@@ -144,6 +144,10 @@ class AlgoFrame {
       currentValue < previousValue ? currentValue : previousValue
     );
   }
+  save(callback, precision) {
+    this.callback = callback;
+    this.precision = precision;
+  }
   timeline(array, real) {
     this._timeline = [];
     this._running = [];
@@ -162,6 +166,10 @@ class AlgoFrame {
         callback: event.run,
       });
     });
+    let all = array.reduce((p, c) => p + c.time, 0);
+    if (this.duration < all) {
+      this.duration = all;
+    }
     this._timeline.forEach(x => this._running.push(x));
     this.nextTime();
     this.callback = function (X, easedProgress, params) {
@@ -170,7 +178,6 @@ class AlgoFrame {
         if (easedProgress >= this._next.time) {
           this._next._.startanimationtime =
             params.timestamp + this._next._._starttime;
-          console.log(this._next._.starttime, params.timestamp);
           this._next._.run(this._next.callback);
           this._running.shift();
           this.nextTime();
@@ -207,6 +214,7 @@ class AlgoFrame {
     if (isNaN(precision)) {
       console.log(new Error(`${precision} is NaN`));
       precision = this._FPS;
+      if (!isNaN(this.precision)) precision = this.precision;
     }
     const lastFrameRate = new Refresher(precision);
 
