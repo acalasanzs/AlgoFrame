@@ -34,8 +34,7 @@ class AlgoFrame {
     duration,
     starttime,
     easing,
-    startX,
-    endX,
+    keyframes,
     FPS = null,
     loop = false
   ) {
@@ -51,8 +50,10 @@ class AlgoFrame {
     this.startanimationtime = null;
     this.stop = false;
     this._start = new Promise(res => (this.__start = res));
-    this.startX = startX;
-    this.endX = endX;
+    if (!(keyframes instanceof Keyframes)) {
+      throw new Error('Invalid Keyframes Object!');
+    }
+    this.keyframes = keyframes;
     this.done = false;
     this.next = undefined;
 
@@ -83,7 +84,7 @@ class AlgoFrame {
     }
     if (this.timelineEnd) return;
     this._next = this._running.reduce((previousValue, currentValue) =>
-      currentValue < previousValue ? currentValue : previousValue
+      currentValue.time < previousValue ? currentValue : previousValue
     );
   }
   save(callback, precision) {
@@ -100,8 +101,7 @@ class AlgoFrame {
           event.duration,
           event.delay ? event.delay : 0,
           event.easing ? event.easing : this.easing,
-          event.startX ? event.startX : this.startX,
-          event.endX ? event.endX : this.endX,
+          event.keyframes ? event.keyframes : this.keyframes,
           this._FPS
         ).finally(event.finally),
         time: event.time,
@@ -206,20 +206,23 @@ class AlgoFrame {
         this.animationFrame++;
         lastFrameRate.refresh(timestamp);
         sent = true;
-        left = (this.endX - this.startX) * Math.min(easedProgress, 1);
-        this.callback(left + this.startX, easedProgress, {
-          lastFrame: lastFrameRate.last,
-          currentTime: lastFrameRate.currentTime,
-          frame: this.animationFrame,
-          timestamp,
-        });
+        this.callback(
+          this.keyframes.test(Math.min(easedProgress, 1)),
+          easedProgress,
+          {
+            lastFrame: lastFrameRate.last,
+            currentTime: lastFrameRate.currentTime,
+            frame: this.animationFrame,
+            timestamp,
+          }
+        );
       }
       if (!this.stop) {
         if (runtime < this.duration) {
           requestAnimationFrame(animate.bind(this));
         } else if (runtime - last.last * 0.9 < this.duration && !sent) {
           this.animationFrame++;
-          this.callback(this.endX, 1, {
+          this.callback(this.keyframes.next.val, 1, {
             lastFrame: lastFrameRate.last,
             currentTime: lastFrameRate.currenttime,
             frame: this.animationFrame,
@@ -254,4 +257,54 @@ class AlgoFrame {
         break;
     }
   }
+}
+class Keyframes {
+  constructor(keyframes, easing) {
+    this.keyframes = [];
+    keyframes.every((keyframe, i) => {
+      if (
+        !(keyframe instanceof Keyframes.keyframe) ||
+        this.keyframes.some(k => k.time === keyframe.time)
+      ) {
+        console.error(new Error(`Invalid Keyframe ${i + 1}!`));
+        return false;
+      } else {
+        this.keyframes.push(keyframe);
+        return true;
+      }
+    });
+    if (typeof easing !== 'function') {
+      this.easing = EasingFunctions[easing];
+    } else {
+      this.easing = easing;
+    }
+  }
+  nextTime() {
+    if (!this.keyframes.length) {
+      this.next = null;
+    }
+    this.current = this.keyframes.reduce((previousValue, currentValue) =>
+      currentValue.time < previousValue ? currentValue : previousValue
+    );
+    this.next = this.keyframes
+      .filter(v => v.time !== this.current.time)
+      .reduce((previousValue, currentValue) =>
+        currentValue.time < previousValue ? currentValue : previousValue
+      );
+  }
+  test(progress) {
+    this.nextTime();
+    return (
+      this.current.val +
+      (this.next.val - this.current.val) *
+        (this.next.time - this.current.time) *
+        Math.min(this.easing(progress), 1)
+    );
+  }
+  static keyframe = class {
+    constructor(totalProgress, value) {
+      this.time = totalProgress;
+      this.val = value;
+    }
+  };
 }

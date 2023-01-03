@@ -39,8 +39,6 @@ box.parentNode.childNodes.forEach(node => {
     time: count == 0 ? 0 : count / boxes,
     duration,
     easing: null,
-    startX: null,
-    endX: null,
     run: function (value, eased) {
       console.log(eased);
       this.classList.add('run');

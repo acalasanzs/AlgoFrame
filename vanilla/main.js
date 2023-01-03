@@ -3,7 +3,12 @@ const delay = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
-let animation = new AlgoFrame(14000, delay, 'easeOutQuad', 0, 100);
+const keyframes = new Keyframes(
+  [new Keyframes.keyframe(0, 0), new Keyframes.keyframe(1, 100)],
+  'easeOutQuad'
+);
+
+let animation = new AlgoFrame(14000, delay, 'easeOutQuad', keyframes);
 document.querySelector('h2').textContent = 'easeInQuad';
 animation.FPS = 60;
 let boxes = 0;
@@ -24,8 +29,6 @@ box.parentNode.childNodes.forEach((node, i) => {
     time: (i + 1) / (box.parentNode.childNodes.length + 1),
     duration,
     easing: null,
-    startX: null,
-    endX: null,
     run: function (value, eased) {
       console.log(eased);
       this.classList.add('run');
