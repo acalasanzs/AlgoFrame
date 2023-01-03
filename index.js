@@ -15,6 +15,7 @@ class AlgoFrame {
       this.easing = easing;
     }
     this.starttime = starttime;
+    this._starttime = starttime;
     this.duration = duration;
     this.startafterwait = null;
     this.startanimationtime = null;
@@ -51,8 +52,13 @@ class AlgoFrame {
   timeline(array, real) {
     this._timeline = [];
     this._running = [];
+    this.timelineEnd = false;
     const nextTime = () => {
-      if (!this._running.length) return;
+      if (!this._running.length) {
+        this._next = null;
+        this.timelineEnd = !false;
+      }
+      if (this.timelineEnd) return;
       this._next = this._running.reduce((previousValue, currentValue) =>
         currentValue < previousValue ? currentValue : previousValue
       );
@@ -61,7 +67,7 @@ class AlgoFrame {
       this._timeline.push({
         _: new AlgoFrame(
           event.duration,
-          0,
+          event.delay ? event.delay : 0,
           event.easing ? event.easing : this.easing,
           event.startX ? event.startX : this.startX,
           event.endX ? event.endX : this.endX,
@@ -75,11 +81,15 @@ class AlgoFrame {
     nextTime();
     this.callback = function (X, easedProgress, params) {
       real(X, easedProgress, params);
-      if (easedProgress >= this._next.time) {
-        this._next._.starttime = params.timestamp;
-        this._next._.run(this._next.callback);
-        this._running.shift();
-        nextTime();
+      if (this._next) {
+        if (easedProgress >= this._next.time) {
+          this._next._.startanimationtime =
+            params.timestamp + this._next._._starttime;
+          console.log(this._next._.starttime, params.timestamp);
+          this._next._.run(this._next.callback);
+          this._running.shift();
+          nextTime();
+        }
       }
     };
     return this;
@@ -88,7 +98,7 @@ class AlgoFrame {
     let left;
     let condition, seg;
     this.callback = callback ? callback : this.callback;
-
+    this.timelineEnd = false;
     class Refresher {
       constructor(precision = 1) {
         this.history = new Array(precision).fill(0);
