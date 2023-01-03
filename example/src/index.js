@@ -7,8 +7,8 @@ const delay = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
-let animation = new AlgoFrame(1500, delay, 'easeInQuad', 0, 100, null, true);
-document.querySelector('h2').textContent = 'easeInQuad';
+let animation = new AlgoFrame(1500, delay, 'easeOutCubic', 0, 100, null, true);
+document.querySelector('h2').textContent = 'easeOutCubic';
 animation.FPS = 60;
 let boxes = 0;
 [...box.parentNode.childNodes].forEach(c =>
