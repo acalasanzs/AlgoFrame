@@ -7,15 +7,12 @@ const delay = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
-let animation = new AlgoFrame(
-  1500,
-  delay,
-  'easeOutCubic',
-  -100 / 14,
-  100,
-  null,
-  true
+const keyframes = new Keyframes(
+  [new Keyframes.keyframe(0, 0), new Keyframes.keyframe(1, 100)],
+  'linear'
 );
+
+let animation = new AlgoFrame(14000, delay, 'easeOutQuad', keyframes);
 document.querySelector('h2').textContent = 'easeOutCubic';
 animation.FPS = 60;
 const timeline = [];
