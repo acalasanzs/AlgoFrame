@@ -1,34 +1,91 @@
-// CONCATENATED MODULE: ./utils.js
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define([], factory);
+	else if(typeof exports === 'object')
+		exports["AlgoFrame"] = factory();
+	else
+		root["AlgoFrame"] = factory();
+})(self, () => {
+return /******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	// The require scope
+/******/ 	var __webpack_require__ = {};
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// ESM COMPAT FLAG
+__webpack_require__.r(__webpack_exports__);
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "default": () => (/* binding */ index)
+});
+
+;// CONCATENATED MODULE: ./utils.js
 const EasingFunctions = {
   // no easing, no acceleration
-  linear: t => t,
+  linear: (t) => t,
   // accelerating from zero velocity
-  easeInQuad: t => t * t,
+  easeInQuad: (t) => t * t,
   // decelerating to zero velocity
-  easeOutQuad: t => t * (2 - t),
+  easeOutQuad: (t) => t * (2 - t),
   // acceleration until halfway, then deceleration
-  easeInOutQuad: t => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+  easeInOutQuad: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
   // accelerating from zero velocity
-  easeInCubic: t => t * t * t,
+  easeInCubic: (t) => t * t * t,
   // decelerating to zero velocity
-  easeOutCubic: t => --t * t * t + 1,
+  easeOutCubic: (t) => --t * t * t + 1,
   // acceleration until halfway, then deceleration
-  easeInOutCubic: t =>
+  easeInOutCubic: (t) =>
     t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
   // accelerating from zero velocity
-  easeInQuart: t => t * t * t * t,
+  easeInQuart: (t) => t * t * t * t,
   // decelerating to zero velocity
-  easeOutQuart: t => 1 - --t * t * t * t,
+  easeOutQuart: (t) => 1 - --t * t * t * t,
   // acceleration until halfway, then deceleration
-  easeInOutQuart: t => (t < 0.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t),
+  easeInOutQuart: (t) =>
+    t < 0.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t,
   // accelerating from zero velocity
-  easeInQuint: t => t * t * t * t * t,
+  easeInQuint: (t) => t * t * t * t * t,
   // decelerating to zero velocity
-  easeOutQuint: t => 1 + --t * t * t * t * t,
+  easeOutQuint: (t) => 1 + --t * t * t * t * t,
   // acceleration until halfway, then deceleration
-  easeInOutQuint: t =>
+  easeInOutQuint: (t) =>
     t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t,
-}; // CONCATENATED MODULE: ./index.js
+};
+
+;// CONCATENATED MODULE: ./index.js
 
 class AlgoFrame {
   constructor(
@@ -176,7 +233,7 @@ class AlgoFrame {
         lastFrameRate.refresh(timestamp);
 
         left = (this.endX - this.startX) * Math.min(easedProgress, 1);
-        callback(left + this.startX, easedProgress, {
+        this.callback(left + this.startX, easedProgress, {
           lastFrame: lastFrameRate.last,
           currentTime: lastFrameRate.currentTime,
           frame: this.animationFrame,
@@ -187,7 +244,7 @@ class AlgoFrame {
           requestAnimationFrame(animate.bind(this));
         } else if (runtime - last.last * 0.7 < this.duration) {
           this.animationFrame++;
-          callback(this.endX, 1, {
+          this.callback(this.endX, 1, {
             lastFrame: lastFrameRate.last,
             currentTime: lastFrameRate.currenttime,
             frame: this.animationFrame,
@@ -209,3 +266,12 @@ class AlgoFrame {
     this.stop = true;
   }
 }
+// const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
+// anim.run((x) => console.log(x));
+
+/* harmony default export */ const index = (AlgoFrame);
+
+/******/ 	return __webpack_exports__;
+/******/ })()
+;
+});

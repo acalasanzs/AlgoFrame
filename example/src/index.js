@@ -1,37 +1,40 @@
-import "./style.css";
-import AlgoFrame from "algoframe";
-import * as BezierEasing from "bezier-easing";
+import './style2.css';
+import AlgoFrame from 'algoframe';
+import * as BezierEasing from 'bezier-easing';
 
 const delay = 500;
 
-const box = document.querySelector(".container .box");
-const stats = document.querySelector("p");
+const box = document.querySelector('.container .box');
+const stats = document.querySelector('p');
 
-const bezierValues = [0.91, 0.52, 0, 1.02];
+let animation = new AlgoFrame(1500, delay, 'linear', 0, 100);
+document.querySelector('h2').textContent = 'easeInQuad';
+animation.FPS = 60;
 
-let animation = new AlgoFrame(
-  1500,
-  delay,
-  BezierEasing(...bezierValues),
-  0,
-  100
-);
-document.querySelector("h2").textContent =
-  "(" + bezierValues.join(", ") + ")" + " + " + delay + "ms";
+const timeline = [];
+box.parentNode.childNodes.forEach((node, i) => {
+  if (node.className !== 'box') return;
+  const duration = 500;
 
-animation.FPS = 12;
-
-animation
-  .run((value, easedProgress, statistics) => {
-    if (typeof statistics.lastFrame === "number") {
-      stats.textContent = `${statistics.lastFrame.toFixed(2)}
-        ms | ${(1000 / statistics.lastFrame).toFixed(1)} FPS`;
-    } else {
-      stats.textContent = statistics.lastFrame;
-    }
-
-    box.classList.add("run");
-    box.style.left = `calc(${value}% - ${box.offsetWidth * (value / 100)}px)`;
-    box.textContent = value.toFixed(1) + "%";
-  }, box)
-  .finally((_) => box.classList.remove("run"));
+  timeline.push({
+    time: (i + 1) / (box.parentNode.childNodes.length + 1),
+    duration,
+    easing: null,
+    startX: null,
+    endX: null,
+    run: function (value, ease) {
+      console.log(ease);
+      this.classList.add('run');
+      this.style.left = `calc(${value}% - ${
+        this.offsetWidth * (value / 100)
+      }px)`;
+      this.textContent = value.toFixed(1) + '%';
+    }.bind(node),
+    finally: _ => node.classList.remove('run'),
+  });
+});
+// console.log(timeline);
+function theRealCallback(value) {
+  //console.log(value);
+}
+animation.timeline(timeline, theRealCallback).run();

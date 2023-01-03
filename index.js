@@ -50,9 +50,10 @@ class AlgoFrame {
   }
   timeline(array, real) {
     this._timeline = [];
+    this._running = [];
     const nextTime = () => {
-      if (!this._timeline.length) return;
-      this._next = this._timeline.reduce((previousValue, currentValue) =>
+      if (!this._running.length) return;
+      this._next = this._running.reduce((previousValue, currentValue) =>
         currentValue < previousValue ? currentValue : previousValue
       );
     };
@@ -63,18 +64,21 @@ class AlgoFrame {
           0,
           event.easing ? event.easing : this.easing,
           event.startX ? event.startX : this.startX,
-          event.endX ? event.endX : this.endX
+          event.endX ? event.endX : this.endX,
+          this._FPS
         ).finally(event.finally),
         time: event.time,
         callback: event.run,
       });
     });
+    this._timeline.forEach(x => this._running.push(x));
     nextTime();
-    this.callback = function (X, easedProgress, ...params) {
-      real(X, easedProgress, ...params);
+    this.callback = function (X, easedProgress, params) {
+      real(X, easedProgress, params);
       if (easedProgress >= this._next.time) {
+        this._next._.starttime = params.timestamp;
         this._next._.run(this._next.callback);
-        this._timeline.shift();
+        this._running.shift();
         nextTime();
       }
     };
@@ -145,10 +149,11 @@ class AlgoFrame {
         lastFrameRate.refresh(timestamp);
 
         left = (this.endX - this.startX) * Math.min(easedProgress, 1);
-        callback(left + this.startX, easedProgress, {
+        this.callback(left + this.startX, easedProgress, {
           lastFrame: lastFrameRate.last,
           currentTime: lastFrameRate.currentTime,
           frame: this.animationFrame,
+          timestamp,
         });
       }
       if (!this.stop) {
@@ -156,10 +161,11 @@ class AlgoFrame {
           requestAnimationFrame(animate.bind(this));
         } else if (runtime - last.last * 0.7 < this.duration) {
           this.animationFrame++;
-          callback(this.endX, 1, {
+          this.callback(this.endX, 1, {
             lastFrame: lastFrameRate.last,
             currentTime: lastFrameRate.currenttime,
             frame: this.animationFrame,
+            timestamp,
           });
           this.next?.();
         } else {
