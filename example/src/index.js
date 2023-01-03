@@ -7,16 +7,27 @@ const delay = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
-let animation = new AlgoFrame(1500, delay, 'easeOutCubic', 0, 100, null, true);
+let animation = new AlgoFrame(
+  1500,
+  delay,
+  'easeOutCubic',
+  -100 / 14,
+  100,
+  null,
+  true
+);
 document.querySelector('h2').textContent = 'easeOutCubic';
 animation.FPS = 60;
-let boxes = 0;
-[...box.parentNode.childNodes].forEach(c =>
-  c.className === 'box' ? (boxes += 1) : (boxes += 0)
-);
 const timeline = [];
-box.parentNode.childNodes.forEach((node, i) => {
+let count = -1;
+let boxes = [...box.parentNode.childNodes].reduce(
+  (p, c) => (c.className === 'box' ? 1 : 0) + p,
+  0
+);
+console.log(boxes);
+box.parentNode.childNodes.forEach(node => {
   if (node.className !== 'box') return;
+  count++;
   node.style.height = (100 / boxes) * 0.75 + '%';
   document.documentElement.style.setProperty(
     '--size',
@@ -25,7 +36,7 @@ box.parentNode.childNodes.forEach((node, i) => {
   const duration = 500;
 
   timeline.push({
-    time: (i + 1) / (box.parentNode.childNodes.length + 1),
+    time: count == 0 ? 0 : count / boxes,
     duration,
     easing: null,
     startX: null,
@@ -46,4 +57,5 @@ function theRealCallback(value, easedProgress) {
   document.querySelector('h2').textContent =
     Math.round(easedProgress * 100) + '%';
 }
+console.log(timeline);
 animation.timeline(timeline, theRealCallback).run();
