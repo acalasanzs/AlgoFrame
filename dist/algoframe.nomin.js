@@ -103,12 +103,15 @@ class AlgoFrame {
       this.easing = easing;
     }
     this.starttime = starttime;
+    this._starttime = starttime;
     this.duration = duration;
     this.startafterwait = null;
     this.startanimationtime = null;
     this.stop = false;
+    this._start = new Promise(res => (this.__start = res));
     this.startX = startX;
     this.endX = endX;
+    this.done = false;
     this.next = undefined;
 
     this._FPS = FPS;
@@ -131,39 +134,47 @@ class AlgoFrame {
       // this.starttime = null;
     } else throw new Error('Not a valid Number');
   }
-  restart(callback) {
-    this.frame = -1;
-    this.starttime = null;
-    return this.run(callback);
+  nextTime() {
+    if (!this._running.length) {
+      this._next = null;
+      this.timelineEnd = !false;
+    }
+    if (this.timelineEnd) return;
+    this._next = this._running.reduce((previousValue, currentValue) =>
+      currentValue < previousValue ? currentValue : previousValue
+    );
   }
   timeline(array, real) {
     this._timeline = [];
-    const nextTime = () => {
-      if (!this._timeline.length) return;
-      this._next = this._timeline.reduce((previousValue, currentValue) =>
-        currentValue < previousValue ? currentValue : previousValue
-      );
-    };
+    this._running = [];
+    this.timelineEnd = false;
     array.forEach(event => {
       this._timeline.push({
         _: new AlgoFrame(
           event.duration,
-          0,
+          event.delay ? event.delay : 0,
           event.easing ? event.easing : this.easing,
           event.startX ? event.startX : this.startX,
-          event.endX ? event.endX : this.endX
+          event.endX ? event.endX : this.endX,
+          this._FPS
         ).finally(event.finally),
         time: event.time,
         callback: event.run,
       });
     });
-    nextTime();
-    this.callback = function (X, easedProgress, ...params) {
-      real(X, easedProgress, ...params);
-      if (easedProgress >= this._next.time) {
-        this._next._.run(this._next.callback);
-        this._timeline.shift();
-        nextTime();
+    this._timeline.forEach(x => this._running.push(x));
+    this.nextTime();
+    this.callback = function (X, easedProgress, params) {
+      real(X, easedProgress, params);
+      if (this._next) {
+        if (easedProgress >= this._next.time) {
+          this._next._.startanimationtime =
+            params.timestamp + this._next._._starttime;
+          console.log(this._next._.starttime, params.timestamp);
+          this._next._.run(this._next.callback);
+          this._running.shift();
+          this.nextTime();
+        }
       }
     };
     return this;
@@ -172,6 +183,7 @@ class AlgoFrame {
     let left;
     let condition, seg;
     this.callback = callback ? callback : this.callback;
+    this.timelineEnd = false;
 
     class Refresher {
       constructor(precision = 1) {
@@ -198,10 +210,16 @@ class AlgoFrame {
     }
     const lastFrameRate = new Refresher(precision);
 
-    if (this.loop) {
-      this.next = this.restart.bind(this, callback);
-    }
     function animate(timestamp) {
+      if (this.done) {
+        this.frame = -1;
+        this.starttime = this._starttime;
+        if (this._timeline) {
+          this._timeline.forEach(x => this._running.push(x));
+          this.nextTime();
+        }
+        this.done = false;
+      }
       if (this._FPS) {
         seg = Math.floor((timestamp - this.starttime) / this.frameDelay); // calc frame no.
         condition = Boolean(seg > this.frame);
@@ -211,8 +229,10 @@ class AlgoFrame {
       last.refresh(timestamp);
 
       const runtime = timestamp - this.startanimationtime;
-      const relativeProgress = runtime / this.duration;
-
+      let relativeProgress = runtime / this.duration;
+      if (relativeProgress > 1) {
+        relativeProgress = 1;
+      }
       const easedProgress = this.easing(relativeProgress);
       if (!this.startanimationtime && this.starttime === 0) {
         this.starttimeBefore = timestamp;
@@ -226,34 +246,41 @@ class AlgoFrame {
         requestAnimationFrame(animate.bind(this));
         return;
       }
-
+      let sent = false;
       if (condition) {
         this.frame = seg;
         this.animationFrame++;
         lastFrameRate.refresh(timestamp);
-
+        sent = true;
         left = (this.endX - this.startX) * Math.min(easedProgress, 1);
         this.callback(left + this.startX, easedProgress, {
           lastFrame: lastFrameRate.last,
           currentTime: lastFrameRate.currentTime,
           frame: this.animationFrame,
+          timestamp,
         });
       }
       if (!this.stop) {
         if (runtime < this.duration) {
           requestAnimationFrame(animate.bind(this));
-        } else if (runtime - last.last * 0.7 < this.duration) {
+        } else if (runtime - last.last * 0.9 < this.duration && !sent) {
           this.animationFrame++;
           this.callback(this.endX, 1, {
             lastFrame: lastFrameRate.last,
             currentTime: lastFrameRate.currenttime,
             frame: this.animationFrame,
+            timestamp,
           });
+          this.done = !this.done;
+          if (this.loop) this.run(callback, precision);
           this.next?.();
         } else {
+          this.done = !this.done;
+          if (this.loop) this.run(callback, precision);
           this.next?.();
         }
       }
+      if (this.animationFrame === 0) this.__start();
     }
     requestAnimationFrame(animate.bind(this));
     return this;
@@ -263,7 +290,15 @@ class AlgoFrame {
     return this;
   }
   break() {
-    this.stop = true;
+    this.stop = false;
+    return this;
+  }
+  listen(type, callback) {
+    switch (type) {
+      case 'start':
+        this._start.then(callback);
+        break;
+    }
   }
 }
 // const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
