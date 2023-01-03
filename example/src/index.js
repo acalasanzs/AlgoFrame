@@ -7,7 +7,7 @@ const delay = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
-let animation = new AlgoFrame(500, delay, 'easeInQuad', 0, 100);
+let animation = new AlgoFrame(500, delay, 'easeInQuad', 0, 100, null, true);
 document.querySelector('h2').textContent = 'easeInQuad';
 animation.FPS = 60;
 let boxes = 0;
@@ -46,4 +46,4 @@ function theRealCallback(value, easedProgress) {
   document.querySelector('h2').textContent =
     Math.round(easedProgress * 100) + '%';
 }
-animation.timeline(timeline, theRealCallback);
+animation.timeline(timeline, theRealCallback).run();
