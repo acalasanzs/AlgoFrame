@@ -20,6 +20,7 @@ class AlgoFrame {
     this.startafterwait = null;
     this.startanimationtime = null;
     this.stop = false;
+    this._start = new Promise(res => (this.__start = res));
     this.startX = startX;
     this.endX = endX;
     this.done = false;
@@ -45,20 +46,20 @@ class AlgoFrame {
       // this.starttime = null;
     } else throw new Error('Not a valid Number');
   }
+  nextTime() {
+    if (!this._running.length) {
+      this._next = null;
+      this.timelineEnd = !false;
+    }
+    if (this.timelineEnd) return;
+    this._next = this._running.reduce((previousValue, currentValue) =>
+      currentValue < previousValue ? currentValue : previousValue
+    );
+  }
   timeline(array, real) {
     this._timeline = [];
     this._running = [];
     this.timelineEnd = false;
-    const nextTime = () => {
-      if (!this._running.length) {
-        this._next = null;
-        this.timelineEnd = !false;
-      }
-      if (this.timelineEnd) return;
-      this._next = this._running.reduce((previousValue, currentValue) =>
-        currentValue < previousValue ? currentValue : previousValue
-      );
-    };
     array.forEach(event => {
       this._timeline.push({
         _: new AlgoFrame(
@@ -74,7 +75,7 @@ class AlgoFrame {
       });
     });
     this._timeline.forEach(x => this._running.push(x));
-    nextTime();
+    this.nextTime();
     this.callback = function (X, easedProgress, params) {
       real(X, easedProgress, params);
       if (this._next) {
@@ -84,7 +85,7 @@ class AlgoFrame {
           console.log(this._next._.starttime, params.timestamp);
           this._next._.run(this._next.callback);
           this._running.shift();
-          nextTime();
+          this.nextTime();
         }
       }
     };
@@ -121,13 +122,14 @@ class AlgoFrame {
     }
     const lastFrameRate = new Refresher(precision);
 
-    if (this.loop) {
-      this.next = this.restart.bind(this, callback);
-    }
     function animate(timestamp) {
       if (this.done) {
         this.frame = -1;
         this.starttime = this._starttime;
+        if (this._timeline) {
+          this._timeline.forEach(x => this._running.push(x));
+          this.nextTime();
+        }
         this.done = false;
       }
       if (this._FPS) {
@@ -190,6 +192,7 @@ class AlgoFrame {
           this.next?.();
         }
       }
+      if (this.animationFrame === 0) this.__start();
     }
     requestAnimationFrame(animate.bind(this));
     return this;
@@ -202,11 +205,10 @@ class AlgoFrame {
     this.stop = false;
     return this;
   }
-  listen(type) {
+  listen(type, callback) {
     switch (type) {
-      case 'reset':
-        break;
       case 'start':
+        this._start.then(callback);
         break;
     }
   }
