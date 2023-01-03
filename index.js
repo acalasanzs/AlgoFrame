@@ -44,10 +44,11 @@ class AlgoFrame {
       // this.starttime = null;
     } else throw new Error('Not a valid Number');
   }
-  restart(callback) {
+  restart(callback, precision) {
     this.frame = -1;
     this.starttime = null;
-    return this.run(callback);
+    this.reset = true;
+    return this.run(callback, precision);
   }
   timeline(array, real) {
     this._timeline = [];
@@ -99,6 +100,9 @@ class AlgoFrame {
     let condition, seg;
     this.callback = callback ? callback : this.callback;
     this.timelineEnd = false;
+    if (this.frame > -1) return this.restart(callback, precision);
+    if (this.reset) this.stop = false;
+
     class Refresher {
       constructor(precision = 1) {
         this.history = new Array(precision).fill(0);
@@ -135,9 +139,17 @@ class AlgoFrame {
         condition = true;
       }
       last.refresh(timestamp);
+      let offset = 0;
+      if (this.reset) {
+        offset += timestamp;
+        this.startanimationtime = null;
+        this.starttime = 0;
+        this.reset = !this.reset;
+      }
 
       const runtime = timestamp - this.startanimationtime;
-      const relativeProgress = runtime / this.duration;
+      const relativeProgress = runtime / (this.duration + offset);
+      console.log(relativeProgress);
 
       const easedProgress = this.easing(relativeProgress);
       if (!this.startanimationtime && this.starttime === 0) {
@@ -190,8 +202,18 @@ class AlgoFrame {
     this.next = callback;
     return this;
   }
-  break() {
-    this.stop = true;
+  toggle() {
+    this.stop = !this.stop;
+    this.reset = true;
+    return this;
+  }
+  listen(type) {
+    switch (type) {
+      case 'reset':
+        break;
+      case 'start':
+        break;
+    }
   }
 }
 // const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
