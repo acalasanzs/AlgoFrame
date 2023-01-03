@@ -166,8 +166,11 @@ class AlgoFrame {
         callback: event.run,
       });
     });
-    let all = array.reduce((p, c) => p + c.time, 0);
-    if (this.duration < all) {
+    let all = array.reduce((p, c, i) => {
+      return p + c.duration || 0 + c.delay || 0;
+    }, 0);
+    console.log(all);
+    if (this.duration !== all) {
       this.duration = all;
     }
     this._timeline.forEach(x => this._running.push(x));
@@ -178,6 +181,7 @@ class AlgoFrame {
         if (easedProgress >= this._next.time) {
           this._next._.startanimationtime =
             params.timestamp + this._next._._starttime;
+          console.log(this._next._.starttime, params.timestamp);
           this._next._.run(this._next.callback);
           this._running.shift();
           this.nextTime();
@@ -309,6 +313,7 @@ class AlgoFrame {
     }
   }
 }
+
 // const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
 // anim.run((x) => console.log(x));
 

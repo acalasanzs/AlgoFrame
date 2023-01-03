@@ -108,8 +108,11 @@ class AlgoFrame {
         callback: event.run,
       });
     });
-    let all = array.reduce((p, c) => p + c.time, 0);
-    if (this.duration < all) {
+    let all = array.reduce((p, c, i) => {
+      return p + c.duration || 0 + c.delay || 0;
+    }, 0);
+    console.log(all);
+    if (this.duration !== all) {
       this.duration = all;
     }
     this._timeline.forEach(x => this._running.push(x));

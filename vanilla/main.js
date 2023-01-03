@@ -3,7 +3,7 @@ const delay = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
-let animation = new AlgoFrame(5000, delay, 'easeInQuad', 0, 100);
+let animation = new AlgoFrame(14000, delay, 'easeOutQuad', 0, 100);
 document.querySelector('h2').textContent = 'easeInQuad';
 animation.FPS = 60;
 let boxes = 0;
