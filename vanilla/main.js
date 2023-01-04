@@ -35,6 +35,7 @@ box.parentNode.childNodes.forEach((node, i) => {
     duration,
     easing: null,
     run: function (value, eased) {
+      if (i + 1 === 2) console.log(eased);
       this.classList.add('run');
       this.style.left = `calc(${value}% - ${
         this.offsetWidth * (value / 100)

@@ -101,7 +101,7 @@ class AlgoFrame {
           event.duration,
           event.delay ? event.delay : 0,
           event.easing ? event.easing : this.easing,
-          event.keyframes ? event.keyframes : this.keyframes,
+          event.keyframes ? event.keyframes.clone() : this.keyframes.clone(),
           this._FPS
         ).finally(event.finally),
         time: event.time,
@@ -124,6 +124,7 @@ class AlgoFrame {
             params.timestamp + this._next._._starttime;
           this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
           this._next._.waiting = true;
+          // this._next._.keyframes.restart();
           this._next._.run(this._next.callback);
           this._running.shift();
           this.nextTime();
@@ -224,7 +225,7 @@ class AlgoFrame {
           requestAnimationFrame(animate.bind(this));
         } else if (runtime + this.last.last > this.duration) {
           this.animationFrame++;
-          this.callback(this.keyframes.test(1), 1, {
+          this.callback(this.keyframes.next.val, 1, {
             lastFrame: this.lastFrameRate.last,
             currentTime: this.lastFrameRate.currenttime,
             frame: this.animationFrame,
@@ -318,8 +319,11 @@ class Keyframes {
     const dif = this.next.val - this.current.val;
     const a = this.next.time - this.current.time;
     const sum = dif * progress;
-    // console.log(a, this.current.val + sum);
     return (this.current.val + sum) / a;
+  }
+  clone() {
+    let orig = this;
+    return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
   }
   static keyframe = class {
     constructor(totalProgress, value) {
