@@ -1,4 +1,4 @@
-/* const delay = 500;
+const delay = 500;
 
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
@@ -14,6 +14,7 @@ const keyframes = new Keyframes(
 );
 
 let animation = new AlgoFrame(14000, delay, 'easeOutQuad', keyframes);
+animation.loop = true;
 document.querySelector('h2').textContent = 'easeInQuad';
 animation.FPS = 60;
 let boxes = 0;
@@ -29,7 +30,6 @@ box.parentNode.childNodes.forEach((node, i) => {
     node.offsetHeight + 'px'
   );
   const duration = 500;
-
   timeline.push({
     time: (i + 1) / (box.parentNode.childNodes.length + 1),
     duration,
@@ -50,9 +50,8 @@ function theRealCallback(value, easedProgress) {
     Math.round(easedProgress * 100) + '%';
 }
 animation.timeline(timeline, theRealCallback).run();
- */
 
-const keyframes = new Keyframes(
+/* const keyframes = new Keyframes(
   [
     new Keyframes.keyframe(0, 0),
     new Keyframes.keyframe(0.5, 100),
@@ -96,4 +95,4 @@ animation
     box.style.left = `calc(${value}% - ${box.offsetWidth * (value / 100)}px)`;
     box.textContent = value.toFixed(1) + '%';
   })
-  .finally(_ => box.classList.remove('run'));
+  .finally(_ => box.classList.remove('run')); */

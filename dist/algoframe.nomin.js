@@ -49,7 +49,8 @@ __webpack_require__.r(__webpack_exports__);
 
 // EXPORTS
 __webpack_require__.d(__webpack_exports__, {
-  "default": () => (/* binding */ index)
+  "AlgoFrame": () => (/* binding */ AlgoFrame),
+  "Keyframes": () => (/* binding */ Keyframes)
 });
 
 ;// CONCATENATED MODULE: ./utils.js
@@ -370,7 +371,7 @@ class Keyframes {
 // const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
 // anim.run((x) => console.log(x));
 
-/* harmony default export */ const index = (AlgoFrame);
+
 
 /******/ 	return __webpack_exports__;
 /******/ })()

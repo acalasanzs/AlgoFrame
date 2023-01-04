@@ -123,6 +123,7 @@ class AlgoFrame {
           this._next._.startanimationtime =
             params.timestamp + this._next._._starttime;
           this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
+          this._next._.waiting = true;
           this._next._.run(this._next.callback);
           this._running.shift();
           this.nextTime();
@@ -169,8 +170,13 @@ class AlgoFrame {
         this.frame = -1;
         this.starttime = this._starttime;
         if (this._timeline) {
+          this.timelineEnd = false;
           this._timeline.forEach(x => this._running.push(x));
           this.nextTime();
+          this._running.forEach(t => {
+            t._.keyframes.restart();
+            t._.keyframes.nextTime();
+          });
         }
         this.done = false;
       }
@@ -202,7 +208,7 @@ class AlgoFrame {
         this.lastFrameRate.refresh(timestamp);
         sent = true;
         this.callback(
-          this.keyframes.test(Math.min(easedProgress, 1)),
+          this.waiting ? 0 : this.keyframes.test(Math.min(easedProgress, 1)),
           easedProgress,
           {
             lastFrame: this.lastFrameRate.last,
@@ -211,11 +217,12 @@ class AlgoFrame {
             timestamp,
           }
         );
+        this.waiting = false;
       }
       if (!this.stop) {
         if (runtime < this.duration) {
           requestAnimationFrame(animate.bind(this));
-        } else if (runtime - this.last.last * 0.9 < this.duration && !sent) {
+        } else if (runtime + this.last.last > this.duration) {
           this.animationFrame++;
           this.callback(this.keyframes.test(1), 1, {
             lastFrame: this.lastFrameRate.last,
@@ -223,12 +230,12 @@ class AlgoFrame {
             frame: this.animationFrame,
             timestamp,
           });
-          this.done = !this.done;
+          this.done = true;
           this.keyframes.restart();
           if (this.loop) this.run(callback, precision);
           this.next?.();
         } else {
-          this.done = !this.done;
+          this.done = true;
           this.keyframes.restart();
           if (this.loop) this.run(callback, precision);
           this.next?.();
