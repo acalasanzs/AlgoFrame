@@ -282,4 +282,4 @@ class Keyframes {
 // const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
 // anim.run((x) => console.log(x));
 
-export default AlgoFrame;
+export { AlgoFrame, Keyframes };

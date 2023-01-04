@@ -1,11 +1,16 @@
-const delay = 500;
+/* const delay = 500;
 
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
 const keyframes = new Keyframes(
-  [new Keyframes.keyframe(0, 0), new Keyframes.keyframe(1, 100)],
-  'easeOutQuad'
+  [
+    new Keyframes.keyframe(0, 0),
+    new Keyframes.keyframe(0.5, 100),
+    ,
+    new Keyframes.keyframe(1, 0),
+  ],
+  'linear'
 );
 
 let animation = new AlgoFrame(14000, delay, 'easeOutQuad', keyframes);
@@ -30,7 +35,6 @@ box.parentNode.childNodes.forEach((node, i) => {
     duration,
     easing: null,
     run: function (value, eased) {
-      console.log(eased);
       this.classList.add('run');
       this.style.left = `calc(${value}% - ${
         this.offsetWidth * (value / 100)
@@ -46,3 +50,50 @@ function theRealCallback(value, easedProgress) {
     Math.round(easedProgress * 100) + '%';
 }
 animation.timeline(timeline, theRealCallback).run();
+ */
+
+const keyframes = new Keyframes(
+  [
+    new Keyframes.keyframe(0, 0),
+    new Keyframes.keyframe(0.5, 100),
+    ,
+    new Keyframes.keyframe(1, 0),
+  ],
+  'linear'
+);
+
+const delay = 500;
+let boxes = 1;
+const box = document.querySelector('.container .box');
+const stats = document.querySelector('p');
+box.parentNode.childNodes.forEach((node, i) => {
+  if (node.className !== 'box') return;
+  node.style.height = (100 / boxes) * 0.75 + '%';
+  document.documentElement.style.setProperty(
+    '--size',
+    node.offsetHeight + 'px'
+  );
+});
+const bezierValues = [0.91, 0.52, 0, 1.02];
+
+let animation = new AlgoFrame(1500, delay, 'easeInQuad', keyframes);
+document.querySelector('h2').textContent =
+  '(' + bezierValues.join(', ') + ')' + ' + ' + delay + 'ms';
+
+animation.FPS = 60;
+animation.loop = true;
+
+animation
+  .run((value, easedProgress, statistics) => {
+    if (typeof statistics.lastFrame === 'number') {
+      stats.textContent = `${statistics.lastFrame.toFixed(2)}
+        ms | ${(1000 / statistics.lastFrame).toFixed(1)} FPS`;
+    } else {
+      stats.textContent = statistics.lastFrame;
+    }
+
+    box.classList.add('run');
+    box.style.left = `calc(${value}% - ${box.offsetWidth * (value / 100)}px)`;
+    box.textContent = value.toFixed(1) + '%';
+  })
+  .finally(_ => box.classList.remove('run'));

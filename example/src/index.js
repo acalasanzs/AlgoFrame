@@ -1,5 +1,5 @@
 import './style2.css';
-import AlgoFrame from 'algoframe';
+import * as AF from 'algoframe';
 import * as BezierEasing from 'bezier-easing';
 
 const delay = 500;
@@ -7,12 +7,17 @@ const delay = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
-const keyframes = new Keyframes(
-  [new Keyframes.keyframe(0, 0), new Keyframes.keyframe(1, 100)],
+const keyframes = new AF.Keyframes(
+  [
+    new AF.Keyframes.keyframe(0, 0),
+    new AF.Keyframes.keyframe(0.5, 100),
+    ,
+    new AF.Keyframes.keyframe(1, 0),
+  ],
   'linear'
 );
 
-let animation = new AlgoFrame(14000, delay, 'easeOutQuad', keyframes);
+let animation = new AF.AlgoFrame(14000, delay, 'easeOutQuad', keyframes);
 document.querySelector('h2').textContent = 'easeOutCubic';
 animation.FPS = 60;
 const timeline = [];
