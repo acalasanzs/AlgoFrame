@@ -78,11 +78,6 @@ class AlgoFrame {
     } else throw new Error('Not a valid Number');
   }
   nextTime() {
-    if (!this._running.length) {
-      this._next = null;
-      this.timelineEnd = !false;
-    }
-    if (this.timelineEnd) return;
     this._next = this._running.reduce((previousValue, currentValue) =>
       currentValue.time < previousValue ? currentValue : previousValue
     );
@@ -91,11 +86,17 @@ class AlgoFrame {
     this.callback = callback;
     this.precision = precision;
   }
-  timeline(array, real) {
+  restartTimeline() {
+    this._timeline.forEach(x => this._running.push(x));
+    this.nextTime();
+  }
+  timeline(array, real, reverseLoop) {
     this._timeline = [];
     this._running = [];
-    this.timelineEnd = false;
     array.forEach(event => {
+      if (event.time >= 1 || event.time < 0) {
+        throw new Error('Not valid');
+      }
       this._timeline.push({
         _: new AlgoFrame(
           event.duration,
@@ -108,27 +109,46 @@ class AlgoFrame {
         callback: event.run,
       });
     });
-    let all = array.reduce((p, c, i) => {
+    let all = array.reduce((p, c) => {
       return p + c.duration || 0 + c.delay || 0;
     }, 0);
-    if (this.duration !== all) {
+    if (all / array[array.length - 1].time < array[array.length - 1].duration) {
+      this.duration +=
+        array[array.length - 1].duration - all / array[array.length - 1].time;
+    }
+    if (this.duration < all) {
       this.duration = all;
     }
-    this._timeline.forEach(x => this._running.push(x));
-    this.nextTime();
+    this.restartTimeline();
+    let first = this._next;
+    let last = this._timeline.reduce((previousValue, currentValue) =>
+      currentValue.time > previousValue ? currentValue : previousValue
+    );
     this.callback = function (X, easedProgress, params) {
       real(X, easedProgress, params);
+      const next = () => {
+        this._next._.startanimationtime =
+          params.timestamp + this._next._._starttime;
+        this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
+        this._next._.waiting = true;
+        // this._next._.keyframes.restart();
+        this._next._.run(this._next.callback);
+        this._running.shift();
+        this.nextTime();
+      };
+
       if (this._next) {
         if (easedProgress >= this._next.time) {
-          this._next._.startanimationtime =
-            params.timestamp + this._next._._starttime;
-          this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
-          this._next._.waiting = true;
-          // this._next._.keyframes.restart();
-          this._next._.run(this._next.callback);
-          this._running.shift();
-          this.nextTime();
+          next();
         }
+      } else if (easedProgress === 1 && first.time === 0) {
+        if (reverseLoop) {
+          this._timeline.forEach(
+            (l, i) => (l.time = array[array.length - i - 1].time)
+          );
+        }
+        this.restartTimeline();
+        next();
       }
     };
     return this;
@@ -136,7 +156,6 @@ class AlgoFrame {
   run(callback, precision = this._FPS) {
     let condition, seg;
     this.callback = callback ? callback : this.callback;
-    this.timelineEnd = false;
 
     class Refresher {
       constructor(precision = 1) {
@@ -169,11 +188,9 @@ class AlgoFrame {
     function animate(timestamp) {
       if (this.done) {
         this.frame = -1;
-        this.starttime = this._starttime;
+        // this.starttime = this._starttime;
         if (this._timeline) {
-          this.timelineEnd = false;
-          this._timeline.forEach(x => this._running.push(x));
-          this.nextTime();
+          this.restartTimeline();
           this._running.forEach(t => {
             t._.keyframes.restart();
             t._.keyframes.nextTime();
@@ -191,6 +208,7 @@ class AlgoFrame {
       const runtime = timestamp - this.startanimationtime;
       let relativeProgress = runtime / this.duration;
       const easedProgress = this.easing(relativeProgress);
+      this.progress = easedProgress;
       if (!this.startanimationtime && this.starttime === 0) {
         this.startanimationtime = timestamp;
       } else if (this.starttime > 0) {
