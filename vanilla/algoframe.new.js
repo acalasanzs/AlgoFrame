@@ -43,8 +43,8 @@ class AlgoFrame {
     } else {
       this.easing = easing;
     }
-    this.starttime = starttime;
-    this._starttime = starttime;
+    this.starttime = starttime ? starttime : 0;
+    this._starttime = this.starttime;
     this.duration = duration;
     this.startafterwait = null;
     this.startanimationtime = null;
@@ -77,13 +77,13 @@ class AlgoFrame {
       // this.starttime = null;
     } else throw new Error('Not a valid Number');
   }
-  nextTime() {
-    if (!this._running.length) {
+  nextTime(arr = this._running) {
+    if (!arr.length) {
       console.log(new Error());
     }
-    this._next = this._running.reduce((previousValue, currentValue) =>
+    return (this._next = arr.reduce((previousValue, currentValue) =>
       currentValue.time < previousValue.time ? currentValue : previousValue
-    );
+    ));
   }
   save(callback, precision) {
     this.callback = callback;
@@ -103,11 +103,12 @@ class AlgoFrame {
   timeline(array, real, reverseLoop) {
     this._timeline = [];
     this._running = [];
+    let data = [];
     array.forEach(event => {
-      if (event.time >= 1 || event.time < 0) {
+      if (event.time >= 1 || event.time < 0 || isNaN(event.time)) {
         throw new Error('Not valid');
       }
-      this._timeline.push({
+      data.push({
         _: new AlgoFrame(
           event.duration,
           event.delay ? event.delay : 0,
@@ -119,7 +120,6 @@ class AlgoFrame {
         callback: event.run,
       });
     });
-    this.saved_timeline = this._timeline.map(l => l.time);
     let all = array.reduce((p, c) => {
       return p + c.duration || 0 + c.delay || 0;
     }, 0);
@@ -130,6 +130,12 @@ class AlgoFrame {
     if (this.duration < all) {
       this.duration = all;
     }
+    const len = data.length;
+    for (let i = 0; i < len; i++) {
+      this._timeline.push(this.nextTime(data));
+      data.splice(data.indexOf(this._timeline[i]), 1);
+    }
+    this.saved_timeline = this._timeline.map(l => l.time);
     this.restartTimeline();
     let first = this._next;
     let last = this._timeline.reduce((previousValue, currentValue) =>
@@ -141,13 +147,25 @@ class AlgoFrame {
       const next = () => {
         this._next._.startanimationtime =
           params.timestamp + this._next._._starttime;
-        this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
         this._next._.waiting = true;
-        // this._next._.keyframes.restart();
+
+        //Parent info
+        this._next._.time = this._next.time;
+
         this._next._.run(this._next.callback);
         this._next.running = true;
         this._current = this._next;
-        this._running.shift();
+        this._running.every((a, i) => {
+          if (a.time === this._current.time) {
+            this._running.splice(i, 1);
+            return false;
+          }
+          return true;
+        });
+        console.log(
+          this._next.time,
+          this._running.map(l => l.time)
+        );
         if (this._running.length) {
           this.nextTime();
         }
@@ -157,15 +175,16 @@ class AlgoFrame {
           next();
         }
       } else {
-        console.log('REVERSE!');
+        console.log('REVERSED');
         if (reverseLoop && !this.reversed) {
-          this._timeline.forEach(
-            (l, i) => (l.time = array[array.length - i - 1].time)
-          );
+          this._timeline.forEach((l, i) => {
+            l.time = this.saved_timeline[this.saved_timeline.length - (i + 1)];
+          });
         } else if (reverseLoop) {
           this._timeline.forEach((l, i) => (l.time = this.saved_timeline[i]));
         }
-        while (this._running.length) this._running.pop();
+
+        while (this._running.length) this._running.shift();
         this.restartTimeline();
         this.restartKeyframes();
         if (reverseLoop && !this.reversed) this._running.reverse();
@@ -215,10 +234,12 @@ class AlgoFrame {
       if (this.done) {
         this.frame = -1;
         this.starttime = this._starttime;
+        this.startanimationtime = timestamp;
         this.done = false;
+        this._next = null;
       }
       if (this._FPS) {
-        seg = Math.floor((timestamp - this.starttime) / this.frameDelay); // calc frame no.
+        seg = Math.floor((timestamp - this.starttime) / this.frameDelay);
         condition = Boolean(seg > this.frame);
       } else {
         condition = true;
@@ -269,15 +290,13 @@ class AlgoFrame {
             timestamp,
           });
           this.done = true;
-          this._next = null;
           this.keyframes.restart();
-          if (this.loop) this.run(callback, precision);
+          if (this.loop) requestAnimationFrame(animate.bind(this));
           this.next?.();
         } else {
           this.done = true;
-          this._next = null;
           this.keyframes.restart();
-          if (this.loop) this.run(callback, precision);
+          if (this.loop) requestAnimationFrame(animate.bind(this));
           this.next?.();
         }
       }

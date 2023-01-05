@@ -13,8 +13,8 @@ class AlgoFrame {
     } else {
       this.easing = easing;
     }
-    this.starttime = starttime;
-    this._starttime = starttime;
+    this.starttime = starttime ? starttime : 0;
+    this._starttime = this.starttime;
     this.duration = duration;
     this.startafterwait = null;
     this.startanimationtime = null;
@@ -90,16 +90,6 @@ class AlgoFrame {
       });
     });
     this.saved_timeline = this._timeline.map(l => l.time);
-    let all = array.reduce((p, c) => {
-      return p + c.duration || 0 + c.delay || 0;
-    }, 0);
-    if (all / array[array.length - 1].time < array[array.length - 1].duration) {
-      this.duration +=
-        array[array.length - 1].duration - all / array[array.length - 1].time;
-    }
-    if (this.duration < all) {
-      this.duration = all;
-    }
     this.restartTimeline();
     let first = this._next;
     let last = this._timeline.reduce((previousValue, currentValue) =>
@@ -111,9 +101,7 @@ class AlgoFrame {
       const next = () => {
         this._next._.startanimationtime =
           params.timestamp + this._next._._starttime;
-        this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
         this._next._.waiting = true;
-        // this._next._.keyframes.restart();
         this._next._.run(this._next.callback);
         this._next.running = true;
         this._current = this._next;
@@ -123,7 +111,11 @@ class AlgoFrame {
         }
       };
       if (this._next) {
-        if (easedProgress >= this._next.time && !this._next.running) {
+        if (
+          easedProgress >= this._next.time &&
+          !this._next.running &&
+          easedProgress !== 1
+        ) {
           next();
         }
       } else {
@@ -185,10 +177,12 @@ class AlgoFrame {
       if (this.done) {
         this.frame = -1;
         this.starttime = this._starttime;
+        this.startanimationtime = timestamp;
         this.done = false;
+        this._next = null;
       }
       if (this._FPS) {
-        seg = Math.floor((timestamp - this.starttime) / this.frameDelay); // calc frame no.
+        seg = Math.floor((timestamp - this.starttime) / this.frameDelay);
         condition = Boolean(seg > this.frame);
       } else {
         condition = true;
@@ -239,15 +233,13 @@ class AlgoFrame {
             timestamp,
           });
           this.done = true;
-          this._next = null;
           this.keyframes.restart();
-          if (this.loop) this.run(callback, precision);
+          if (this.loop) requestAnimationFrame(animate.bind(this));
           this.next?.();
         } else {
           this.done = true;
-          this._next = null;
           this.keyframes.restart();
-          if (this.loop) this.run(callback, precision);
+          if (this.loop) requestAnimationFrame(animate.bind(this));
           this.next?.();
         }
       }
