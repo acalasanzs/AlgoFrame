@@ -1,92 +1,33 @@
-(function webpackUniversalModuleDefinition(root, factory) {
-	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory();
-	else if(typeof define === 'function' && define.amd)
-		define([], factory);
-	else if(typeof exports === 'object')
-		exports["AlgoFrame"] = factory();
-	else
-		root["AlgoFrame"] = factory();
-})(self, () => {
-return /******/ (() => { // webpackBootstrap
-/******/ 	"use strict";
-/******/ 	// The require scope
-/******/ 	var __webpack_require__ = {};
-/******/ 	
-/************************************************************************/
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__webpack_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/make namespace object */
-/******/ 	(() => {
-/******/ 		// define __esModule on exports
-/******/ 		__webpack_require__.r = (exports) => {
-/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 			}
-/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/************************************************************************/
-var __webpack_exports__ = {};
-// ESM COMPAT FLAG
-__webpack_require__.r(__webpack_exports__);
-
-// EXPORTS
-__webpack_require__.d(__webpack_exports__, {
-  "AlgoFrame": () => (/* binding */ AlgoFrame),
-  "Keyframes": () => (/* binding */ Keyframes)
-});
-
-;// CONCATENATED MODULE: ./utils.js
 const EasingFunctions = {
   // no easing, no acceleration
-  linear: (t) => t,
+  linear: t => t,
   // accelerating from zero velocity
-  easeInQuad: (t) => t * t,
+  easeInQuad: t => t * t,
   // decelerating to zero velocity
-  easeOutQuad: (t) => t * (2 - t),
+  easeOutQuad: t => t * (2 - t),
   // acceleration until halfway, then deceleration
-  easeInOutQuad: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+  easeInOutQuad: t => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
   // accelerating from zero velocity
-  easeInCubic: (t) => t * t * t,
+  easeInCubic: t => t * t * t,
   // decelerating to zero velocity
-  easeOutCubic: (t) => --t * t * t + 1,
+  easeOutCubic: t => --t * t * t + 1,
   // acceleration until halfway, then deceleration
-  easeInOutCubic: (t) =>
+  easeInOutCubic: t =>
     t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
   // accelerating from zero velocity
-  easeInQuart: (t) => t * t * t * t,
+  easeInQuart: t => t * t * t * t,
   // decelerating to zero velocity
-  easeOutQuart: (t) => 1 - --t * t * t * t,
+  easeOutQuart: t => 1 - --t * t * t * t,
   // acceleration until halfway, then deceleration
-  easeInOutQuart: (t) =>
-    t < 0.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t,
+  easeInOutQuart: t => (t < 0.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t),
   // accelerating from zero velocity
-  easeInQuint: (t) => t * t * t * t * t,
+  easeInQuint: t => t * t * t * t * t,
   // decelerating to zero velocity
-  easeOutQuint: (t) => 1 + --t * t * t * t * t,
+  easeOutQuint: t => 1 + --t * t * t * t * t,
   // acceleration until halfway, then deceleration
-  easeInOutQuint: (t) =>
+  easeInOutQuint: t =>
     t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t,
-};
-
-;// CONCATENATED MODULE: ./index.js
+}; // CONCATENATED MODULE: ./index.js
 
 class AlgoFrame {
   constructor(
@@ -138,64 +79,109 @@ class AlgoFrame {
   }
   nextTime() {
     if (!this._running.length) {
-      this._next = null;
-      this.timelineEnd = !false;
+      console.log(new Error());
     }
-    if (this.timelineEnd) return;
     this._next = this._running.reduce((previousValue, currentValue) =>
-      currentValue.time < previousValue ? currentValue : previousValue
+      currentValue.time < previousValue.time ? currentValue : previousValue
     );
   }
   save(callback, precision) {
     this.callback = callback;
     this.precision = precision;
   }
-  timeline(array, real) {
+  restartKeyframes() {
+    this._running.forEach(t => {
+      t._.keyframes.restart();
+      t._.keyframes.nextTime();
+      t.running = false;
+    });
+  }
+  restartTimeline() {
+    this._timeline.forEach(x => this._running.push(x));
+    this.nextTime();
+  }
+  timeline(array, real, reverseLoop) {
     this._timeline = [];
     this._running = [];
-    this.timelineEnd = false;
     array.forEach(event => {
+      if (event.time >= 1 || event.time < 0) {
+        throw new Error('Not valid');
+      }
       this._timeline.push({
         _: new AlgoFrame(
           event.duration,
           event.delay ? event.delay : 0,
           event.easing ? event.easing : this.easing,
-          event.keyframes ? event.keyframes : this.keyframes,
+          event.keyframes ? event.keyframes.clone() : this.keyframes.clone(),
           this._FPS
         ).finally(event.finally),
         time: event.time,
         callback: event.run,
       });
     });
-    let all = array.reduce((p, c, i) => {
+    this.saved_timeline = this._timeline.map(l => l.time);
+    let all = array.reduce((p, c) => {
       return p + c.duration || 0 + c.delay || 0;
     }, 0);
-    console.log(all);
-    if (this.duration !== all) {
+    if (all / array[array.length - 1].time < array[array.length - 1].duration) {
+      this.duration +=
+        array[array.length - 1].duration - all / array[array.length - 1].time;
+    }
+    if (this.duration < all) {
       this.duration = all;
     }
-    this._timeline.forEach(x => this._running.push(x));
-    this.nextTime();
+    this.restartTimeline();
+    let first = this._next;
+    let last = this._timeline.reduce((previousValue, currentValue) =>
+      currentValue.time > previousValue.time ? currentValue : previousValue
+    );
+    this.reversed = false;
     this.callback = function (X, easedProgress, params) {
       real(X, easedProgress, params);
-      if (this._next) {
-        if (easedProgress >= this._next.time) {
-          this._next._.startanimationtime =
-            params.timestamp + this._next._._starttime;
-          console.log(this._next._.starttime, params.timestamp);
-          this._next._.run(this._next.callback);
-          this._running.shift();
+      const next = () => {
+        this._next._.startanimationtime =
+          params.timestamp + this._next._._starttime;
+        this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
+        this._next._.waiting = true;
+        // this._next._.keyframes.restart();
+        this._next._.run(this._next.callback);
+        this._next.running = true;
+        this._current = this._next;
+        this._running.shift();
+        if (this._running.length) {
           this.nextTime();
         }
+      };
+      if (this._next) {
+        if (easedProgress >= this._next.time && !this._next.running) {
+          next();
+        }
+      } else {
+        console.log('REVERSE!');
+        if (reverseLoop && !this.reversed) {
+          this._timeline.forEach(
+            (l, i) => (l.time = array[array.length - i - 1].time)
+          );
+        } else if (reverseLoop) {
+          this._timeline.forEach((l, i) => (l.time = this.saved_timeline[i]));
+        }
+        while (this._running.length) this._running.pop();
+        this.restartTimeline();
+        this.restartKeyframes();
+        if (reverseLoop && !this.reversed) this._running.reverse();
+        this.reversed = !this.reversed;
+        first = this._next;
+        last = this._timeline.reduce((previousValue, currentValue) =>
+          currentValue.time > previousValue.time ? currentValue : previousValue
+        );
+        next();
       }
     };
     return this;
   }
   run(callback, precision = this._FPS) {
-    let left;
     let condition, seg;
     this.callback = callback ? callback : this.callback;
-    this.timelineEnd = false;
 
     class Refresher {
       constructor(precision = 1) {
@@ -215,22 +201,20 @@ class AlgoFrame {
       }
     }
 
-    const last = new Refresher();
+    this.last = new Refresher();
     if (isNaN(precision)) {
       console.log(new Error(`${precision} is NaN`));
       precision = this._FPS;
       if (!isNaN(this.precision)) precision = this.precision;
     }
-    const lastFrameRate = new Refresher(precision);
+    this.lastFrameRate = this.lastFrameRate
+      ? this.lastFrameRate
+      : new Refresher(precision);
 
     function animate(timestamp) {
       if (this.done) {
         this.frame = -1;
         this.starttime = this._starttime;
-        if (this._timeline) {
-          this._timeline.forEach(x => this._running.push(x));
-          this.nextTime();
-        }
         this.done = false;
       }
       if (this._FPS) {
@@ -239,23 +223,19 @@ class AlgoFrame {
       } else {
         condition = true;
       }
-      last.refresh(timestamp);
-
+      this.last.refresh(timestamp);
       const runtime = timestamp - this.startanimationtime;
       let relativeProgress = runtime / this.duration;
-      if (relativeProgress > 1) {
-        relativeProgress = 1;
-      }
       const easedProgress = this.easing(relativeProgress);
+      this.progress = easedProgress;
       if (!this.startanimationtime && this.starttime === 0) {
-        this.starttimeBefore = timestamp;
         this.startanimationtime = timestamp;
       } else if (this.starttime > 0) {
         this.startanimationtime = timestamp;
         this.starttime =
-          this.starttime - last.last < last.last * 0.7
+          this.starttime - this.last.last < this.last.last * 0.7
             ? 0
-            : this.starttime - last.last;
+            : this.starttime - this.last.last;
         requestAnimationFrame(animate.bind(this));
         return;
       }
@@ -263,35 +243,40 @@ class AlgoFrame {
       if (condition) {
         this.frame = seg;
         this.animationFrame++;
-        lastFrameRate.refresh(timestamp);
+        this.lastFrameRate.refresh(timestamp);
         sent = true;
         this.callback(
-          this.keyframes.test(Math.min(easedProgress, 1)),
-          easedProgress,
+          this.waiting ? 0 : this.keyframes.test(Math.min(easedProgress, 1)),
+          Math.min(easedProgress, 1),
           {
-            lastFrame: lastFrameRate.last,
-            currentTime: lastFrameRate.currentTime,
+            lastFrame: this.lastFrameRate.last,
+            currentTime: this.lastFrameRate.currentTime,
             frame: this.animationFrame,
             timestamp,
           }
         );
+        this.waiting = false;
       }
       if (!this.stop) {
         if (runtime < this.duration) {
           requestAnimationFrame(animate.bind(this));
-        } else if (runtime - last.last * 0.9 < this.duration && !sent) {
+        } else if (runtime + this.last.last > this.duration) {
           this.animationFrame++;
           this.callback(this.keyframes.next.val, 1, {
-            lastFrame: lastFrameRate.last,
-            currentTime: lastFrameRate.currenttime,
+            lastFrame: this.lastFrameRate.last,
+            currentTime: this.lastFrameRate.currenttime,
             frame: this.animationFrame,
             timestamp,
           });
-          this.done = !this.done;
+          this.done = true;
+          this._next = null;
+          this.keyframes.restart();
           if (this.loop) this.run(callback, precision);
           this.next?.();
         } else {
-          this.done = !this.done;
+          this.done = true;
+          this._next = null;
+          this.keyframes.restart();
           if (this.loop) this.run(callback, precision);
           this.next?.();
         }
@@ -320,6 +305,7 @@ class AlgoFrame {
 class Keyframes {
   constructor(keyframes, easing) {
     this.keyframes = [];
+    this.run = [];
     keyframes.every((keyframe, i) => {
       if (
         !(keyframe instanceof Keyframes.keyframe) ||
@@ -332,33 +318,51 @@ class Keyframes {
         return true;
       }
     });
+    this.keyframes.forEach(k => this.run.push(k));
     if (typeof easing !== 'function') {
       this.easing = EasingFunctions[easing];
     } else {
       this.easing = easing;
     }
+    this.nextTime();
   }
   nextTime() {
-    if (!this.keyframes.length) {
-      this.next = null;
+    if (!this.run.length) {
+      return (this.next = null);
     }
-    this.current = this.keyframes.reduce((previousValue, currentValue) =>
-      currentValue.time < previousValue ? currentValue : previousValue
-    );
-    this.next = this.keyframes
-      .filter(v => v.time !== this.current.time)
-      .reduce((previousValue, currentValue) =>
-        currentValue.time < previousValue ? currentValue : previousValue
+
+    if (this.run.length > 1) {
+      this.current = this.run.reduce((previousValue, currentValue) =>
+        currentValue.time < previousValue.time ? currentValue : previousValue
       );
+      this.next = this.run
+        .filter(v => v.time !== this.current.time)
+        .reduce((previousValue, currentValue) =>
+          currentValue.time < previousValue ? currentValue : previousValue
+        );
+    } else {
+      this.restart();
+      this.next = this.run.reduce((previousValue, currentValue) =>
+        currentValue.time < previousValue.time ? currentValue : previousValue
+      );
+    }
+    this.run.shift();
+  }
+  restart() {
+    while (this.run.length) this.run.pop();
+    this.keyframes.forEach(k => this.run.push(k));
   }
   test(progress) {
-    this.nextTime();
-    return (
-      this.current.val +
-      (this.next.val - this.current.val) *
-        (this.next.time - this.current.time) *
-        Math.min(this.easing(progress), 1)
-    );
+    if (this.next.time <= progress) this.nextTime();
+    progress = Math.min(this.easing(progress), 1);
+    const dif = this.next.val - this.current.val;
+    const a = this.next.time - this.current.time;
+    const sum = dif * progress;
+    return (this.current.val + sum) / a;
+  }
+  clone() {
+    let orig = this;
+    return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
   }
   static keyframe = class {
     constructor(totalProgress, value) {
@@ -367,13 +371,3 @@ class Keyframes {
     }
   };
 }
-
-// const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
-// anim.run((x) => console.log(x));
-
-
-
-/******/ 	return __webpack_exports__;
-/******/ })()
-;
-});
