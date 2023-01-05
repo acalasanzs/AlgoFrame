@@ -119,6 +119,7 @@ class AlgoFrame {
         callback: event.run,
       });
     });
+    this.saved_timeline = this._timeline.map(l => l.time);
     let all = array.reduce((p, c) => {
       return p + c.duration || 0 + c.delay || 0;
     }, 0);
@@ -134,6 +135,7 @@ class AlgoFrame {
     let last = this._timeline.reduce((previousValue, currentValue) =>
       currentValue.time > previousValue.time ? currentValue : previousValue
     );
+    this.reversed = false;
     this.callback = function (X, easedProgress, params) {
       real(X, easedProgress, params);
       const next = () => {
@@ -156,15 +158,18 @@ class AlgoFrame {
         }
       } else {
         console.log('REVERSE!');
-        if (reverseLoop) {
+        if (reverseLoop && !this.reversed) {
           this._timeline.forEach(
             (l, i) => (l.time = array[array.length - i - 1].time)
           );
+        } else if (reverseLoop) {
+          this._timeline.forEach((l, i) => (l.time = this.saved_timeline[i]));
         }
         while (this._running.length) this._running.pop();
         this.restartTimeline();
         this.restartKeyframes();
-        this._running.reverse();
+        if (reverseLoop && !this.reversed) this._running.reverse();
+        this.reversed = !this.reversed;
         first = this._next;
         last = this._timeline.reduce((previousValue, currentValue) =>
           currentValue.time > previousValue.time ? currentValue : previousValue
