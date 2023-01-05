@@ -1,4 +1,4 @@
-const delay = 0;
+/* const delay = 0;
 const duration = 1000;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
@@ -53,9 +53,9 @@ function theRealCallback(value, easedProgress) {
   document.querySelector('h2').textContent =
     Math.round(easedProgress * 100) + '%';
 }
-animation.timeline(timeline, theRealCallback, true).run();
+animation.timeline(timeline, theRealCallback, true).run(); */
 
-/* const keyframes = new Keyframes(
+const keyframes = new Keyframes(
   [
     new Keyframes.keyframe(0, 0),
     new Keyframes.keyframe(0.5, 100),
@@ -99,4 +99,4 @@ animation
     box.style.left = `calc(${value}% - ${box.offsetWidth * (value / 100)}px)`;
     box.textContent = value.toFixed(1) + '%';
   })
-  .finally(_ => box.classList.remove('run')); */
+  .finally(_ => box.classList.remove('run'));

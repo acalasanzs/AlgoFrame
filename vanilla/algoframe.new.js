@@ -233,7 +233,6 @@ class AlgoFrame {
     function animate(timestamp) {
       if (this.done) {
         this.frame = -1;
-        this.starttime = this._starttime;
         this.startanimationtime = timestamp;
         this.done = false;
         this._next = null;
