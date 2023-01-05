@@ -78,13 +78,23 @@ class AlgoFrame {
     } else throw new Error('Not a valid Number');
   }
   nextTime() {
+    if (!this._running.length) {
+      console.log(new Error());
+    }
     this._next = this._running.reduce((previousValue, currentValue) =>
-      currentValue.time < previousValue ? currentValue : previousValue
+      currentValue.time < previousValue.time ? currentValue : previousValue
     );
   }
   save(callback, precision) {
     this.callback = callback;
     this.precision = precision;
+  }
+  restartKeyframes() {
+    this._running.forEach(t => {
+      t._.keyframes.restart();
+      t._.keyframes.nextTime();
+      t.running = false;
+    });
   }
   restartTimeline() {
     this._timeline.forEach(x => this._running.push(x));
@@ -122,7 +132,7 @@ class AlgoFrame {
     this.restartTimeline();
     let first = this._next;
     let last = this._timeline.reduce((previousValue, currentValue) =>
-      currentValue.time > previousValue ? currentValue : previousValue
+      currentValue.time > previousValue.time ? currentValue : previousValue
     );
     this.callback = function (X, easedProgress, params) {
       real(X, easedProgress, params);
@@ -133,21 +143,32 @@ class AlgoFrame {
         this._next._.waiting = true;
         // this._next._.keyframes.restart();
         this._next._.run(this._next.callback);
+        this._next.running = true;
+        this._current = this._next;
         this._running.shift();
-        this.nextTime();
+        if (this._running.length) {
+          this.nextTime();
+        }
       };
-
       if (this._next) {
-        if (easedProgress >= this._next.time) {
+        if (easedProgress >= this._next.time && !this._next.running) {
           next();
         }
-      } else if (easedProgress === 1 && first.time === 0) {
+      } else {
+        console.log('REVERSE!');
         if (reverseLoop) {
           this._timeline.forEach(
             (l, i) => (l.time = array[array.length - i - 1].time)
           );
         }
+        while (this._running.length) this._running.pop();
         this.restartTimeline();
+        this.restartKeyframes();
+        this._running.reverse();
+        first = this._next;
+        last = this._timeline.reduce((previousValue, currentValue) =>
+          currentValue.time > previousValue.time ? currentValue : previousValue
+        );
         next();
       }
     };
@@ -188,14 +209,7 @@ class AlgoFrame {
     function animate(timestamp) {
       if (this.done) {
         this.frame = -1;
-        // this.starttime = this._starttime;
-        if (this._timeline) {
-          this.restartTimeline();
-          this._running.forEach(t => {
-            t._.keyframes.restart();
-            t._.keyframes.nextTime();
-          });
-        }
+        this.starttime = this._starttime;
         this.done = false;
       }
       if (this._FPS) {
@@ -228,7 +242,7 @@ class AlgoFrame {
         sent = true;
         this.callback(
           this.waiting ? 0 : this.keyframes.test(Math.min(easedProgress, 1)),
-          easedProgress,
+          Math.min(easedProgress, 1),
           {
             lastFrame: this.lastFrameRate.last,
             currentTime: this.lastFrameRate.currentTime,
@@ -250,11 +264,13 @@ class AlgoFrame {
             timestamp,
           });
           this.done = true;
+          this._next = null;
           this.keyframes.restart();
           if (this.loop) this.run(callback, precision);
           this.next?.();
         } else {
           this.done = true;
+          this._next = null;
           this.keyframes.restart();
           if (this.loop) this.run(callback, precision);
           this.next?.();

@@ -46,6 +46,7 @@ box.parentNode.childNodes.forEach((node, i) => {
 });
 // console.log(timeline);
 function theRealCallback(value, easedProgress) {
+  // console.log(easedProgress);
   document.querySelector('h2').textContent =
     Math.round(easedProgress * 100) + '%';
 }
