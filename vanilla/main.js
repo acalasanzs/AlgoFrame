@@ -1,5 +1,5 @@
 const delay = 500;
-const duration = 2000;
+const duration = 500;
 const box = document.querySelector('.container .box');
 const stats = document.querySelector('p');
 
@@ -13,6 +13,7 @@ const keyframes = new Keyframes(
   'linear'
 );
 let count = 0;
+let variable = 1;
 let animation = new AlgoFrame(duration, delay, 'easeOutQuad', keyframes);
 animation.loop = true;
 document.querySelector('h2').textContent = 'easeInQuad';
@@ -30,9 +31,10 @@ box.parentNode.childNodes.forEach((node, i) => {
     '--size',
     node.offsetHeight + 'px'
   );
+  variable += 0.75;
   timeline.push({
-    time: count / boxes - 1 / boxes,
-    duration: duration / boxes,
+    time: (count / boxes - 1 / boxes) / variable,
+    duration: (duration / boxes) * 5,
     easing: null,
     run: function (value, eased) {
       this.classList.add('run');

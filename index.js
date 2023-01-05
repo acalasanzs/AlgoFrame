@@ -49,23 +49,34 @@ class AlgoFrame {
   }
   nextTime() {
     if (!this._running.length) {
-      this._next = null;
-      this.timelineEnd = !false;
+      console.log(new Error());
     }
-    if (this.timelineEnd) return;
     this._next = this._running.reduce((previousValue, currentValue) =>
-      currentValue.time < previousValue ? currentValue : previousValue
+      currentValue.time < previousValue.time ? currentValue : previousValue
     );
   }
   save(callback, precision) {
     this.callback = callback;
     this.precision = precision;
   }
-  timeline(array, real) {
+  restartKeyframes() {
+    this._running.forEach(t => {
+      t._.keyframes.restart();
+      t._.keyframes.nextTime();
+      t.running = false;
+    });
+  }
+  restartTimeline() {
+    this._timeline.forEach(x => this._running.push(x));
+    this.nextTime();
+  }
+  timeline(array, real, reverseLoop) {
     this._timeline = [];
     this._running = [];
-    this.timelineEnd = false;
     array.forEach(event => {
+      if (event.time >= 1 || event.time < 0) {
+        throw new Error('Not valid');
+      }
       this._timeline.push({
         _: new AlgoFrame(
           event.duration,
@@ -78,27 +89,62 @@ class AlgoFrame {
         callback: event.run,
       });
     });
-    let all = array.reduce((p, c, i) => {
+    this.saved_timeline = this._timeline.map(l => l.time);
+    let all = array.reduce((p, c) => {
       return p + c.duration || 0 + c.delay || 0;
     }, 0);
-    if (this.duration !== all) {
+    if (all / array[array.length - 1].time < array[array.length - 1].duration) {
+      this.duration +=
+        array[array.length - 1].duration - all / array[array.length - 1].time;
+    }
+    if (this.duration < all) {
       this.duration = all;
     }
-    this._timeline.forEach(x => this._running.push(x));
-    this.nextTime();
+    this.restartTimeline();
+    let first = this._next;
+    let last = this._timeline.reduce((previousValue, currentValue) =>
+      currentValue.time > previousValue.time ? currentValue : previousValue
+    );
+    this.reversed = false;
     this.callback = function (X, easedProgress, params) {
       real(X, easedProgress, params);
-      if (this._next) {
-        if (easedProgress >= this._next.time) {
-          this._next._.startanimationtime =
-            params.timestamp + this._next._._starttime;
-          this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
-          this._next._.waiting = true;
-          // this._next._.keyframes.restart();
-          this._next._.run(this._next.callback);
-          this._running.shift();
+      const next = () => {
+        this._next._.startanimationtime =
+          params.timestamp + this._next._._starttime;
+        this._next._.starttime += !isNaN(this.starttime) ? 0 : this.delay;
+        this._next._.waiting = true;
+        // this._next._.keyframes.restart();
+        this._next._.run(this._next.callback);
+        this._next.running = true;
+        this._current = this._next;
+        this._running.shift();
+        if (this._running.length) {
           this.nextTime();
         }
+      };
+      if (this._next) {
+        if (easedProgress >= this._next.time && !this._next.running) {
+          next();
+        }
+      } else {
+        console.log('REVERSE!');
+        if (reverseLoop && !this.reversed) {
+          this._timeline.forEach(
+            (l, i) => (l.time = array[array.length - i - 1].time)
+          );
+        } else if (reverseLoop) {
+          this._timeline.forEach((l, i) => (l.time = this.saved_timeline[i]));
+        }
+        while (this._running.length) this._running.pop();
+        this.restartTimeline();
+        this.restartKeyframes();
+        if (reverseLoop && !this.reversed) this._running.reverse();
+        this.reversed = !this.reversed;
+        first = this._next;
+        last = this._timeline.reduce((previousValue, currentValue) =>
+          currentValue.time > previousValue.time ? currentValue : previousValue
+        );
+        next();
       }
     };
     return this;
@@ -106,7 +152,6 @@ class AlgoFrame {
   run(callback, precision = this._FPS) {
     let condition, seg;
     this.callback = callback ? callback : this.callback;
-    this.timelineEnd = false;
 
     class Refresher {
       constructor(precision = 1) {
@@ -140,15 +185,6 @@ class AlgoFrame {
       if (this.done) {
         this.frame = -1;
         this.starttime = this._starttime;
-        if (this._timeline) {
-          this.timelineEnd = false;
-          this._timeline.forEach(x => this._running.push(x));
-          this.nextTime();
-          this._running.forEach(t => {
-            t._.keyframes.restart();
-            t._.keyframes.nextTime();
-          });
-        }
         this.done = false;
       }
       if (this._FPS) {
@@ -161,6 +197,7 @@ class AlgoFrame {
       const runtime = timestamp - this.startanimationtime;
       let relativeProgress = runtime / this.duration;
       const easedProgress = this.easing(relativeProgress);
+      this.progress = easedProgress;
       if (!this.startanimationtime && this.starttime === 0) {
         this.startanimationtime = timestamp;
       } else if (this.starttime > 0) {
@@ -180,7 +217,7 @@ class AlgoFrame {
         sent = true;
         this.callback(
           this.waiting ? 0 : this.keyframes.test(Math.min(easedProgress, 1)),
-          easedProgress,
+          Math.min(easedProgress, 1),
           {
             lastFrame: this.lastFrameRate.last,
             currentTime: this.lastFrameRate.currentTime,
@@ -202,11 +239,13 @@ class AlgoFrame {
             timestamp,
           });
           this.done = true;
+          this._next = null;
           this.keyframes.restart();
           if (this.loop) this.run(callback, precision);
           this.next?.();
         } else {
           this.done = true;
+          this._next = null;
           this.keyframes.restart();
           if (this.loop) this.run(callback, precision);
           this.next?.();
