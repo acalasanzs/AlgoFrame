@@ -155,13 +155,7 @@ class AlgoFrame {
         this._next._.run(this._next.callback);
         this._next.running = true;
         this._current = this._next;
-        this._running.every((a, i) => {
-          if (a.time === this._current.time) {
-            this._running.splice(i, 1);
-            return false;
-          }
-          return true;
-        });
+        this._running.shift();
         console.log(
           this._next.time,
           this._running.map(l => l.time)
