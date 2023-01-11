@@ -32,7 +32,7 @@ box.parentNode.childNodes.forEach((node, i) => {
     node.offsetHeight + 'px'
   );
   // variable += 0.5;
-  let time = count / (boxes + 1) / variable;
+  let time = (count - 1) / boxes / variable;
   timeline.push({
     time,
     duration: (duration / boxes) * 5,

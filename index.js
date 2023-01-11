@@ -47,11 +47,11 @@ class AlgoFrame {
       // this.starttime = null;
     } else throw new Error('Not a valid Number');
   }
-  nextTime() {
-    if (!this._running.length) {
+  nextTime(arr = this._running) {
+    if (!arr.length) {
       console.log(new Error());
     }
-    this._next = this._running.reduce((previousValue, currentValue) =>
+    return arr.reduce((previousValue, currentValue) =>
       currentValue.time < previousValue.time ? currentValue : previousValue
     );
   }
@@ -59,8 +59,9 @@ class AlgoFrame {
     this.callback = callback;
     this.precision = precision;
   }
-  restartKeyframes() {
-    this._running.forEach(t => {
+  restartKeyframes(t) {
+    this._timeline.forEach(t => {
+      if (t.id === this._current.id) return;
       t._.keyframes.restart();
       t._.keyframes.nextTime();
       t.running = false;
@@ -68,16 +69,17 @@ class AlgoFrame {
   }
   restartTimeline() {
     this._timeline.forEach(x => this._running.push(x));
-    this.nextTime();
+    this._next = this.nextTime();
   }
   timeline(array, real, reverseLoop) {
     this._timeline = [];
     this._running = [];
+    let data = [];
     array.forEach(event => {
-      if (event.time >= 1 || event.time < 0) {
+      if (event.time >= 1 || event.time < 0 || isNaN(event.time)) {
         throw new Error('Not valid');
       }
-      this._timeline.push({
+      data.push({
         _: new AlgoFrame(
           event.duration,
           event.delay ? event.delay : 0,
@@ -89,6 +91,24 @@ class AlgoFrame {
         callback: event.run,
       });
     });
+    let all = array.reduce((p, c) => {
+      return p + c.duration || 0 + c.delay || 0;
+    }, 0);
+    if (all / array[array.length - 1].time < array[array.length - 1].duration) {
+      this.duration +=
+        array[array.length - 1].duration - all / array[array.length - 1].time;
+    }
+    if (this.duration < all) {
+      this.duration = all;
+    }
+    const len = data.length;
+    for (let i = 0; i < len; i++) {
+      const cur = this.nextTime(data);
+      cur.id = i + 1;
+      cur._.id = i + 1;
+      this._timeline.push(cur);
+      data.splice(data.indexOf(this._timeline[i]), 1);
+    }
     this.saved_timeline = this._timeline.map(l => l.time);
     this.restartTimeline();
     let first = this._next;
@@ -102,32 +122,39 @@ class AlgoFrame {
         this._next._.startanimationtime =
           params.timestamp + this._next._._starttime;
         this._next._.waiting = true;
+
+        //Parent info
+        this._next._.time = this._next.time;
+
         this._next._.run(this._next.callback);
         this._next.running = true;
         this._current = this._next;
         this._running.shift();
+        console.log(
+          this._next.time,
+          this._running.map(l => l.time)
+        );
         if (this._running.length) {
-          this.nextTime();
+          this._next = this.nextTime();
         }
       };
       if (this._next) {
-        if (
-          easedProgress >= this._next.time &&
-          !this._next.running &&
-          easedProgress !== 1
-        ) {
+        if (easedProgress >= this._next.time && !this._next.running) {
           next();
         }
       } else {
-        console.log('REVERSE!');
+        console.log('REVERSED');
         if (reverseLoop && !this.reversed) {
-          this._timeline.forEach(
-            (l, i) => (l.time = array[array.length - i - 1].time)
-          );
+          this._timeline.forEach((l, i) => {
+            l.time =
+              this.saved_timeline[this.saved_timeline.length - (i + 1)] -
+              this.nextTime(this.saved_timeline);
+          });
         } else if (reverseLoop) {
           this._timeline.forEach((l, i) => (l.time = this.saved_timeline[i]));
         }
-        while (this._running.length) this._running.pop();
+
+        while (this._running.length) this._running.shift();
         this.restartTimeline();
         this.restartKeyframes();
         if (reverseLoop && !this.reversed) this._running.reverse();
@@ -136,6 +163,8 @@ class AlgoFrame {
         last = this._timeline.reduce((previousValue, currentValue) =>
           currentValue.time > previousValue.time ? currentValue : previousValue
         );
+        this._running.shift();
+        this._next = this.nextTime();
         next();
       }
     };
@@ -176,7 +205,6 @@ class AlgoFrame {
     function animate(timestamp) {
       if (this.done) {
         this.frame = -1;
-        this.starttime = this._starttime;
         this.startanimationtime = timestamp;
         this.done = false;
         this._next = null;
@@ -226,7 +254,8 @@ class AlgoFrame {
           requestAnimationFrame(animate.bind(this));
         } else if (runtime + this.last.last > this.duration) {
           this.animationFrame++;
-          this.callback(this.keyframes.next.val, 1, {
+          this.keyframes.nextTime();
+          this.callback(this.keyframes.test(1), 1, {
             lastFrame: this.lastFrameRate.last,
             currentTime: this.lastFrameRate.currenttime,
             frame: this.animationFrame,
