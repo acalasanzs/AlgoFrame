@@ -1,4 +1,4 @@
-import { EasingFunctions } from './utils';
+import EasingFunctions from './utils';
 class AlgoFrame {
   constructor(
     duration,
