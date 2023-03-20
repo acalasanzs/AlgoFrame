@@ -160,10 +160,10 @@ class AlgoFrame {
         this._next.running = true;
         this._current = this._next;
         this._running.shift();
-        console.log(
-          this._next.time,
-          this._running.map(l => l.time)
-        );
+        // console.log(
+        //   this._next.time,
+        //   this._running.map(l => l.time)
+        // );
         if (this._running.length) {
           this._next = this.nextTime();
         }
@@ -361,6 +361,7 @@ class Keyframes {
         .reduce((previousValue, currentValue) =>
           currentValue.time < previousValue ? currentValue : previousValue
         );
+      console.log(this.next, this.run);
     } else {
       this.restart();
       this.next = this.run.reduce((previousValue, currentValue) =>
