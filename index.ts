@@ -1,6 +1,6 @@
 import EasingFunctions from './utils';
 
-type Preset = typeof EasingFunctions | ((x: number) => number);
+type Preset = string | ((x: number) => number);
 class Animate {
   private readonly presets: typeof EasingFunctions = EasingFunctions;
   readonly Tduration: number;
@@ -47,7 +47,9 @@ class Keyframes {
     });
     this.keyframes.forEach(k => this.run.push(k));
     if (typeof easing !== 'function') {
-      this.easing = EasingFunctions[easing];
+      this.easing = EasingFunctions[
+        easing as keyof typeof EasingFunctions
+      ] as Preset;
     } else {
       this.easing = easing;
     }
