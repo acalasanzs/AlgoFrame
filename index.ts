@@ -1,31 +1,37 @@
 import EasingFunctions from './utils';
 
 type Preset = string | ((x: number) => number);
+
+/*
+ * Tinit = this.starttime
+ * preset = this.easing
+ * keyframes = this.keyframes
+ */
 class Animate {
-  readonly Tduration: number;
-  starttime: any;
-  _starttime: any;
-  duration: any;
-  startafterwait: null;
-  startanimationtime: null;
+  readonly duration: number;
+  private _starttime: number;
+  private startafterwait?: number;
+  private startanimationtime?: number;
   stop: boolean;
-  _start: Promise<unknown>;
-  __start!: (value: unknown) => void;
-  done: boolean;
-  next: undefined;
-  _FPS: any;
-  frameDelay: number;
+  private _start: Promise<unknown>;
+  private __start!: (value: unknown) => void;
+  private done: boolean;
+  next?: () => void;
+  private _FPS?: number;
+  frameDelay?: number;
   frameRate: number;
   frame: number;
   animationFrame: number;
-  loop: any;
+  loop: boolean;
   constructor(
-    Tduration: number,
-    public readonly Tinit: number,
+    duration: number,
+    public readonly starttime: number = 0,
     public readonly preset: Preset,
-    public readonly keyframes: Keyframes
+    public readonly keyframes: Keyframes,
+    FPS: undefined | number = undefined,
+    loop: boolean = false
   ) {
-    this.Tduration = Math.floor(Tduration);
+    this.duration = Math.floor(duration);
     if (typeof preset !== 'function') {
       this.preset = EasingFunctions[
         preset as keyof typeof EasingFunctions
@@ -33,27 +39,42 @@ class Animate {
     } else {
       this.preset = preset as (t: number) => number;
     }
-    this.starttime = starttime ? starttime : 0;
     this._starttime = this.starttime;
     this.duration = duration;
-    this.startafterwait = null;
-    this.startanimationtime = null;
     this.stop = false;
     this._start = new Promise(res => (this.__start = res));
-    if (!(keyframes instanceof Keyframes)) {
-      throw new Error('Invalid Keyframes Object!');
-    }
     this.keyframes = keyframes;
     this.done = false;
-    this.next = undefined;
 
-    this._FPS = FPS;
-    this.frameDelay = 1000 / this._FPS;
+    if (typeof FPS === 'number') {
+      this._FPS = FPS;
+      this.frameDelay = 1000 / this._FPS;
+    }
     this.frameRate = 0;
     this.frame = -1;
     this.animationFrame = -1;
 
     this.loop = loop;
+  }
+  get FPS() {
+    return this._FPS ? 1000 / this._FPS : null;
+  }
+  set FPS(value: number | null) {
+    const FPS = value;
+    if (FPS) {
+      this._FPS = FPS;
+      this.frameDelay = 1000 / FPS;
+      // this.frame = -1;
+      // this.starttime = null;
+    } else console.warn(new Error('Not a valid Number'));
+  }
+  nextTime(arr = this._running) {
+    if (!arr.length) {
+      console.log(new Error());
+    }
+    return arr.reduce((previousValue, currentValue) =>
+      currentValue.time < previousValue.time ? currentValue : previousValue
+    );
   }
 }
 
