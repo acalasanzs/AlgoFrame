@@ -1,61 +1,34 @@
-import EasingFunctions from './utils';
-
-type Preset = string | ((x: number) => number);
-
-module Animate {
-  export interface event {
-    id: number;
-    time: number;
-    callback: () => void;
-  }
-}
-class Animate {
-  readonly duration: number;
-  private _starttime: number;
-  private startafterwait?: number;
-  private startanimationtime?: number;
-  stop: boolean;
-  private _start: Promise<unknown>;
-  private __start!: (value: unknown) => void;
-  private done: boolean;
-  next?: () => void;
-  private _FPS?: number;
-  frameDelay?: number;
-  frameRate: number;
-  frame: number;
-  animationFrame: number;
-  loop: boolean;
-
-  // * TIMELINE FEATURES
-  private _running: Animate.event[] = [];
-
+import { EasingFunctions } from './utils';
+class AlgoFrame {
   constructor(
-    duration: number,
-    public readonly starttime: number = 0,
-    public readonly preset: Preset,
-    public readonly keyframes: Keyframes,
-    FPS: undefined | number = undefined,
-    loop: boolean = false
+    duration,
+    starttime,
+    easing,
+    keyframes,
+    FPS = null,
+    loop = false
   ) {
-    this.duration = Math.floor(duration);
-    if (typeof preset !== 'function') {
-      this.preset = EasingFunctions[
-        preset as keyof typeof EasingFunctions
-      ] as Preset as (t: number) => number;
+    if (typeof easing !== 'function') {
+      this.easing = EasingFunctions[easing];
     } else {
-      this.preset = preset as (t: number) => number;
+      this.easing = easing;
     }
+    this.starttime = starttime ? starttime : 0;
     this._starttime = this.starttime;
     this.duration = duration;
+    this.startafterwait = null;
+    this.startanimationtime = null;
     this.stop = false;
     this._start = new Promise(res => (this.__start = res));
+    if (!(keyframes instanceof Keyframes)) {
+      throw new Error('Invalid Keyframes Object!');
+    }
     this.keyframes = keyframes;
     this.done = false;
+    this.next = undefined;
 
-    if (typeof FPS === 'number') {
-      this._FPS = FPS;
-      this.frameDelay = 1000 / this._FPS;
-    }
+    this._FPS = FPS;
+    this.frameDelay = 1000 / this._FPS;
     this.frameRate = 0;
     this.frame = -1;
     this.animationFrame = -1;
@@ -65,16 +38,16 @@ class Animate {
   get FPS() {
     return this._FPS ? 1000 / this._FPS : null;
   }
-  set FPS(value: number | null) {
-    const FPS = value;
+  set FPS(value) {
+    const FPS = parseFloat(value);
     if (FPS) {
       this._FPS = FPS;
       this.frameDelay = 1000 / FPS;
       // this.frame = -1;
       // this.starttime = null;
-    } else console.warn(new Error('Not a valid Number'));
+    } else throw new Error('Not a valid Number');
   }
-  nextTime(arr: typeof this._running = this._running) {
+  nextTime(arr = this._running) {
     if (!arr.length) {
       console.log(new Error());
     }
@@ -157,10 +130,10 @@ class Animate {
         this._next.running = true;
         this._current = this._next;
         this._running.shift();
-        console.log(
-          this._next.time,
-          this._running.map(l => l.time)
-        );
+        // console.log(
+        //   this._next.time,
+        //   this._running.map(l => l.time)
+        // );
         if (this._running.length) {
           this._next = this.nextTime();
         }
@@ -320,31 +293,14 @@ class Animate {
     }
   }
 }
-
-type Ktimeline = [Keyframe];
-
-namespace _Keyframes {
-  export type keyframes = _keyframe[];
-  export type _keyframe = {
-    val: any;
-    time: number;
-  } | null;
-}
 class Keyframes {
-  keyframes: _Keyframes.keyframes;
-  run: _Keyframes.keyframes;
-  easing: any;
-  next: _Keyframes._keyframe = null;
-  current: _Keyframes._keyframe = null;
-  constructor(keyframes: Ktimeline, easing: Preset) {
+  constructor(keyframes, easing) {
     this.keyframes = [];
     this.run = [];
     keyframes.every((keyframe, i) => {
       if (
         !(keyframe instanceof Keyframes.keyframe) ||
-        this.keyframes.some(function (k): k is _Keyframes._keyframe {
-          return k!.time === keyframe.time;
-        })
+        this.keyframes.some(k => k.time === keyframe.time)
       ) {
         console.error(new Error(`Invalid Keyframe ${i + 1}!`));
         return false;
@@ -355,11 +311,9 @@ class Keyframes {
     });
     this.keyframes.forEach(k => this.run.push(k));
     if (typeof easing !== 'function') {
-      this.easing = EasingFunctions[
-        easing as keyof typeof EasingFunctions
-      ] as Preset as (t: number) => number;
+      this.easing = EasingFunctions[easing];
     } else {
-      this.easing = easing as (t: number) => number;
+      this.easing = easing;
     }
     this.nextTime();
   }
@@ -370,19 +324,17 @@ class Keyframes {
 
     if (this.run.length > 1) {
       this.current = this.run.reduce((previousValue, currentValue) =>
-        currentValue!.time < previousValue!.time ? currentValue : previousValue
+        currentValue.time < previousValue.time ? currentValue : previousValue
       );
       this.next = this.run
-        .filter(v => v!.time !== this.current!.time)
+        .filter(v => v.time !== this.current.time)
         .reduce((previousValue, currentValue) =>
-          currentValue!.time < previousValue!.time
-            ? currentValue
-            : previousValue
+          currentValue.time < previousValue ? currentValue : previousValue
         );
     } else {
       this.restart();
       this.next = this.run.reduce((previousValue, currentValue) =>
-        currentValue!.time < previousValue!.time ? currentValue : previousValue
+        currentValue.time < previousValue.time ? currentValue : previousValue
       );
     }
     this.run.shift();
@@ -391,21 +343,27 @@ class Keyframes {
     while (this.run.length) this.run.pop();
     this.keyframes.forEach(k => this.run.push(k));
   }
-  test(progress: number) {
-    if (this.next!.time <= progress) this.nextTime();
+  test(progress) {
+    if (this.next.time <= progress) this.nextTime();
     progress = Math.min(this.easing(progress), 1);
-    const dif = this.next!.val - this.current!.val;
-    const a = this.next!.time - this.current!.time;
+    const dif = this.next.val - this.current.val;
+    const a = this.next.time - this.current.time;
     const sum = dif * progress;
-    return (this.current!.val + sum) / a;
+    return (this.current.val + sum) / a;
   }
   clone() {
     let orig = this;
     return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
   }
   static keyframe = class {
-    constructor(public readonly time: number, public readonly val: number) {}
+    constructor(totalProgress, value) {
+      this.time = totalProgress;
+      this.val = value;
+    }
   };
 }
 
-export { Animate, Keyframes };
+// const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
+// anim.run((x) => console.log(x));
+
+export { AlgoFrame, Keyframes };

@@ -1,5 +1,5 @@
 import './style2.css';
-import * as AF from 'algoframe';
+import * as AF from './algoframe';
 import * as BezierEasing from 'bezier-easing';
 
 const delay = 500;
@@ -26,7 +26,7 @@ let boxes = [...box.parentNode.childNodes].reduce(
   (p, c) => (c.className === 'box' ? 1 : 0) + p,
   0
 );
-console.log(boxes);
+console.log(boxes, 'boxes loaded');
 box.parentNode.childNodes.forEach(node => {
   if (node.className !== 'box') return;
   count++;
@@ -57,5 +57,5 @@ function theRealCallback(value, easedProgress) {
   document.querySelector('h2').textContent =
     Math.round(easedProgress * 100) + '%';
 }
-console.log(timeline);
+// console.log(timeline);
 animation.timeline(timeline, theRealCallback).run();
