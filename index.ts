@@ -325,50 +325,48 @@ class Animate {
     }
   }
 }
-
+class _value {
+  constructor(public val: number, public time: number) {}
+}
+class _object {
+  constructor(public obj: unknown, public time: number) {}
+}
 module Timeline {
-  export interface event {
-    value: unknown;
+  export type _simple = typeof Timeline._value[];
+  export type _sequence = typeof Timeline._object[];
+  export type __object = {
+    obj: unknown;
     time: number;
-  }
+  };
+  export type __value = {
+    value: number;
+    time: number;
+  };
 }
 class Timeline {
-  constructor(events: [Timeline.event], modificator: Preset) {}
-}
+  static readonly _value = class {
+    constructor(public val: number, public time: number) {}
+  };
+  static readonly _object = class {
+    constructor(public obj: unknown, public time: number) {}
+  };
 
-type Ktimeline = [Keyframes._keyframe]; //'Keyframes._keyframe's not empty tuple like array
-
-module Keyframes {
-  export type _keyframes = _keyframe[];
-  export type _keyframe = {
-    val: any;
-    time: number;
-  } | null;
-}
-class Keyframes {
-  keyframes: Keyframes._keyframes;
-  run: Keyframes._keyframes;
-  easing: any;
-  next: Keyframes._keyframe = null;
-  current: Keyframes._keyframe = null;
-  constructor(keyframes: Ktimeline, easing: Preset) {
-    this.keyframes = [];
+  readonly type!: 'sequence' | 'simple';
+  run: Timeline._simple & Timeline._sequence;
+  next: (Timeline._value & Timeline._object) | null = null;
+  current: (Timeline._value & Timeline._object) | null = null;
+  easing: (t: number) => number;
+  constructor(
+    public keyframes: [Timeline._value] & [Timeline._object],
+    easing: Preset
+  ) {
     this.run = [];
-    keyframes.every((keyframe, i) => {
-      if (
-        !(keyframe instanceof Keyframes.keyframe) ||
-        this.keyframes.some(function (k): k is Keyframes._keyframe {
-          return k!.time === keyframe.time;
-        })
-      ) {
-        console.error(new Error(`Invalid Keyframe ${i + 1}!`));
-        return false;
-      } else {
-        this.keyframes.push(keyframe);
-        return true;
-      }
-    });
-    this.keyframes.forEach(k => this.run.push(k));
+
+    // Pushes and Checks if all events are of type _object or _keyframe
+    this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));
+
+    if (this.keyframes[0] instanceof Timeline._value) {
+    }
     if (typeof easing !== 'function') {
       this.easing = EasingFunctions[
         easing as keyof typeof EasingFunctions
@@ -378,9 +376,19 @@ class Keyframes {
     }
     this.nextTime();
   }
-  nextTime() {
+  passKeyframe(k: any | _object | _value) {
+    if (k instanceof _object || k instanceof _value) return k;
+    function is_value(object: any): object is _value {
+      return 'val' in object;
+    }
+    return is_value(k)
+      ? new Timeline._value(k.val, k.time)
+      : new Timeline._object(k.obj, k.time);
+  }
+  private nextTime(): void {
     if (!this.run.length) {
-      return (this.next = null);
+      this.next = null;
+      return;
     }
 
     if (this.run.length > 1) {
@@ -406,21 +414,19 @@ class Keyframes {
     while (this.run.length) this.run.pop();
     this.keyframes.forEach(k => this.run.push(k));
   }
-  test(progress: number) {
-    if (this.next!.time <= progress) this.nextTime();
-    progress = Math.min(this.easing(progress), 1);
-    const dif = this.next!.val - this.current!.val;
-    const a = this.next!.time - this.current!.time;
-    const sum = dif * progress;
-    return (this.current!.val + sum) / a;
+  test(progress: number): unknown | number | null {
+    if (this.next && this.current) {
+      if (this.next.time <= progress) this.nextTime(); //bug proof
+      progress = Math.min(this.easing(progress), 1);
+      const dif = this.next.val - this.current.val;
+      const a = this.next.time - this.current.time;
+      const sum = dif * progress;
+      return (this.current.val + sum) / a;
+    }
   }
   clone() {
     let orig = this;
     return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
   }
-  static keyframe = class {
-    constructor(public readonly time: number, public readonly val: number) {}
-  };
 }
-
-export { Animate, Keyframes };
+export { Animate, Timeline };
