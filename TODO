@@ -12,3 +12,7 @@
     shiftByEvent(position: "before" | "after", UID: number): cut before/after the begin/end of an event in a timeline, adjusting all the keyframes so them remain equivalent in time. 
     .expand(miliseconds: number): add 'miliseconds' to the global timeline (.enlarge if necessary without expanding or shrinking the whole timeline, adjusting all events).
 4. Sequencing: Nested Algoframe.timeline(s)
+
+
+
+Check: ✓
