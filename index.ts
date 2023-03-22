@@ -4,8 +4,13 @@ type Preset = string | ((x: number) => number);
 
 module Animate {
   export interface event {
-    id: number;
-    time: number;
+    id: number; // UID for every event in a Algoframe's timeline
+    time: number; // Time in
+    duration: number;
+    delay: number;
+    easing: Preset;
+    keyframes: Keyframes;
+
     callback: () => void;
   }
 }
@@ -321,28 +326,38 @@ class Animate {
   }
 }
 
-type Ktimeline = [Keyframe];
+module Timeline {
+  export interface event {
+    value: unknown;
+    time: number;
+  }
+}
+class Timeline {
+  constructor(events: [Timeline.event], modificator: Preset) {}
+}
 
-namespace _Keyframes {
-  export type keyframes = _keyframe[];
+type Ktimeline = [Keyframes._keyframe]; //'Keyframes._keyframe's not empty tuple like array
+
+module Keyframes {
+  export type _keyframes = _keyframe[];
   export type _keyframe = {
     val: any;
     time: number;
   } | null;
 }
 class Keyframes {
-  keyframes: _Keyframes.keyframes;
-  run: _Keyframes.keyframes;
+  keyframes: Keyframes._keyframes;
+  run: Keyframes._keyframes;
   easing: any;
-  next: _Keyframes._keyframe = null;
-  current: _Keyframes._keyframe = null;
+  next: Keyframes._keyframe = null;
+  current: Keyframes._keyframe = null;
   constructor(keyframes: Ktimeline, easing: Preset) {
     this.keyframes = [];
     this.run = [];
     keyframes.every((keyframe, i) => {
       if (
         !(keyframe instanceof Keyframes.keyframe) ||
-        this.keyframes.some(function (k): k is _Keyframes._keyframe {
+        this.keyframes.some(function (k): k is Keyframes._keyframe {
           return k!.time === keyframe.time;
         })
       ) {
