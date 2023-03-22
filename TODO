@@ -4,8 +4,10 @@
     Important to set UID's before importing to the framework Algoframe.timeline
 
 3. Flexible timeline framework = including:
-    .add(Timeline.event): add an event to the global timeline (.enlarge if necessary),
-    .del(UID: number)
-    .enlarge(number) : adds time to the global timeline,        shrinking the curreent timeline respectively,
+    .add(event: Timeline.event): add an event to the global timeline (.enlarge if necessary without expanding or shrinking the whole timeline, adjusting all events).
+    .del(UID: number): remove an event but adjusting nothing.
+    .enlarge(number): adds time to the global timeline,        shrinking the curreent timeline respectively.
+    shift(miliseconds: number): cut/shift end of the timeline in miliseconds, adjusting all the keyframes so them remain equivalent in time. 
     .shrink(number),
-    .expand(number)
+    shiftByEvent(position: "before" | "after", UID: number): cut before/after the begin/end of an event in a timeline, adjusting all the keyframes so them remain equivalent in time. 
+    .expand(miliseconds: number): add 'miliseconds' to the global timeline (.enlarge if necessary without expanding or shrinking the whole timeline, adjusting all events).
