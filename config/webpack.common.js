@@ -1,3 +1,4 @@
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
 const UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
 const config = {
@@ -6,8 +7,15 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        use: 'ts-loader',
+        test: /\.ts?$/,
+        use: [
+          {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true,
+            },
+          },
+        ],
         exclude: /node_modules/,
       },
     ],
@@ -21,7 +29,13 @@ const config = {
     library: 'AlgoFrame',
     libraryTarget: 'umd',
   },
-  plugins: [new UnminifiedWebpackPlugin()],
+  plugins: [
+    new UnminifiedWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: 'our project',
+      template: 'src/index.html',
+    }),
+  ],
 };
 
 module.exports = config;

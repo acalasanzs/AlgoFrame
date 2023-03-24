@@ -1,0 +1,1 @@
+!function(e,o){"object"==typeof exports&&"object"==typeof module?module.exports=o():"function"==typeof define&&define.amd?define([],o):"object"==typeof exports?exports.AlgoFrame=o():e.AlgoFrame=o()}(self,(()=>(()=>{"use strict";return console.log("It works!"),{}})()));

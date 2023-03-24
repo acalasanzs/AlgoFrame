@@ -5,7 +5,7 @@ class _value {
   constructor(public value: number, public time: number) {}
 }
 class _object {
-  constructor(public obj: unknown, public time: number) {} // unknown now but maybe a special kind of AlgoFrame + Timelinen for nested sequencees!
+  constructor(public obj: Timeline, public time: number) {} // unknown now but maybe a special kind of AlgoFrame + Timelinen for nested sequencees!
 }
 
 // Enumerables
@@ -14,7 +14,7 @@ type _sequence = _object[];
 
 // Anonymous Interfaces
 type __object = {
-  obj: unknown;
+  obj: Timeline;
   time: number;
 };
 type __value = {
@@ -27,7 +27,7 @@ export class Timeline {
     constructor(public val: number, public time: number) {}
   };
   static readonly _object = class {
-    constructor(public obj: unknown, public time: number) {}
+    constructor(public obj: Timeline, public time: number) {}
   };
 
   readonly type!: 'sequence' | 'simple';
@@ -100,7 +100,7 @@ export class Timeline {
         const sum = dif * progress;
         return (this.current.value + sum) / a;
       } else {
-        return (this.current as _object).obj;
+        return (this.current as _object).obj.test(progress - this.current.time);
       }
     }
   }
