@@ -26,7 +26,7 @@ abstract class KeyChanger {
   run: (__object | __value)[];
   next: (_value | _object) | null = null;
   current: (_value | _object) | null = null;
-  abstract keyframes: __value[] | __object[];
+  keyframes?: (__value | __object)[];
   easing: (t: number) => number;
 
   constructor(easing: Preset = 'linear') {
@@ -64,10 +64,12 @@ abstract class KeyChanger {
     }
     this.run.shift();
   }
+  protected abstract reset(): void;
   public restart() {
     while (this.run.length) this.run.pop();
-    this.keyframes.forEach(k => this.run.push(k));
+    this.reset();
   }
+  protected abstract asSequence(object: _object, progress: number): any;
   test(progress: number): unknown | number | null {
     if (this.next && this.current) {
       if (this.next.time <= progress) this.nextTime(); //bug proof
@@ -78,7 +80,8 @@ abstract class KeyChanger {
         const sum = dif * progress;
         return (this.current.value + sum) / a;
       } else {
-        return (this.current as _object).obj.test(progress - this.current.time);
+        // return (this.current as _object).obj.test(progress - this.current.time);
+        return this.asSequence(this.current as _object, progress);
       }
     }
   }
@@ -109,6 +112,12 @@ export class Sequence extends KeyChanger {
       );
     }
   }
+  protected asSequence(object: _object, progress: number) {
+    return object.obj.test(progress - this.current!.time);
+  }
+  protected reset(): void {
+    this.keyframes.forEach(k => this.run.push(k));
+  }
   private passKeyframe(k: any | _object | _value) {
     if (k instanceof _object || k instanceof _value) return k;
     return this.is_value(k)
@@ -127,5 +136,8 @@ export class Sequence extends KeyChanger {
 export class Timeline extends KeyChanger {
   constructor(public channels: Sequence[], easing: Preset = 'linear') {
     super(easing);
+  }
+  protected asSequence(object: _object, progress: number) {
+    return object.obj.test(progress - this.current!.time);
   }
 }
