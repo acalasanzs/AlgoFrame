@@ -1,8 +1,11 @@
 ✓1. Set base class for Keyframes: Timeline
 
 ✓1.5. Set nesting to Timeline base class: return Timeline.test: Timeline => Timeline.test: number
+//1.75 ...And duration limits within sequence timeline
+Timeline -> Sequence
 
-2. SET EVENTS TO AlgoFrame.Animate.timeline() 
+2. Set multiple channels on AlgoFrame.timeline with each being a Sequence.
+2.5. SET EVENTS TO AlgoFrame.Animate.timeline() 
     Important to set UID's before importing to the framework Algoframe.timeline
 
 3. Flexible timeline framework = including:

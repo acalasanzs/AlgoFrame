@@ -1,11 +1,11 @@
 import { Preset, EasingFunctions } from '../utils';
 
 // Classes
-class _value {
+export class _value {
   constructor(public value: number, public time: number) {}
 }
-class _object {
-  constructor(public obj: Timeline, public time: number) {} // unknown now but maybe a special kind of AlgoFrame + Timelinen for nested sequencees!
+export class _object {
+  constructor(public obj: Sequence, public time: number) {} // unknown now but maybe a special kind of AlgoFrame + Timelinen for nested sequencees!
 }
 
 // Enumerables
@@ -13,36 +13,24 @@ type _simple = _value[];
 type _sequence = _object[];
 
 // Anonymous Interfaces
-type __object = {
-  obj: Timeline;
+export type __object = {
+  obj: Sequence;
   time: number;
 };
-type __value = {
+export type __value = {
   value: number;
   time: number;
 };
 
-export class Timeline {
-  static readonly _value = class {
-    constructor(public val: number, public time: number) {}
-  };
-  static readonly _object = class {
-    constructor(public obj: Timeline, public time: number) {}
-  };
-
-  readonly type!: 'sequence' | 'simple';
-  run: (_object | _value)[];
+abstract class KeyChanger {
+  run: (__object | __value)[];
   next: (_value | _object) | null = null;
   current: (_value | _object) | null = null;
+  abstract keyframes: __value[] | __object[];
   easing: (t: number) => number;
-  constructor(public keyframes: [__value] | [__object], easing: Preset) {
+
+  constructor(easing: Preset = 'linear') {
     this.run = [];
-
-    // Pushes and Checks if all events are of type _object or _keyframe
-    this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));
-
-    if (this.keyframes[0] instanceof Timeline._value) {
-    }
     if (typeof easing !== 'function') {
       this.easing = EasingFunctions[
         easing as keyof typeof EasingFunctions
@@ -50,18 +38,8 @@ export class Timeline {
     } else {
       this.easing = easing as (t: number) => number;
     }
-    this.nextTime();
   }
-  passKeyframe(k: any | _object | _value) {
-    if (k instanceof _object || k instanceof _value) return k;
-    return this.is_value(k)
-      ? new _value(k.value, k.time)
-      : new _object(k.obj, k.time);
-  }
-  private is_value(object: any): object is __value {
-    return 'val' in object;
-  }
-  private nextTime(): void {
+  protected nextTime(): void {
     if (!this.run.length) {
       this.next = null;
       return;
@@ -86,7 +64,7 @@ export class Timeline {
     }
     this.run.shift();
   }
-  restart() {
+  public restart() {
     while (this.run.length) this.run.pop();
     this.keyframes.forEach(k => this.run.push(k));
   }
@@ -104,8 +82,50 @@ export class Timeline {
       }
     }
   }
+}
+
+export class Sequence extends KeyChanger {
+  type!: 'nested' | 'simple';
+  constructor(
+    public keyframes: __value[] | __object[],
+    easing: Preset = 'linear'
+  ) {
+    super(easing);
+    // Pushes and Checks if all events are of type _object or _keyframe
+    this.keyframes.forEach((k, i) => {
+      k = this.passKeyframe(k);
+      if (i === 0) this.type = k instanceof _value ? 'simple' : 'nested';
+      this.run.push(k);
+    });
+    if (!this.type) throw new Error('No events/keyframes provided');
+
+    if (this.keyframes[0] instanceof _value) {
+    }
+    try {
+      this.nextTime();
+    } catch {
+      throw new Error(
+        'Identical time signatures on keyframes are not allowed on a single animation channel'
+      );
+    }
+  }
+  private passKeyframe(k: any | _object | _value) {
+    if (k instanceof _object || k instanceof _value) return k;
+    return this.is_value(k)
+      ? new _value(k.value, k.time)
+      : new _object(k.obj, k.time);
+  }
+  private is_value(object: any): object is __value {
+    return 'val' in object;
+  }
   clone() {
     let orig = this;
     return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
+  }
+}
+
+export class Timeline extends KeyChanger {
+  constructor(public channels: Sequence[], easing: Preset = 'linear') {
+    super(easing);
   }
 }

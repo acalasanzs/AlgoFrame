@@ -1,5 +1,5 @@
 import { EasingFunctions, Preset } from './utils';
-import { Timeline } from './src/Timeline';
+import { Sequence } from './src/Timeline';
 
 module Animate {
   export interface event {
