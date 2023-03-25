@@ -1,35 +1,37 @@
 import { Preset, EasingFunctions } from '../utils';
 
 // Classes
-export class _value {
+export class valueKeyframe {
   constructor(public value: number, public time: number) {}
 }
-export class _object {
+export class nestedKeyframe {
   constructor(public obj: Sequence, public time: number) {} // unknown now but maybe a special kind of AlgoFrame + Timelinen for nested sequencees!
 }
 
 // Enumerables
-type _simple = _value[];
-type _sequence = _object[];
+type _simple = valueKeyframe[];
+type _nested = nestedKeyframe[];
 
 // Anonymous Interfaces
-export type __object = {
+export type __objectKeyframe = {
   obj: Sequence;
   time: number;
 };
-export type __value = {
+export type __valueKeyframe = {
   value: number;
   time: number;
 };
 
 abstract class KeyChanger {
-  run: (__object | __value)[];
-  next: (_value | _object) | null = null;
-  current: (_value | _object) | null = null;
-  keyframes?: (__value | __object)[];
+  protected duration: number;
+  run: (__objectKeyframe | __valueKeyframe)[];
+  next: (valueKeyframe | nestedKeyframe) | null = null;
+  current: (valueKeyframe | nestedKeyframe) | null = null;
+  keyframes?: (__valueKeyframe | __objectKeyframe)[];
   easing: (t: number) => number;
 
-  constructor(easing: Preset = 'linear') {
+  constructor(duration: number, easing: Preset = 'linear') {
+    this.duration = Math.floor(duration);
     this.run = [];
     if (typeof easing !== 'function') {
       this.easing = EasingFunctions[
@@ -69,19 +71,23 @@ abstract class KeyChanger {
     while (this.run.length) this.run.pop();
     this.reset();
   }
-  protected abstract asSequence(object: _object, progress: number): any;
+  // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
+  protected abstract asSequence(object: nestedKeyframe, progress: number): any;
   test(progress: number): unknown | number | null {
     if (this.next && this.current) {
-      if (this.next.time <= progress) this.nextTime(); //bug proof
-      if (this.next instanceof _value && this.current instanceof _value) {
+      if (this.next.time <= progress) this.nextTime(); //bug-proof
+      if (
+        this.next instanceof valueKeyframe &&
+        this.current instanceof valueKeyframe
+      ) {
         progress = Math.min(this.easing(progress), 1);
         const dif = this.next.value - this.current.value;
         const a = this.next.time - this.current.time;
         const sum = dif * progress;
         return (this.current.value + sum) / a;
       } else {
-        // return (this.current as _object).obj.test(progress - this.current.time);
-        return this.asSequence(this.current as _object, progress);
+        // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
+        return this.asSequence(this.current as nestedKeyframe, progress);
       }
     }
   }
@@ -90,19 +96,20 @@ abstract class KeyChanger {
 export class Sequence extends KeyChanger {
   type!: 'nested' | 'simple';
   constructor(
-    public keyframes: __value[] | __object[],
+    duration: number,
+    public keyframes: __valueKeyframe[] | __objectKeyframe[],
     easing: Preset = 'linear'
   ) {
-    super(easing);
-    // Pushes and Checks if all events are of type _object or _keyframe
+    super(duration, easing);
+    // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
     this.keyframes.forEach((k, i) => {
       k = this.passKeyframe(k);
-      if (i === 0) this.type = k instanceof _value ? 'simple' : 'nested';
+      if (i === 0) this.type = k instanceof valueKeyframe ? 'simple' : 'nested';
       this.run.push(k);
     });
     if (!this.type) throw new Error('No events/keyframes provided');
 
-    if (this.keyframes[0] instanceof _value) {
+    if (this.keyframes[0] instanceof valueKeyframe) {
     }
     try {
       this.nextTime();
@@ -112,19 +119,19 @@ export class Sequence extends KeyChanger {
       );
     }
   }
-  protected asSequence(object: _object, progress: number) {
-    return object.obj.test(progress - this.current!.time);
+  protected asSequence(object: nestedKeyframe, progress: number) {
+    // return object.obj.test(progress - this.current!.time);
   }
   protected reset(): void {
     this.keyframes.forEach(k => this.run.push(k));
   }
-  private passKeyframe(k: any | _object | _value) {
-    if (k instanceof _object || k instanceof _value) return k;
+  private passKeyframe(k: any | nestedKeyframe | valueKeyframe) {
+    if (k instanceof nestedKeyframe || k instanceof valueKeyframe) return k;
     return this.is_value(k)
-      ? new _value(k.value, k.time)
-      : new _object(k.obj, k.time);
+      ? new valueKeyframe(k.value, k.time)
+      : new nestedKeyframe(k.obj, k.time);
   }
-  private is_value(object: any): object is __value {
+  private is_value(object: any): object is __valueKeyframe {
     return 'val' in object;
   }
   clone() {
@@ -133,11 +140,20 @@ export class Sequence extends KeyChanger {
   }
 }
 
-export class Timeline extends KeyChanger {
-  constructor(public channels: Sequence[], easing: Preset = 'linear') {
-    super(easing);
+export class ChannelsTimeline extends KeyChanger {
+  //AllRun? to all channels simultaneously
+  // Return a nested object of all the results in a given time?
+  // So in that case, call every AlgoFrame Sequence/timeline better.
+  constructor(
+    duration: number,
+    public channels: Sequence[], // Main sequences means a whole channel, but all must have the same length in miliseconds. If not, all will be extended to the largest one.
+    easing: Preset = 'linear'
+  ) {
+    super(duration, easing);
+    if (this.channels.some(s => s.type !== 'nested')) {
+      throw new Error();
+    }
   }
-  protected asSequence(object: _object, progress: number) {
-    return object.obj.test(progress - this.current!.time);
-  }
+  protected asSequence(object: nestedKeyframe, progress: number) {}
+  protected reset(): void {}
 }

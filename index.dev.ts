@@ -1,5 +1,5 @@
 import { EasingFunctions, Preset } from './utils';
-import { Sequence } from './src/Timeline';
+import { Channels, Sequence } from './src/Timeline';
 
 module Animate {
   export interface event {
@@ -8,13 +8,12 @@ module Animate {
     duration: number;
     delay: number;
     easing: Preset;
-    keyframes: Keyframes;
+    keyframes: Sequence;
 
     callback: () => void;
   }
 }
 class Animate {
-  readonly duration: number;
   private _starttime: number;
   private startafterwait?: number;
   private startanimationtime?: number;
@@ -34,14 +33,12 @@ class Animate {
   private _running: Animate.event[] = [];
 
   constructor(
-    duration: number,
     public readonly starttime: number = 0,
     public readonly preset: Preset,
-    public readonly keyframes: Keyframes,
+    public readonly keyframes: Sequence,
     FPS: undefined | number = undefined,
     loop: boolean = false
   ) {
-    this.duration = Math.floor(duration);
     if (typeof preset !== 'function') {
       this.preset = EasingFunctions[
         preset as keyof typeof EasingFunctions
