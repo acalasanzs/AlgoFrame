@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2016" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
-    "module": "commonjs" /* Specify what module code is generated. */,
+    "module": "CommonJS" /* Specify what module code is generated. */,
     "rootDir": "./src" /* Specify the root folder within your source files. */,
     "typeRoots": [
       "./node_modules/@types/",
