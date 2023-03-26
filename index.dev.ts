@@ -1,4 +1,4 @@
-import { EasingFunctions, Preset } from './utils';
+import { passPreset, EasingFunctions, Preset } from './utils';
 import { Channels, Sequence } from './src/Timeline';
 
 module Animate {
@@ -13,6 +13,7 @@ module Animate {
     callback: () => void;
   }
 }
+// * this.duration will be replaced by the duration of the Sequence
 class Animate {
   private _starttime: number;
   private startafterwait?: number;
@@ -28,6 +29,7 @@ class Animate {
   frame: number;
   animationFrame: number;
   loop: boolean;
+  callback!: Function;
 
   // * TIMELINE FEATURES
   private _running: Animate.event[] = [];
@@ -39,15 +41,8 @@ class Animate {
     FPS: undefined | number = undefined,
     loop: boolean = false
   ) {
-    if (typeof preset !== 'function') {
-      this.preset = EasingFunctions[
-        preset as keyof typeof EasingFunctions
-      ] as Preset as (t: number) => number;
-    } else {
-      this.preset = preset as (t: number) => number;
-    }
+    this.preset = passPreset(preset);
     this._starttime = this.starttime;
-    this.duration = duration;
     this.stop = false;
     this._start = new Promise(res => (this.__start = res));
     this.keyframes = keyframes;

@@ -1,4 +1,4 @@
-import { Preset, EasingFunctions } from '../utils';
+import { Preset, EasingFunctions, passPreset } from '../utils';
 
 // Classes
 
@@ -59,13 +59,7 @@ abstract class KeyChanger {
   constructor(duration: number, easing: Preset = 'linear') {
     this.duration = Math.floor(duration);
     this.run = [];
-    if (typeof easing !== 'function') {
-      this.easing = EasingFunctions[
-        easing as keyof typeof EasingFunctions
-      ] as Preset as (t: number) => number;
-    } else {
-      this.easing = easing as (t: number) => number;
-    }
+    this.easing = passPreset(easing);
   }
   protected nextTime(): void {
     if (!this.run.length) {

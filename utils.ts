@@ -31,4 +31,13 @@ class EasingFunctions {
     t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 }
 type Preset = string | ((x: number) => number);
-export { EasingFunctions, Preset };
+function passPreset(preset: Preset) {
+  if (typeof preset !== 'function') {
+    return EasingFunctions[
+      preset as keyof typeof EasingFunctions
+    ] as Preset as (t: number) => number;
+  } else {
+    return preset as (t: number) => number;
+  }
+}
+export { EasingFunctions, Preset, passPreset };
