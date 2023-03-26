@@ -1,6 +1,7 @@
 import { passPreset, EasingFunctions, Preset } from './utils';
 import { Channels, Sequence } from './src/Timeline';
 
+//Remove this and replace by Timeline
 module Animate {
   export interface event {
     id: number; // UID for every event in a Algoframe's timeline
@@ -30,6 +31,10 @@ class Animate {
   animationFrame: number;
   loop: boolean;
   callback!: Function;
+
+  last!: unknown;
+  lastFrameRate!: unknown;
+  precision!: number;
 
   // * TIMELINE FEATURES
   private _running: Animate.event[] = [];
@@ -193,39 +198,41 @@ class Animate {
     };
     return this;
   }
-  run(callback, precision = this._FPS) {
-    let condition, seg;
+  protected static Refresher = class {
+    history: number[];
+    last: number | 'Calculating...';
+    currenttime: number;
+    constructor(precision = 1) {
+      this.history = new Array(precision).fill(0);
+      this.last = 0;
+      this.currenttime = 0;
+    }
+    refresh(timestamp: number) {
+      this.history.unshift(0);
+      this.history.pop();
+      this.history[0] = timestamp - this.currenttime;
+      this.last = this.history.includes(0)
+        ? 'Calculating...'
+        : this.history.reduce((prev, curr) => prev + curr) /
+          this.history.length;
+      this.currenttime = timestamp;
+    }
+  };
+  run(callback: typeof this.callback, precision = this._FPS) {
+    let condition: boolean, seg;
     this.callback = callback ? callback : this.callback;
 
-    class Refresher {
-      constructor(precision = 1) {
-        this.history = new Array(precision).fill(0);
-        this.last = 0;
-        this.currenttime = 0;
-      }
-      refresh(timestamp) {
-        this.history.unshift(0);
-        this.history.pop();
-        this.history[0] = timestamp - this.currenttime;
-        this.last = this.history.includes(0)
-          ? 'Calculating...'
-          : this.history.reduce((prev, curr) => prev + curr) /
-            this.history.length;
-        this.currenttime = timestamp;
-      }
-    }
-
-    this.last = new Refresher();
-    if (isNaN(precision)) {
+    this.last = new Animate.Refresher();
+    if (typeof precision === 'number' && isNaN(precision)) {
       console.log(new Error(`${precision} is NaN`));
       precision = this._FPS;
       if (!isNaN(this.precision)) precision = this.precision;
     }
     this.lastFrameRate = this.lastFrameRate
       ? this.lastFrameRate
-      : new Refresher(precision);
+      : new Animate.Refresher(precision);
 
-    function animate(timestamp) {
+    const animate = (timestamp: number) => {
       if (this.done) {
         this.frame = -1;
         this.startanimationtime = timestamp;
@@ -296,7 +303,7 @@ class Animate {
         }
       }
       if (this.animationFrame === 0) this.__start();
-    }
+    };
     requestAnimationFrame(animate.bind(this));
     return this;
   }
