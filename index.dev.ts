@@ -2,18 +2,18 @@ import { passPreset, EasingFunctions, Preset } from './utils';
 import { Channels, Sequence } from './src/Timeline';
 
 //Remove this and replace by Timeline
-module Animate {
-  export interface event {
-    id: number; // UID for every event in a Algoframe's timeline
-    time: number; // Time in
-    duration: number;
-    delay: number;
-    easing: Preset;
-    keyframes: Sequence;
+// module Animate {
+//   export interface event {
+//     id: number; // UID for every event in a Algoframe's timeline
+//     time: number; // Time in
+//     duration: number;
+//     delay: number;
+//     easing: Preset;
+//     keyframes: Sequence;
 
-    callback: () => void;
-  }
-}
+//     callback: () => void;
+//   }
+// }
 // * this.duration will be replaced by the duration of the Sequence
 class Animate {
   private _starttime: number;

@@ -2,6 +2,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
 const UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
 const config = {
+  context: path.resolve(__dirname, '../src'),
   target: 'web',
   entry: './index.ts',
   module: {
@@ -33,7 +34,7 @@ const config = {
     new UnminifiedWebpackPlugin(),
     new HtmlWebpackPlugin({
       title: 'our project',
-      template: 'public/index.html',
+      template: '../public/index.html',
     }),
   ],
 };
