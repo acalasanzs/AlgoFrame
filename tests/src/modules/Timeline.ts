@@ -114,6 +114,10 @@ abstract class KeyChanger {
   }
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
   protected abstract asSequence(object: nestedKeyframe, progress: number): any;
+  static lerp(x: number, y: number, a: number) {
+    const lerp = x * (1 - a) + y * a;
+    return lerp;
+  }
   public test(
     progress: number,
     miliseconds: boolean = false
@@ -131,9 +135,15 @@ abstract class KeyChanger {
           this.easing(progress),
           miliseconds ? this.duration : 1
         );
-        const res =
-          this.current.value * (1 - progress) + this.next.value * progress;
-        return res;
+        const a = this.next.time(1) - this.current.time(1);
+        const trace = progress / a;
+        const lerp = KeyChanger.lerp(
+          this.current.value,
+          this.next.value,
+          progress < a ? trace : (progress - a) / a
+        );
+        console.log(lerp, this.current.value);
+        return lerp;
       } else {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
         return this.asSequence(this.current as nestedKeyframe, progress);

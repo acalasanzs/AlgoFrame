@@ -26,5 +26,5 @@ const keyframes = new AFT.Sequence(500, [
   new AFT.valueKeyframe(1, 1, 'ratio'),
 ]);
 
-animation.run(console.log);
+animation.run((_: any) => 0);
 // animation.run((x: number) => console.log(keyframes.test(x)));
