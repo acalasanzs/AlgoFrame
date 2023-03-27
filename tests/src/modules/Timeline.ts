@@ -5,26 +5,30 @@ import { Preset, EasingFunctions, passPreset } from '../utils';
 class _keyframe {
   static instances = 0;
   readonly id: number;
+  public duration!: number;
   constructor(
     public timing: number,
     public type: 'ratio' | 'miliseconds' = 'ratio',
-    public delay?: number,
-    public duration?: number
+    public delay?: number
   ) {
-    if (this.type === 'ratio' && this.delay && !this.duration)
-      throw new Error(
-        `If delay is specified and keyframe's type is 'ratio', it needs to be also with the duration of the sequence`
-      );
-    if ((this.delay || this.duration) && !(this.delay && this.duration))
-      throw new Error('Both duration and delay must be specified');
-    this.timing =
-      this.type === 'ratio'
-        ? ratioAndMilisecons(this.timing, this.delay!, this.duration!)
-        : this.timing + this.delay!;
     this.id = _keyframe.instances++;
   }
   time(duration: number): number {
-    return this.type === 'miliseconds' ? this.timing : duration * this.timing;
+    if (this.delay) {
+      if (!this.duration)
+        throw new Error('Keyframe with delay has to have duration setted');
+      this.timing =
+        this.type === 'ratio'
+          ? ratioAndMilisecons(this.timing, this.delay!, this.duration!)
+          : this.timing + this.delay!;
+    }
+    if (!this.duration)
+      throw new Error(
+        'Need to set this.duration to each keyframe in the keyframes manager'
+      );
+    return this.type === 'miliseconds'
+      ? this.timing / (this.duration / duration)
+      : duration * this.timing;
   }
 }
 
@@ -58,12 +62,14 @@ export type __objectKeyframe = {
   timing: number;
   type: 'ratio' | 'miliseconds';
   delay?: number;
+  duration?: number;
 };
 export type __valueKeyframe = {
   value: number;
   timing: number;
   type: 'ratio' | 'miliseconds';
   delay?: number;
+  duration?: number;
 };
 
 abstract class KeyChanger {
@@ -180,6 +186,7 @@ export class Sequence extends KeyChanger {
     super(duration, easing);
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
     this.keyframes.forEach((k: any, i) => {
+      k.duration = this.duration;
       k = this.passKeyframe(k);
       if (k instanceof nestedKeyframe) this.type = 'nested';
       this.run.push(k);
@@ -211,7 +218,13 @@ export class Sequence extends KeyChanger {
       | valueKeyframe
       | nestedKeyframe
   ): void {
-    const total = this.keyframes.push(keyframe);
+    const total = this.keyframes
+      .map(x => this.passKeyframe(x))
+      .reduce(
+        (accumulator, currentValue) =>
+          accumulator + currentValue.time(this.duration),
+        0
+      );
   }
   protected asSequence(object: nestedKeyframe, progress: number) {
     // return object.obj.test(progress - this.current!.time);
