@@ -191,6 +191,7 @@ export class Sequence extends KeyChanger {
       k.duration = this.duration;
       k = this.passKeyframe(k);
       const timing = k.time(this.duration);
+      if (timing > this.duration) throw new Error('Keyframe timing overflow');
       if (this.taken.includes(timing))
         throw new Error('It must not have repeated times');
       this.taken.push(timing);

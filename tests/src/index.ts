@@ -22,8 +22,8 @@ const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
 // Keyframes
 // Needs to allow ratios and miliseconds values on duration
 const keyframes = new AFT.Sequence(500, [
-  new AFT.valueKeyframe(0, 0, 'ratio'),
-  new AFT.valueKeyframe(1, 1, 'ratio'),
+  new AFT.valueKeyframe(0, 0.2, 'ratio'),
+  new AFT.valueKeyframe(1, 100, 'miliseconds'),
 ]);
 keyframes.addKeyframe(new AFT.valueKeyframe(0, 0, 'ratio'));
 animation.run(console.log);
