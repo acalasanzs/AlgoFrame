@@ -20,6 +20,23 @@ const config = {
         ],
         exclude: /node_modules/,
       },
+      {
+        test: /\.css$/,
+        use: [
+          {
+            loader: 'css-modules-typescript-loader',
+            options: {
+              mode: process.env.CI ? 'verify' : 'emit',
+            },
+          },
+          {
+            loader: 'css-loader',
+            options: {
+              modules: true,
+            },
+          },
+        ],
+      },
     ],
   },
   resolve: {
