@@ -95,9 +95,6 @@ abstract class KeyChanger {
           ) || this.current;
     } else {
       this.restart();
-      this.next = this.run.reduce((previousValue, currentValue) =>
-        currentValue!.time < previousValue!.time ? currentValue : previousValue
-      );
     }
     this.run.shift();
   }
@@ -123,18 +120,20 @@ abstract class KeyChanger {
   ): unknown | number | null {
     if (miliseconds) progress = progress * this.duration;
     if (this.next && this.current) {
-      if (this.next.time(this.duration) / this.duration <= progress)
+      if (this.next.time(1) <= progress) {
         this.nextTime(); //bug-proof
+      }
       if (
         this.next instanceof valueKeyframe &&
         this.current instanceof valueKeyframe
       ) {
-        progress = Math.min(this.easing(progress), 1);
-        const dif = this.next.value - this.current.value;
-        const a =
-          this.next.time(this.duration) - this.current.time(this.duration);
-        const sum = dif * progress;
-        return (this.current.value + sum) / (a / this.duration);
+        progress = Math.min(
+          this.easing(progress),
+          miliseconds ? this.duration : 1
+        );
+        const res =
+          this.current.value * (1 - progress) + this.next.value * progress;
+        return res;
       } else {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
         return this.asSequence(this.current as nestedKeyframe, progress);

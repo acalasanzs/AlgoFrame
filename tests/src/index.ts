@@ -12,18 +12,19 @@ let unitLinearAnimation = new AF.Keyframes(
 );
 
 unitLinearAnimation = new AFT.Sequence(1000, [
-  new AFT.valueKeyframe(0, 0, 'ratio'),
-  new AFT.valueKeyframe(1, 1, 'ratio'),
+  new AFT.valueKeyframe(1, 0, 'ratio'),
+  new AFT.valueKeyframe(0, 0.5, 'ratio'),
+  new AFT.valueKeyframe(0.5, 1, 'ratio'),
 ]);
 
 const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
 
 // Keyframes
 // Needs to allow ratios and miliseconds values on duration
-/* const keyframes = new AFT.Sequence(500, [
-  new AFT.valueKeyframe(0, 0),
-  new AFT.valueKeyframe(100, 450, 'miliseconds'),
-]); */
+const keyframes = new AFT.Sequence(500, [
+  new AFT.valueKeyframe(0, 0, 'ratio'),
+  new AFT.valueKeyframe(1, 1, 'ratio'),
+]);
 
 animation.run(console.log);
 // animation.run((x: number) => console.log(keyframes.test(x)));
