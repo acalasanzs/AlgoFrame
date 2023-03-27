@@ -173,6 +173,7 @@ abstract class KeyChanger {
 
 export class Sequence extends KeyChanger {
   type: 'nested' | 'simple' = 'simple';
+  taken: number[];
   constructor(
     duration: number,
     public keyframes: (
@@ -185,9 +186,14 @@ export class Sequence extends KeyChanger {
   ) {
     super(duration, easing);
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
+    this.taken = [];
     this.keyframes.forEach((k: any, i) => {
       k.duration = this.duration;
       k = this.passKeyframe(k);
+      const timing = k.time(this.duration);
+      if (this.taken.includes(timing))
+        throw new Error('It must not have repeated times');
+      this.taken.push(timing);
       if (k instanceof nestedKeyframe) this.type = 'nested';
       this.run.push(k);
     });
