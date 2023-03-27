@@ -3,10 +3,14 @@ import { Preset, EasingFunctions, passPreset } from '../utils';
 // Classes
 
 class _keyframe {
+  static instances = 0;
+  readonly id: number;
   constructor(
     public timing: number,
     public type: 'ratio' | 'miliseconds' = 'ratio'
-  ) {}
+  ) {
+    this.id = _keyframe.instances++;
+  }
   time(duration: number): number {
     return this.type === 'miliseconds' ? this.timing : duration * this.timing;
   }
@@ -53,8 +57,12 @@ abstract class KeyChanger {
   run: (nestedKeyframe | valueKeyframe)[];
   next: (valueKeyframe | nestedKeyframe) | null = null;
   current: (valueKeyframe | nestedKeyframe) | null = null;
-  keyframes?: (__valueKeyframe | __objectKeyframe)[];
-  testType: 'ratio' | 'miliseconds' = 'ratio';
+  keyframes?: (
+    | __valueKeyframe
+    | __objectKeyframe
+    | valueKeyframe
+    | nestedKeyframe
+  )[];
   easing: (t: number) => number;
 
   constructor(duration: number, easing: Preset = 'linear') {
@@ -67,7 +75,6 @@ abstract class KeyChanger {
       this.next = null;
       return;
     }
-
     if (this.run.length > 1) {
       this.current = this.run.reduce((previousValue, currentValue) => {
         return currentValue!.time(this.duration) <
@@ -75,15 +82,17 @@ abstract class KeyChanger {
           ? currentValue
           : previousValue;
       });
-      this.next = this.run
-        .filter(
-          v => v!.time(this.duration) !== this.current!.time(this.duration)
-        )
-        .reduce((previousValue, currentValue) =>
-          currentValue!.time(this.duration) < previousValue!.time(this.duration)
-            ? currentValue
-            : previousValue
-        );
+      this.next =
+        this.run
+          .filter(
+            v => v!.time(this.duration) !== this.current!.time(this.duration)
+          )
+          .reduce((previousValue, currentValue) =>
+            currentValue!.time(this.duration) <
+            previousValue!.time(this.duration)
+              ? currentValue
+              : previousValue
+          ) || this.current;
     } else {
       this.restart();
       this.next = this.run.reduce((previousValue, currentValue) =>
@@ -108,13 +117,14 @@ abstract class KeyChanger {
   }
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
   protected abstract asSequence(object: nestedKeyframe, progress: number): any;
-  test(
+  public test(
     progress: number,
     miliseconds: boolean = false
   ): unknown | number | null {
-    if (!miliseconds) progress = progress * this.duration;
+    if (miliseconds) progress = progress * this.duration;
     if (this.next && this.current) {
-      if (this.next.time(this.duration) <= progress) this.nextTime(); //bug-proof
+      if (this.next.time(this.duration) / this.duration <= progress)
+        this.nextTime(); //bug-proof
       if (
         this.next instanceof valueKeyframe &&
         this.current instanceof valueKeyframe
@@ -124,7 +134,7 @@ abstract class KeyChanger {
         const a =
           this.next.time(this.duration) - this.current.time(this.duration);
         const sum = dif * progress;
-        return (this.current.value + sum) / a;
+        return (this.current.value + sum) / (a / this.duration);
       } else {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
         return this.asSequence(this.current as nestedKeyframe, progress);
