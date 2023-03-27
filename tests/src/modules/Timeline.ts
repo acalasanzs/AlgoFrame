@@ -7,8 +7,20 @@ class _keyframe {
   readonly id: number;
   constructor(
     public timing: number,
-    public type: 'ratio' | 'miliseconds' = 'ratio'
+    public type: 'ratio' | 'miliseconds' = 'ratio',
+    public delay?: number,
+    public duration?: number
   ) {
+    if (this.type === 'ratio' && this.delay && !this.duration)
+      throw new Error(
+        `If delay is specified and keyframe's type is 'ratio', it needs to be also with the duration of the sequence`
+      );
+    if ((this.delay || this.duration) && !(this.delay && this.duration))
+      throw new Error('Both duration and delay must be specified');
+    this.timing =
+      this.type === 'ratio'
+        ? ratioAndMilisecons(this.timing, this.delay!, this.duration!)
+        : this.timing + this.delay!;
     this.id = _keyframe.instances++;
   }
   time(duration: number): number {
@@ -45,11 +57,13 @@ export type __objectKeyframe = {
   obj: Sequence;
   timing: number;
   type: 'ratio' | 'miliseconds';
+  delay?: number;
 };
 export type __valueKeyframe = {
   value: number;
   timing: number;
   type: 'ratio' | 'miliseconds';
+  delay?: number;
 };
 
 abstract class KeyChanger {
@@ -142,7 +156,6 @@ abstract class KeyChanger {
           this.next.value,
           progress < a ? trace : (progress - a) / a
         );
-        console.log(lerp, this.current.value);
         return lerp;
       } else {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
@@ -156,7 +169,12 @@ export class Sequence extends KeyChanger {
   type: 'nested' | 'simple' = 'simple';
   constructor(
     duration: number,
-    public keyframes: (__valueKeyframe | __objectKeyframe)[],
+    public keyframes: (
+      | __valueKeyframe
+      | __objectKeyframe
+      | valueKeyframe
+      | nestedKeyframe
+    )[],
     easing: Preset = 'linear'
   ) {
     super(duration, easing);
@@ -178,12 +196,30 @@ export class Sequence extends KeyChanger {
       );
     }
   }
+  public addKeyframe(
+    /**
+     * Adds a new keyframe to the entire set,
+     *
+     * @remarks
+     * To apply new keyframes, must do .restart() before
+     *
+     * @param keyframe - A valid AlgoFrame's keyframe object
+     */
+    keyframe:
+      | __valueKeyframe
+      | __objectKeyframe
+      | valueKeyframe
+      | nestedKeyframe
+  ): void {
+    const total = this.keyframes.push(keyframe);
+  }
   protected asSequence(object: nestedKeyframe, progress: number) {
     // return object.obj.test(progress - this.current!.time);
   }
   protected reset(): void {
     this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));
   }
+  // public restart(): void in abstract parent class
   clone() {
     let orig = this;
     return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
@@ -203,4 +239,18 @@ export class ChannelsTimeline extends KeyChanger {
   }
   protected asSequence(object: nestedKeyframe, progress: number) {}
   protected reset(): void {}
+}
+
+function ratioAndMilisecons(
+  ratio: number,
+  miliseconds: number,
+  duration: number
+): number {
+  /**
+   * @param ratio - The ratio of the basic measure, between 0 and 1
+   * @param miliseconds - Miliseconds to delay on the ratio
+   * @param duration - Total duration of the sequence
+   * @returns The arithmetic sum with all parameters in miliseconds
+   */
+  return ratio * duration + miliseconds;
 }
