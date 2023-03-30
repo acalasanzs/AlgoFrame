@@ -12,61 +12,6 @@ return /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 895:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-// @ts-ignore
-const AF = __importStar(__webpack_require__(448));
-const AFT = __importStar(__webpack_require__(784));
-// Styles
-__webpack_require__(686);
-// Animation engine
-const delay = 500;
-let unitLinearAnimation = new AF.Keyframes([new AF.Keyframes.keyframe(0, 0), new AF.Keyframes.keyframe(1, 1)], 'linear');
-unitLinearAnimation = new AFT.Sequence(1000, [
-    new AFT.valueKeyframe(1, 0, 'ratio'),
-    new AFT.valueKeyframe(0, 0.5, 'ratio'),
-    new AFT.valueKeyframe(0.5, 1, 'ratio'),
-]);
-const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
-// Keyframes
-// Needs to allow ratios and miliseconds values on duration
-const keyframes = new AFT.Sequence(500, [
-    new AFT.valueKeyframe(0, 0.2, 'ratio'),
-    new AFT.valueKeyframe(1, 100, 'miliseconds'),
-]);
-keyframes.addKeyframe(new AFT.valueKeyframe(0, 0, 'ratio'));
-animation.run(console.log);
-// animation.run((x: number) => console.log(keyframes.test(x)));
-
-
-/***/ }),
-
 /***/ 784:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
@@ -118,7 +63,14 @@ class KeyChanger {
     constructor(duration, easing = 'linear') {
         this.next = null;
         this.current = null;
-        this.duration = Math.floor(duration);
+        this.adaptative = false;
+        this.duration =
+            typeof duration === 'number'
+                ? Math.floor(duration)
+                : (_ => {
+                    this.adaptative = true;
+                    return 1;
+                })();
         this.run = [];
         this.easing = (0, utils_1.passPreset)(easing);
     }
@@ -166,28 +118,54 @@ class KeyChanger {
         const lerp = x * (1 - a) + y * a;
         return lerp;
     }
-    test(progress, miliseconds = false) {
-        if (miliseconds)
+    test(progress, miliseconds = false, runAdaptative = false, nextValue) {
+        const next = nextValue ? nextValue : this.next;
+        if (this.adaptative && !runAdaptative) {
+            throw new Error('Adaptitive timed sequences cannot be played in first place');
+        }
+        if (miliseconds && !runAdaptative)
             progress = progress * this.duration;
-        if (this.next && this.current) {
-            if (this.next.time(1) <= progress) {
+        else if (miliseconds)
+            throw new Error('miliseconds mode not allowe when adaptative');
+        if (next && this.current) {
+            if (next.time(1) <= progress) {
                 this.nextTime(); //bug-proof
             }
-            if (this.next instanceof valueKeyframe &&
+            if (next instanceof valueKeyframe &&
                 this.current instanceof valueKeyframe) {
                 progress = Math.min(this.easing(progress), miliseconds ? this.duration : 1);
-                const a = this.next.time(1) - this.current.time(1);
+                const a = next.time(1) - this.current.time(1);
                 const trace = progress / a;
-                const lerp = KeyChanger.lerp(this.current.value, this.next.value, progress < a ? trace : (progress - a) / a);
+                const lerp = KeyChanger.lerp(this.current.value, next.value, progress < a ? trace : (progress - a) / a);
                 return lerp;
             }
-            else {
+            else if (next instanceof nestedKeyframe) {
                 // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
-                return this.asSequence(this.current, progress);
+                const nextValueFromObj = new valueKeyframe(this.getAbsoluteStartValue(next.obj), next.time(1), 'ratio');
+                nextValueFromObj.duration = this.duration;
+                return this.test(progress, undefined, undefined, nextValueFromObj
+                // this.next.obj.run[0].value
+                );
+            }
+            else {
+                this.nextTime();
+                // debugger;
+                return this.asSequence(this.current, progress, this.next ? this.next.time(1) : 1);
             }
         }
     }
+    getAbsoluteStartValue(sequence) {
+        let last = sequence.current;
+        while (last instanceof nestedKeyframe) {
+            last = sequence.current;
+        }
+        return last.value;
+    }
 }
+// TODO:
+// 1. Nested Sequence instances DONE
+//    Adaptative Sequence duration DONE
+// P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
 class Sequence extends KeyChanger {
     constructor(duration, keyframes, easing = 'linear') {
         super(duration, easing);
@@ -229,12 +207,16 @@ class Sequence extends KeyChanger {
      * @param keyframe - A valid AlgoFrame's keyframe object
      */
     keyframe) {
-        const total = this.keyframes
-            .map(x => this.passKeyframe(x))
-            .reduce((accumulator, currentValue) => accumulator + currentValue.time(this.duration), 0);
+        return this;
     }
-    asSequence(object, progress) {
-        // return object.obj.test(progress - this.current!.time);
+    replaceKeyframe(keyframe) {
+        return this;
+    }
+    asSequence(object, progress, end) {
+        // console.log((progress - object.time(1)) / (end - object.time(1)));
+        const res = object.obj.test((progress - object.time(1)) / (end - object.time(1)), undefined, true);
+        debugger;
+        return res;
     }
     reset() {
         this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));
@@ -268,6 +250,71 @@ function ratioAndMilisecons(ratio, miliseconds, duration) {
      */
     return ratio * duration + miliseconds;
 }
+
+
+/***/ }),
+
+/***/ 494:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+// @ts-ignore
+const AF = __importStar(__webpack_require__(448)); // * AlgoFrame 4.4.4
+const AFT = __importStar(__webpack_require__(784));
+// Animation engine
+const delay = 500;
+let unitLinearAnimation = new AF.Keyframes([new AF.Keyframes.keyframe(0, 0), new AF.Keyframes.keyframe(1, 1)], 'linear');
+const keyframes = new AFT.Sequence(false, [
+    new AFT.valueKeyframe(0, 0.2, 'ratio'),
+    new AFT.valueKeyframe(10, 0.5, 'ratio'),
+    new AFT.valueKeyframe(50, 1, 'ratio'),
+]);
+unitLinearAnimation = new AFT.Sequence(1000, [
+    new AFT.valueKeyframe(100, 0, 'ratio'),
+    new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
+    new AFT.valueKeyframe(500, 1, 'ratio'),
+]);
+// Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw
+const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
+// Keyframes
+// Needs to allow ratios and miliseconds values on duration
+/* const keyframes = new AFT.Sequence(500, [
+  new AFT.valueKeyframe(0, 0.2, 'ratio'),
+  new AFT.valueKeyframe(1, 100, 'miliseconds'),
+
+  => Uncaught Error: Invalid Keyframes Object!
+]); */
+// keyframes.addKeyframe(new AFT.valueKeyframe(0, 0, 'ratio'));
+animation.run((x) => {
+    if (!x)
+        debugger;
+    console.log(x);
+});
+// animation.run((x: number) => console.log(keyframes.test(x)));
 
 
 /***/ }),
@@ -388,9 +435,9 @@ class AlgoFrame {
     this.startanimationtime = null;
     this.stop = false;
     this._start = new Promise(res => (this.__start = res));
-    if (!(keyframes instanceof Keyframes)) {
-      throw new Error('Invalid Keyframes Object!');
-    }
+    // if (!(keyframes instanceof Keyframes)) {
+    //   throw new Error('Invalid Keyframes Object!');
+    // }
     this.keyframes = keyframes;
     this.done = false;
     this.next = undefined;
@@ -737,148 +784,6 @@ class Keyframes {
 
 
 
-/***/ }),
-
-/***/ 476:
-/***/ ((module) => {
-
-
-
-/*
-  MIT License http://www.opensource.org/licenses/mit-license.php
-  Author Tobias Koppers @sokra
-*/
-module.exports = function (cssWithMappingToString) {
-  var list = [];
-
-  // return the list of modules as css string
-  list.toString = function toString() {
-    return this.map(function (item) {
-      var content = "";
-      var needLayer = typeof item[5] !== "undefined";
-      if (item[4]) {
-        content += "@supports (".concat(item[4], ") {");
-      }
-      if (item[2]) {
-        content += "@media ".concat(item[2], " {");
-      }
-      if (needLayer) {
-        content += "@layer".concat(item[5].length > 0 ? " ".concat(item[5]) : "", " {");
-      }
-      content += cssWithMappingToString(item);
-      if (needLayer) {
-        content += "}";
-      }
-      if (item[2]) {
-        content += "}";
-      }
-      if (item[4]) {
-        content += "}";
-      }
-      return content;
-    }).join("");
-  };
-
-  // import a list of modules into the list
-  list.i = function i(modules, media, dedupe, supports, layer) {
-    if (typeof modules === "string") {
-      modules = [[null, modules, undefined]];
-    }
-    var alreadyImportedModules = {};
-    if (dedupe) {
-      for (var k = 0; k < this.length; k++) {
-        var id = this[k][0];
-        if (id != null) {
-          alreadyImportedModules[id] = true;
-        }
-      }
-    }
-    for (var _k = 0; _k < modules.length; _k++) {
-      var item = [].concat(modules[_k]);
-      if (dedupe && alreadyImportedModules[item[0]]) {
-        continue;
-      }
-      if (typeof layer !== "undefined") {
-        if (typeof item[5] === "undefined") {
-          item[5] = layer;
-        } else {
-          item[1] = "@layer".concat(item[5].length > 0 ? " ".concat(item[5]) : "", " {").concat(item[1], "}");
-          item[5] = layer;
-        }
-      }
-      if (media) {
-        if (!item[2]) {
-          item[2] = media;
-        } else {
-          item[1] = "@media ".concat(item[2], " {").concat(item[1], "}");
-          item[2] = media;
-        }
-      }
-      if (supports) {
-        if (!item[4]) {
-          item[4] = "".concat(supports);
-        } else {
-          item[1] = "@supports (".concat(item[4], ") {").concat(item[1], "}");
-          item[4] = supports;
-        }
-      }
-      list.push(item);
-    }
-  };
-  return list;
-};
-
-/***/ }),
-
-/***/ 559:
-/***/ ((module) => {
-
-
-
-module.exports = function (item) {
-  var content = item[1];
-  var cssMapping = item[3];
-  if (!cssMapping) {
-    return content;
-  }
-  if (typeof btoa === "function") {
-    var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(cssMapping))));
-    var data = "sourceMappingURL=data:application/json;charset=utf-8;base64,".concat(base64);
-    var sourceMapping = "/*# ".concat(data, " */");
-    return [content].concat([sourceMapping]).join("\n");
-  }
-  return [content].join("\n");
-};
-
-/***/ }),
-
-/***/ 686:
-/***/ ((module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var _node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(559);
-/* harmony import */ var _node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(476);
-/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__);
-// Imports
-
-
-var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
-// Module
-___CSS_LOADER_EXPORT___.push([module.id, "* {\r\n  box-sizing: border-box;\r\n  margin: 0;\r\n}\r\nhtml {\r\n  --size: 0px;\r\n  height: 100%;\r\n  width: 100%;\r\n}\r\nbody {\r\n  background: #ddd;\r\n  place-content: center;\r\n  display: flex;\r\n  align-items: center;\r\n  flex-direction: column;\r\n  height: 100%;\r\n  width: 100%;\r\n  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,\r\n    Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;\r\n}\r\n.HJy2hN7EviyUcpFE_RO7 {\r\n  position: relative;\r\n  display: flex;\r\n  flex-direction: column;\r\n  justify-content: space-around;\r\n  gap: 0.5rem;\r\n  width: 100%;\r\n  height: 100%;\r\n}\r\n.XGKV_X58VCmx7CDLhhSM {\r\n  margin-bottom: 2rem;\r\n  text-align: center;\r\n}\r\n.HJy2hN7EviyUcpFE_RO7 .Sz1OFum2w231GO8bUb5O {\r\n  position: relative;\r\n  height: 0;\r\n  width: var(--size);\r\n  background-color: cornflowerblue;\r\n  font-size: calc(var(--size) / 4);\r\n  color: #fff;\r\n  display: flex;\r\n  justify-content: center;\r\n  align-items: center;\r\n  transition: background-color 0.3s;\r\n}\r\n.Sz1OFum2w231GO8bUb5O.LLBL1HKPlx9PDYeCOBWb {\r\n  background-color: #ff7675;\r\n  transition: background-color 0.3s;\r\n}\r\n.XGKV_X58VCmx7CDLhhSM p {\r\n  font-size: 2rem;\r\n}\r\n", "",{"version":3,"sources":["webpack://./style2.css"],"names":[],"mappings":"AAAA;EACE,sBAAsB;EACtB,SAAS;AACX;AACA;EACE,WAAW;EACX,YAAY;EACZ,WAAW;AACb;AACA;EACE,gBAAgB;EAChB,qBAAqB;EACrB,aAAa;EACb,mBAAmB;EACnB,sBAAsB;EACtB,YAAY;EACZ,WAAW;EACX;wEACsE;AACxE;AACA;EACE,kBAAkB;EAClB,aAAa;EACb,sBAAsB;EACtB,6BAA6B;EAC7B,WAAW;EACX,WAAW;EACX,YAAY;AACd;AACA;EACE,mBAAmB;EACnB,kBAAkB;AACpB;AACA;EACE,kBAAkB;EAClB,SAAS;EACT,kBAAkB;EAClB,gCAAgC;EAChC,gCAAgC;EAChC,WAAW;EACX,aAAa;EACb,uBAAuB;EACvB,mBAAmB;EACnB,iCAAiC;AACnC;AACA;EACE,yBAAyB;EACzB,iCAAiC;AACnC;AACA;EACE,eAAe;AACjB","sourcesContent":["* {\r\n  box-sizing: border-box;\r\n  margin: 0;\r\n}\r\nhtml {\r\n  --size: 0px;\r\n  height: 100%;\r\n  width: 100%;\r\n}\r\nbody {\r\n  background: #ddd;\r\n  place-content: center;\r\n  display: flex;\r\n  align-items: center;\r\n  flex-direction: column;\r\n  height: 100%;\r\n  width: 100%;\r\n  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,\r\n    Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;\r\n}\r\n.container {\r\n  position: relative;\r\n  display: flex;\r\n  flex-direction: column;\r\n  justify-content: space-around;\r\n  gap: 0.5rem;\r\n  width: 100%;\r\n  height: 100%;\r\n}\r\n.title {\r\n  margin-bottom: 2rem;\r\n  text-align: center;\r\n}\r\n.container .box {\r\n  position: relative;\r\n  height: 0;\r\n  width: var(--size);\r\n  background-color: cornflowerblue;\r\n  font-size: calc(var(--size) / 4);\r\n  color: #fff;\r\n  display: flex;\r\n  justify-content: center;\r\n  align-items: center;\r\n  transition: background-color 0.3s;\r\n}\r\n.box.run {\r\n  background-color: #ff7675;\r\n  transition: background-color 0.3s;\r\n}\r\n.title p {\r\n  font-size: 2rem;\r\n}\r\n"],"sourceRoot":""}]);
-// Exports
-___CSS_LOADER_EXPORT___.locals = {
-	"container": "HJy2hN7EviyUcpFE_RO7",
-	"title": "XGKV_X58VCmx7CDLhhSM",
-	"box": "Sz1OFum2w231GO8bUb5O",
-	"run": "LLBL1HKPlx9PDYeCOBWb"
-};
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
-
-
 /***/ })
 
 /******/ 	});
@@ -895,7 +800,7 @@ ___CSS_LOADER_EXPORT___.locals = {
 /******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			id: moduleId,
+/******/ 			// no module.id needed
 /******/ 			// no module.loaded needed
 /******/ 			exports: {}
 /******/ 		};
@@ -908,18 +813,6 @@ ___CSS_LOADER_EXPORT___.locals = {
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat get default export */
-/******/ 	(() => {
-/******/ 		// getDefaultExport function for compatibility with non-harmony modules
-/******/ 		__webpack_require__.n = (module) => {
-/******/ 			var getter = module && module.__esModule ?
-/******/ 				() => (module['default']) :
-/******/ 				() => (module);
-/******/ 			__webpack_require__.d(getter, { a: getter });
-/******/ 			return getter;
-/******/ 		};
-/******/ 	})();
-/******/ 	
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
 /******/ 		// define getter functions for harmony exports
@@ -953,7 +846,7 @@ ___CSS_LOADER_EXPORT___.locals = {
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__(895);
+/******/ 	var __webpack_exports__ = __webpack_require__(494);
 /******/ 	
 /******/ 	return __webpack_exports__;
 /******/ })()

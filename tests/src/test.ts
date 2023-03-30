@@ -11,9 +11,9 @@ let unitLinearAnimation = new AF.Keyframes(
   'linear'
 );
 
-const keyframes = new AFT.Sequence(false, [
+const keyframes = new AFT.Sequence(1000, [
   new AFT.valueKeyframe(0, 0.2, 'ratio'),
-  new AFT.valueKeyframe(1, 0.5, 'ratio'),
+  new AFT.valueKeyframe(10, 0.5, 'ratio'),
   new AFT.valueKeyframe(50, 1, 'ratio'),
 ]);
 
@@ -24,7 +24,7 @@ unitLinearAnimation = new AFT.Sequence(1000, [
 ]);
 
 // Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw
-const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
+const animation = new AF.AlgoFrame(1000, delay, 'linear', keyframes);
 
 // Keyframes
 // Needs to allow ratios and miliseconds values on duration
@@ -35,5 +35,8 @@ const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
   => Uncaught Error: Invalid Keyframes Object!
 ]); */
 // keyframes.addKeyframe(new AFT.valueKeyframe(0, 0, 'ratio'));
-animation.run(console.log);
+animation.run((x: any) => {
+  // tslint:disable-next-line:no-debugger
+  console.log(x);
+});
 // animation.run((x: number) => console.log(keyframes.test(x)));

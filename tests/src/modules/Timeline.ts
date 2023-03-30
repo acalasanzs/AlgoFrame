@@ -153,8 +153,9 @@ abstract class KeyChanger {
     progress: number,
     miliseconds: boolean = false,
     runAdaptative: boolean = false,
-    nextValue?: number
+    nextValue?: valueKeyframe
   ): number | undefined {
+    const next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
       throw new Error(
         'Adaptitive timed sequences cannot be played in first place'
@@ -163,42 +164,58 @@ abstract class KeyChanger {
     if (miliseconds && !runAdaptative) progress = progress * this.duration;
     else if (miliseconds)
       throw new Error('miliseconds mode not allowe when adaptative');
-    if (this.next && this.current) {
-      if (this.next.time(1) <= progress) {
+    if (next && this.current) {
+      if (next.time(1) <= progress) {
         this.nextTime(); //bug-proof
       }
       if (
-        this.next instanceof valueKeyframe &&
+        next instanceof valueKeyframe &&
         this.current instanceof valueKeyframe
       ) {
         progress = Math.min(
           this.easing(progress),
           miliseconds ? this.duration : 1
         );
-        const a = this.next.time(1) - this.current.time(1);
+        const a = next.time(1) - this.current.time(1);
         const trace = progress / a;
         const lerp = KeyChanger.lerp(
           this.current.value,
-          this.next.value,
+          next.value,
           progress < a ? trace : (progress - a) / a
         );
         return lerp;
-      } else if (this.next instanceof nestedKeyframe) {
+      } else if (next instanceof nestedKeyframe) {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
+        const nextValueFromObj = new valueKeyframe(
+          this.getAbsoluteStartValue(next.obj),
+          next.time(1),
+          'ratio'
+        );
+        nextValueFromObj.duration = this.duration;
         return this.test(
           progress,
           undefined,
           undefined,
-          this.asSequence(this.next as nestedKeyframe, 0, 1)
+          nextValueFromObj
+          // this.next.obj.run[0].value
         );
       } else {
+        this.nextTime();
+        // debugger;
         return this.asSequence(
           this.current as nestedKeyframe,
           progress,
-          this.next.time(1)
+          this.next ? this.next.time(1) : 1
         );
       }
     }
+  }
+  getAbsoluteStartValue(sequence: Sequence): number {
+    let last = sequence.current;
+    while (last instanceof nestedKeyframe) {
+      last = sequence.current;
+    }
+    return last!.value;
   }
 }
 
@@ -276,12 +293,12 @@ export class Sequence extends KeyChanger {
     progress: number,
     end: number
   ): number {
+    // console.log((progress - object.time(1)) / (end - object.time(1)));
     const res = object.obj.test(
       (progress - object.time(1)) / (end - object.time(1)),
       undefined,
       true
     ) as number;
-    debugger;
     return res;
   }
   protected reset(): void {
