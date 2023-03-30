@@ -5,7 +5,7 @@ const config = {
   context: path.resolve(__dirname, '../src'),
   devtool: 'source-map',
   target: 'web',
-  entry: './index.ts',
+  entry: './test.ts',
   module: {
     rules: [
       {

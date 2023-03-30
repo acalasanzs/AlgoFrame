@@ -77,6 +77,7 @@ abstract class KeyChanger {
   run: (nestedKeyframe | valueKeyframe)[];
   next: (valueKeyframe | nestedKeyframe) | null = null;
   current: (valueKeyframe | nestedKeyframe) | null = null;
+  protected adaptative: boolean = false;
   keyframes?: (
     | __valueKeyframe
     | __objectKeyframe
@@ -85,8 +86,14 @@ abstract class KeyChanger {
   )[];
   easing: (t: number) => number;
 
-  constructor(duration: number, easing: Preset = 'linear') {
-    this.duration = Math.floor(duration);
+  constructor(duration: number | false, easing: Preset = 'linear') {
+    this.duration =
+      typeof duration === 'number'
+        ? Math.floor(duration)
+        : (_ => {
+            this.adaptative = true;
+            return 1;
+          })();
     this.run = [];
     this.easing = passPreset(easing);
   }
@@ -133,16 +140,28 @@ abstract class KeyChanger {
     this.reset();
   }
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
-  protected abstract asSequence(object: nestedKeyframe, progress: number): any;
+  protected abstract asSequence(
+    object: nestedKeyframe,
+    progress: number,
+    end: number
+  ): any;
   static lerp(x: number, y: number, a: number) {
     const lerp = x * (1 - a) + y * a;
     return lerp;
   }
   public test(
     progress: number,
-    miliseconds: boolean = false
-  ): unknown | number | null {
-    if (miliseconds) progress = progress * this.duration;
+    miliseconds: boolean = false,
+    runAdaptative: boolean = false
+  ): number | undefined {
+    if (this.adaptative && !runAdaptative) {
+      throw new Error(
+        'Adaptitive timed sequences cannot be played in first place'
+      );
+    }
+    if (miliseconds && !runAdaptative) progress = progress * this.duration;
+    else if (miliseconds)
+      throw new Error('miliseconds mode not allowe when adaptative');
     if (this.next && this.current) {
       if (this.next.time(1) <= progress) {
         this.nextTime(); //bug-proof
@@ -165,17 +184,24 @@ abstract class KeyChanger {
         return lerp;
       } else {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
-        return this.asSequence(this.current as nestedKeyframe, progress);
+        return this.asSequence(
+          this.current as nestedKeyframe,
+          progress,
+          this.next.time(1)
+        );
       }
     }
   }
 }
 
+// TODO:
+// 1. Nested Sequence instances
+//    Adaptative Sequence duration
 export class Sequence extends KeyChanger {
   type: 'nested' | 'simple' = 'simple';
   taken: number[];
   constructor(
-    duration: number,
+    duration: number | false,
     public keyframes: (
       | __valueKeyframe
       | __objectKeyframe
@@ -224,17 +250,24 @@ export class Sequence extends KeyChanger {
       | __objectKeyframe
       | valueKeyframe
       | nestedKeyframe
-  ): void {
-    const total = this.keyframes
-      .map(x => this.passKeyframe(x))
-      .reduce(
-        (accumulator, currentValue) =>
-          accumulator + currentValue.time(this.duration),
-        0
-      );
+  ): Sequence {
+    return this;
   }
-  protected asSequence(object: nestedKeyframe, progress: number) {
-    // return object.obj.test(progress - this.current!.time);
+  public replaceKeyframe(
+    keyframe:
+      | __valueKeyframe
+      | __objectKeyframe
+      | valueKeyframe
+      | nestedKeyframe
+  ) {
+    return this;
+  }
+  protected asSequence(object: nestedKeyframe, progress: number, end: number) {
+    return object.obj.test(
+      (progress - object.time(1)) / (end - object.time(1)),
+      undefined,
+      true
+    );
   }
   protected reset(): void {
     this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));
