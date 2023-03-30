@@ -152,7 +152,8 @@ abstract class KeyChanger {
   public test(
     progress: number,
     miliseconds: boolean = false,
-    runAdaptative: boolean = false
+    runAdaptative: boolean = false,
+    nextValue?: number
   ): number | undefined {
     if (this.adaptative && !runAdaptative) {
       throw new Error(
@@ -182,8 +183,15 @@ abstract class KeyChanger {
           progress < a ? trace : (progress - a) / a
         );
         return lerp;
-      } else {
+      } else if (this.next instanceof nestedKeyframe) {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
+        return this.test(
+          progress,
+          undefined,
+          undefined,
+          this.asSequence(this.next as nestedKeyframe, 0, 1)
+        );
+      } else {
         return this.asSequence(
           this.current as nestedKeyframe,
           progress,
@@ -195,8 +203,9 @@ abstract class KeyChanger {
 }
 
 // TODO:
-// 1. Nested Sequence instances
-//    Adaptative Sequence duration
+// 1. Nested Sequence instances DONE
+//    Adaptative Sequence duration DONE
+// P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
 export class Sequence extends KeyChanger {
   type: 'nested' | 'simple' = 'simple';
   taken: number[];
@@ -262,12 +271,18 @@ export class Sequence extends KeyChanger {
   ) {
     return this;
   }
-  protected asSequence(object: nestedKeyframe, progress: number, end: number) {
-    return object.obj.test(
+  public asSequence(
+    object: nestedKeyframe,
+    progress: number,
+    end: number
+  ): number {
+    const res = object.obj.test(
       (progress - object.time(1)) / (end - object.time(1)),
       undefined,
       true
-    );
+    ) as number;
+    debugger;
+    return res;
   }
   protected reset(): void {
     this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));

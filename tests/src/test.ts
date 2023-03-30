@@ -11,9 +11,9 @@ let unitLinearAnimation = new AF.Keyframes(
   'linear'
 );
 
-const keyframes = new AFT.Sequence(500, [
+const keyframes = new AFT.Sequence(false, [
   new AFT.valueKeyframe(0, 0.2, 'ratio'),
-  new AFT.valueKeyframe(1, 150, 'miliseconds'),
+  new AFT.valueKeyframe(1, 0.5, 'ratio'),
   new AFT.valueKeyframe(50, 1, 'ratio'),
 ]);
 
