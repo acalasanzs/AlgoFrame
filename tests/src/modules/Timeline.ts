@@ -186,11 +186,12 @@ abstract class KeyChanger {
             ? trace
             : (progress - this.current.time(1)) / a
         );
-        console.log(
-          'p:' + progress.toFixed(3),
-          this.current.time(1),
-          next.time(1)
-        );
+        if (!runAdaptative)
+          console.log(
+            'p:' + progress.toFixed(3),
+            this.current.time(1),
+            next.time(1)
+          );
         return lerp;
       } else if (
         next instanceof nestedKeyframe &&

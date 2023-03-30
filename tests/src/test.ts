@@ -22,7 +22,8 @@ const keyframes = new AFT.Sequence(1000, [
 unitLinearAnimation = new AFT.Sequence(1000, [
   new AFT.valueKeyframe(100, 0, 'ratio'),
   new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
-  new AFT.valueKeyframe(500, 1, 'ratio'),
+  new AFT.valueKeyframe(50, 0.9, 'ratio'),
+  new AFT.valueKeyframe(100, 1, 'ratio'),
 ]);
 
 // Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw
