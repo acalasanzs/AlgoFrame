@@ -155,7 +155,7 @@ abstract class KeyChanger {
     runAdaptative: boolean = false,
     nextValue?: valueKeyframe
   ): number | undefined {
-    const next = nextValue ? nextValue : this.next;
+    let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
       throw new Error(
         'Adaptitive timed sequences cannot be played in first place'
@@ -167,6 +167,7 @@ abstract class KeyChanger {
     if (next && this.current) {
       if (next.time(1) <= progress) {
         this.nextTime(); //bug-proof
+        next = this.next;
       }
       if (
         next instanceof valueKeyframe &&
@@ -199,7 +200,10 @@ abstract class KeyChanger {
           nextValueFromObj
           // this.next.obj.run[0].value
         );
-      } else {
+      } else if (
+        this.current instanceof nestedKeyframe &&
+        next instanceof nestedKeyframe
+      ) {
         this.nextTime();
         // debugger;
         return this.asSequence(
@@ -239,6 +243,18 @@ export class Sequence extends KeyChanger {
     super(duration, easing);
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
     this.taken = [];
+    const zero = this.passKeyframe(keyframes[0]);
+    zero.duration = this.duration;
+    if (zero.time(1) > 0) {
+      // this.taken.push(0);
+      const first =
+        zero instanceof valueKeyframe
+          ? new valueKeyframe(zero.value, 0)
+          : new nestedKeyframe(zero.obj, 0);
+      first.duration = this.duration;
+      this.keyframes.unshift(first);
+      this.run.push(first);
+    }
     this.keyframes.forEach((k: any, i) => {
       k.duration = this.duration;
       k = this.passKeyframe(k);
@@ -255,6 +271,7 @@ export class Sequence extends KeyChanger {
     if (this.keyframes[0] instanceof valueKeyframe) {
     }
     try {
+      console.log(this);
       this.nextTime();
     } catch {
       throw new Error(

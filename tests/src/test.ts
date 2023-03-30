@@ -24,7 +24,7 @@ unitLinearAnimation = new AFT.Sequence(1000, [
 ]);
 
 // Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw
-const animation = new AF.AlgoFrame(1000, delay, 'linear', keyframes);
+const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
 
 // Keyframes
 // Needs to allow ratios and miliseconds values on duration
