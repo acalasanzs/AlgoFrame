@@ -4,6 +4,8 @@ import * as AFT from './modules/Timeline';
 
 // Animation engine
 
+// Falta la transición entre nested y value;
+
 const delay: number = 500;
 
 let unitLinearAnimation = new AF.Keyframes(

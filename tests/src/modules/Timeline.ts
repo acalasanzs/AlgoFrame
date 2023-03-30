@@ -140,7 +140,7 @@ abstract class KeyChanger {
     this.reset();
   }
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
-  protected abstract asSequence(
+  protected abstract currentAsSequence(
     object: nestedKeyframe,
     progress: number,
     end: number
@@ -153,7 +153,8 @@ abstract class KeyChanger {
     progress: number,
     miliseconds: boolean = false,
     runAdaptative: boolean = false,
-    nextValue?: valueKeyframe
+    nextValue?: valueKeyframe,
+    currentValue?: valueKeyframe
   ): number | undefined {
     let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
@@ -206,10 +207,20 @@ abstract class KeyChanger {
       ) {
         this.nextTime();
         // debugger;
-        return this.asSequence(
+        return this.currentAsSequence(
           this.current as nestedKeyframe,
           progress,
           this.next ? this.next.time(1) : 1
+        );
+      } else if (
+        this.current instanceof nestedKeyframe &&
+        (next instanceof valueKeyframe || !next)
+      ) {
+        // console.log(progress.toFixed(2));
+        return this.currentAsSequence(
+          this.current as nestedKeyframe,
+          progress,
+          next ? next.time(1) : 1
         );
       }
     }
@@ -305,12 +316,16 @@ export class Sequence extends KeyChanger {
   ) {
     return this;
   }
-  public asSequence(
+  protected currentAsSequence(
     object: nestedKeyframe,
     progress: number,
     end: number
   ): number {
     // console.log((progress - object.time(1)) / (end - object.time(1)));
+    if (progress > 0.6)
+      console.log(
+        ((progress - object.time(1)) / (end - object.time(1))).toFixed(3)
+      );
     const res = object.obj.test(
       (progress - object.time(1)) / (end - object.time(1)),
       undefined,
@@ -339,7 +354,7 @@ export class ChannelsTimeline extends KeyChanger {
   ) {
     super(duration, easing);
   }
-  protected asSequence(object: nestedKeyframe, progress: number) {}
+  protected currentAsSequence(object: nestedKeyframe, progress: number) {}
   protected reset(): void {}
 }
 
