@@ -186,12 +186,6 @@ abstract class KeyChanger {
             ? trace
             : (progress - this.current.time(1)) / a
         );
-        if (!runAdaptative)
-          console.log(
-            'p:' + progress.toFixed(3),
-            this.current.time(1),
-            next.time(1)
-          );
         return lerp;
       } else if (
         next instanceof nestedKeyframe &&
@@ -217,11 +211,12 @@ abstract class KeyChanger {
       ) {
         this.nextTime();
         // debugger;
-        return this.currentAsSequence(
+        const res = this.currentAsSequence(
           this.current as nestedKeyframe,
           progress,
           this.next ? this.next.time(1) : 1
         );
+        return res;
       } else if (
         this.current instanceof nestedKeyframe &&
         (next instanceof valueKeyframe || !next)
@@ -272,7 +267,9 @@ export class Sequence extends KeyChanger {
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
     this.taken = [];
     const zero = this.passKeyframe(keyframes[0]);
+    const final = this.passKeyframe(keyframes[keyframes.length - 1]);
     zero.duration = this.duration;
+    final.duration = this.duration;
     if (zero.time(1) > 0) {
       // this.taken.push(0);
       const first =
@@ -283,6 +280,16 @@ export class Sequence extends KeyChanger {
       this.keyframes.unshift(first);
       this.run.push(first);
     }
+    if (final.time(1) < 1) {
+      if (final instanceof nestedKeyframe)
+        throw new Error(
+          "Cannot set last keyframe as nested sequence, it's impossible"
+        );
+      const last = new valueKeyframe(final.value, 1, 'ratio');
+      last.duration = this.duration;
+      this.keyframes.push(last);
+      this.run.push(last);
+    }
     this.keyframes.forEach((k: any, i) => {
       k.duration = this.duration;
       k = this.passKeyframe(k);
@@ -290,7 +297,7 @@ export class Sequence extends KeyChanger {
       if (timing > this.duration) throw new Error('Keyframe timing overflow');
       if (this.taken.includes(timing))
         throw new Error('It must not have repeated times');
-      this.taken.push(timing);
+      this.taken.push(k.time(1));
       if (k instanceof nestedKeyframe) this.type = 'nested';
       this.run.push(k);
     });
@@ -299,7 +306,6 @@ export class Sequence extends KeyChanger {
     if (this.keyframes[0] instanceof valueKeyframe) {
     }
     try {
-      console.log(this);
       this.nextTime();
     } catch {
       throw new Error(
@@ -337,18 +343,14 @@ export class Sequence extends KeyChanger {
     object: nestedKeyframe,
     progress: number,
     end: number
-  ): number {
+  ): number | undefined {
     // console.log((progress - object.time(1)) / (end - object.time(1)));
-    if (progress)
-      console.log(
-        ((progress - object.time(1)) / (end - object.time(1))).toFixed(3)
-      );
-    const res = object.obj.test(
-      (progress - object.time(1)) / (end - object.time(1)),
-      undefined,
-      true
-    ) as number;
-    return res;
+    const rProgress = (progress - object.time(1)) / (end - object.time(1));
+    let res!: number;
+    if (rProgress <= 1.05) {
+      res = object.obj.test(rProgress, undefined, true) as number;
+      return res;
+    }
   }
   protected reset(): void {
     this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));
