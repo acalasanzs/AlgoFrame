@@ -153,8 +153,7 @@ abstract class KeyChanger {
     progress: number,
     miliseconds: boolean = false,
     runAdaptative: boolean = false,
-    nextValue?: valueKeyframe,
-    currentValue?: valueKeyframe
+    nextValue?: valueKeyframe
   ): number | undefined {
     let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
@@ -183,10 +182,20 @@ abstract class KeyChanger {
         const lerp = KeyChanger.lerp(
           this.current.value,
           next.value,
-          progress < a ? trace : (progress - a) / a
+          progress < progress - a
+            ? trace
+            : (progress - this.current.time(1)) / a
+        );
+        console.log(
+          'p:' + progress.toFixed(3),
+          this.current.time(1),
+          next.time(1)
         );
         return lerp;
-      } else if (next instanceof nestedKeyframe) {
+      } else if (
+        next instanceof nestedKeyframe &&
+        this.current instanceof valueKeyframe
+      ) {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
         const nextValueFromObj = new valueKeyframe(
           this.getAbsoluteStartValue(next.obj),
@@ -231,6 +240,13 @@ abstract class KeyChanger {
       last = sequence.current;
     }
     return last!.value;
+  }
+  getAbsoluteEndKeyframe(sequence: Sequence): valueKeyframe {
+    let last = sequence.run[sequence.run.length - 1];
+    while (last instanceof nestedKeyframe) {
+      last = sequence.run[sequence.run.length - 1];
+    }
+    return last;
   }
 }
 
@@ -322,7 +338,7 @@ export class Sequence extends KeyChanger {
     end: number
   ): number {
     // console.log((progress - object.time(1)) / (end - object.time(1)));
-    if (progress > 0.6)
+    if (progress)
       console.log(
         ((progress - object.time(1)) / (end - object.time(1))).toFixed(3)
       );
