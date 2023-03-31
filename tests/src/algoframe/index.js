@@ -263,10 +263,10 @@ class AlgoFrame {
           });
           this.done = true;
           // this.keyframes.restart();
-          debugger;
+          // debugger;
           if (this.loop) requestAnimationFrame(animate.bind(this));
           this.next?.();
-        } else if(!this.done) {
+        } else if (!this.done) {
           this.done = true;
           // this.keyframes.restart();
           if (this.loop) requestAnimationFrame(animate.bind(this));

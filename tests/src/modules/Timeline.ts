@@ -120,7 +120,7 @@ abstract class KeyChanger {
               ? currentValue
               : previousValue
           ) || this.current;
-      console.log(this.current?.time(1), this.next.time(1), this.run);
+      // console.log(this.current?.time(1), this.next.time(1), this.run);
     } else {
       this.restart();
     }
@@ -188,6 +188,8 @@ abstract class KeyChanger {
             ? trace
             : (progress - this.current.time(1)) / a
         );
+        // debugger;
+        // console.log(this.current, next);
         return lerp;
       } else if (
         next instanceof nestedKeyframe &&
@@ -211,7 +213,7 @@ abstract class KeyChanger {
         this.current instanceof nestedKeyframe &&
         next instanceof nestedKeyframe
       ) {
-        this.nextTime();
+        // this.nextTime();
         // debugger;
         const res = this.currentAsSequence(
           this.current as nestedKeyframe,
@@ -263,7 +265,8 @@ export class Sequence extends KeyChanger {
       | valueKeyframe
       | nestedKeyframe
     )[],
-    easing: Preset = 'linear'
+    easing: Preset = 'linear',
+    public callback: Function | null = null
   ) {
     super(duration, easing);
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
@@ -349,7 +352,8 @@ export class Sequence extends KeyChanger {
     // console.log((progress - object.time(1)) / (end - object.time(1)));
     const rProgress = (progress - object.time(1)) / (end - object.time(1));
     let res!: number;
-    if (rProgress <= 1.05) {
+    if (rProgress <= 1) {
+      // console.log(object.obj);
       res = object.obj.test(rProgress, undefined, true) as number;
       return res;
     }

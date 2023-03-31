@@ -1,38 +1,35 @@
 // @ts-ignore
 import * as AF from './algoframe'; // * AlgoFrame 4.4.4
-import * as AFT from './modules/Timeline';
+import { Sequence, nestedKeyframe, valueKeyframe } from './modules/Timeline';
 
 // Animation engine
 
 // Falta la transición entre nested y value;
 
-const delay: number = 500;
+const delay: number = 300;
 
-let unitLinearAnimation = new AF.Keyframes(
-  [new AF.Keyframes.keyframe(0, 0), new AF.Keyframes.keyframe(1, 1)],
-  'linear'
-);
-const keyframes = new AFT.Sequence(1000, [
-  new AFT.valueKeyframe(0, 0.2, 'ratio'),
-  new AFT.valueKeyframe(10, 0.5, 'ratio'),
-  new AFT.valueKeyframe(50, 1, 'ratio'),
+// For reversed timelines, 1 pass to 0 and 0 pass to 1 cosntantly during the animation.
+
+const basic = new Sequence(false, [
+  new valueKeyframe(2222, 0, 'ratio'),
+  new valueKeyframe(4444, 0.5, 'ratio'),
+  new valueKeyframe(6666, 1, 'ratio'),
+]);
+const first = new Sequence(false, [
+  new nestedKeyframe(basic.clone(), 0, 'ratio'),
+  new nestedKeyframe(basic.clone(), 0.5, 'ratio'),
+  new nestedKeyframe(basic.clone(), 1, 'ratio'),
+]);
+const second = new Sequence(3 ** 3 * 1000, [
+  new nestedKeyframe(first.clone(), 0, 'ratio'),
+  new nestedKeyframe(first.clone(), 0.5, 'ratio'),
+  new nestedKeyframe(first.clone(), 1, 'ratio'),
 ]);
 
-unitLinearAnimation = new AFT.Sequence(1000, [
-  new AFT.valueKeyframe(100, 0, 'ratio'),
-  new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
-  new AFT.valueKeyframe(50, 0.75, 'ratio'),
-  new AFT.valueKeyframe(100, 0.9, 'ratio'),
-]);
-window['anim'] = new AFT.Sequence(1000, [
-  new AFT.valueKeyframe(100, 0, 'ratio'),
-  new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
-  new AFT.valueKeyframe(50, 0.75, 'ratio'),
-  new AFT.valueKeyframe(100, 0.9, 'ratio'),
-]);
+// console.log(second, second.clone());
 
 // Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw
-const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
+const animation = new AF.AlgoFrame(1000, delay, 'linear', second);
 
 // Keyframes
 // Needs to allow ratios and miliseconds values on duration

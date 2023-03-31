@@ -75,6 +75,7 @@ class KeyChanger {
         this.easing = (0, utils_1.passPreset)(easing);
     }
     nextTime() {
+        var _a;
         if (!this.run.length) {
             this.next = null;
             return;
@@ -93,6 +94,7 @@ class KeyChanger {
                     previousValue.time(this.duration)
                     ? currentValue
                     : previousValue) || this.current;
+            console.log((_a = this.current) === null || _a === void 0 ? void 0 : _a.time(1), this.next.time(1), this.run);
         }
         else {
             this.restart();
@@ -119,7 +121,8 @@ class KeyChanger {
         return lerp;
     }
     test(progress, miliseconds = false, runAdaptative = false, nextValue) {
-        const next = nextValue ? nextValue : this.next;
+        progress = progress <= 1 ? progress : 1;
+        let next = nextValue ? nextValue : this.next;
         if (this.adaptative && !runAdaptative) {
             throw new Error('Adaptitive timed sequences cannot be played in first place');
         }
@@ -128,18 +131,22 @@ class KeyChanger {
         else if (miliseconds)
             throw new Error('miliseconds mode not allowe when adaptative');
         if (next && this.current) {
-            if (next.time(1) <= progress) {
+            while (next.time(1) <= progress && !(next.time(1) === 1)) {
                 this.nextTime(); //bug-proof
+                next = this.next;
             }
             if (next instanceof valueKeyframe &&
                 this.current instanceof valueKeyframe) {
                 progress = Math.min(this.easing(progress), miliseconds ? this.duration : 1);
                 const a = next.time(1) - this.current.time(1);
                 const trace = progress / a;
-                const lerp = KeyChanger.lerp(this.current.value, next.value, progress < a ? trace : (progress - a) / a);
+                const lerp = KeyChanger.lerp(this.current.value, next.value, progress < progress - a
+                    ? trace
+                    : (progress - this.current.time(1)) / a);
                 return lerp;
             }
-            else if (next instanceof nestedKeyframe) {
+            else if (next instanceof nestedKeyframe &&
+                this.current instanceof valueKeyframe) {
                 // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
                 const nextValueFromObj = new valueKeyframe(this.getAbsoluteStartValue(next.obj), next.time(1), 'ratio');
                 nextValueFromObj.duration = this.duration;
@@ -147,10 +154,17 @@ class KeyChanger {
                 // this.next.obj.run[0].value
                 );
             }
-            else {
+            else if (this.current instanceof nestedKeyframe &&
+                next instanceof nestedKeyframe) {
                 this.nextTime();
                 // debugger;
-                return this.asSequence(this.current, progress, this.next ? this.next.time(1) : 1);
+                const res = this.currentAsSequence(this.current, progress, this.next ? this.next.time(1) : 1);
+                return res;
+            }
+            else if (this.current instanceof nestedKeyframe &&
+                (next instanceof valueKeyframe || !next)) {
+                // console.log(progress.toFixed(2));
+                return this.currentAsSequence(this.current, progress, next ? next.time(1) : 1);
             }
         }
     }
@@ -160,6 +174,13 @@ class KeyChanger {
             last = sequence.current;
         }
         return last.value;
+    }
+    getAbsoluteEndKeyframe(sequence) {
+        let last = sequence.run[sequence.run.length - 1];
+        while (last instanceof nestedKeyframe) {
+            last = sequence.run[sequence.run.length - 1];
+        }
+        return last;
     }
 }
 // TODO:
@@ -173,6 +194,27 @@ class Sequence extends KeyChanger {
         this.type = 'simple';
         // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
         this.taken = [];
+        const zero = this.passKeyframe(keyframes[0]);
+        const final = this.passKeyframe(keyframes[keyframes.length - 1]);
+        zero.duration = this.duration;
+        final.duration = this.duration;
+        if (zero.time(1) > 0) {
+            // this.taken.push(0);
+            const first = zero instanceof valueKeyframe
+                ? new valueKeyframe(zero.value, 0)
+                : new nestedKeyframe(zero.obj, 0);
+            first.duration = this.duration;
+            this.keyframes.unshift(first);
+            this.run.push(first);
+        }
+        if (final.time(1) < 1) {
+            if (final instanceof nestedKeyframe)
+                throw new Error("Cannot set last keyframe as nested sequence, it's impossible");
+            const last = new valueKeyframe(final.value, 1, 'ratio');
+            last.duration = this.duration;
+            this.keyframes.push(last);
+            this.run.push(last);
+        }
         this.keyframes.forEach((k, i) => {
             k.duration = this.duration;
             k = this.passKeyframe(k);
@@ -181,7 +223,7 @@ class Sequence extends KeyChanger {
                 throw new Error('Keyframe timing overflow');
             if (this.taken.includes(timing))
                 throw new Error('It must not have repeated times');
-            this.taken.push(timing);
+            this.taken.push(k.time(1));
             if (k instanceof nestedKeyframe)
                 this.type = 'nested';
             this.run.push(k);
@@ -212,11 +254,14 @@ class Sequence extends KeyChanger {
     replaceKeyframe(keyframe) {
         return this;
     }
-    asSequence(object, progress, end) {
+    currentAsSequence(object, progress, end) {
         // console.log((progress - object.time(1)) / (end - object.time(1)));
-        const res = object.obj.test((progress - object.time(1)) / (end - object.time(1)), undefined, true);
-        debugger;
-        return res;
+        const rProgress = (progress - object.time(1)) / (end - object.time(1));
+        let res;
+        if (rProgress <= 1.05) {
+            res = object.obj.test(rProgress, undefined, true);
+            return res;
+        }
     }
     reset() {
         this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));
@@ -237,7 +282,7 @@ class ChannelsTimeline extends KeyChanger {
         super(duration, easing);
         this.channels = channels;
     }
-    asSequence(object, progress) { }
+    currentAsSequence(object, progress) { }
     reset() { }
 }
 exports.ChannelsTimeline = ChannelsTimeline;
@@ -283,12 +328,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 // @ts-ignore
-const AF = __importStar(__webpack_require__(448)); // * AlgoFrame 4.4.4
+const AF = __importStar(__webpack_require__(100)); // * AlgoFrame 4.4.4
 const AFT = __importStar(__webpack_require__(784));
 // Animation engine
+// Falta la transición entre nested y value;
 const delay = 500;
 let unitLinearAnimation = new AF.Keyframes([new AF.Keyframes.keyframe(0, 0), new AF.Keyframes.keyframe(1, 1)], 'linear');
-const keyframes = new AFT.Sequence(false, [
+const keyframes = new AFT.Sequence(1000, [
     new AFT.valueKeyframe(0, 0.2, 'ratio'),
     new AFT.valueKeyframe(10, 0.5, 'ratio'),
     new AFT.valueKeyframe(50, 1, 'ratio'),
@@ -296,7 +342,14 @@ const keyframes = new AFT.Sequence(false, [
 unitLinearAnimation = new AFT.Sequence(1000, [
     new AFT.valueKeyframe(100, 0, 'ratio'),
     new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
-    new AFT.valueKeyframe(500, 1, 'ratio'),
+    new AFT.valueKeyframe(50, 0.75, 'ratio'),
+    new AFT.valueKeyframe(100, 0.9, 'ratio'),
+]);
+window['anim'] = new AFT.Sequence(1000, [
+    new AFT.valueKeyframe(100, 0, 'ratio'),
+    new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
+    new AFT.valueKeyframe(50, 0.75, 'ratio'),
+    new AFT.valueKeyframe(100, 0.9, 'ratio'),
 ]);
 // Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw
 const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
@@ -305,14 +358,13 @@ const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
 /* const keyframes = new AFT.Sequence(500, [
   new AFT.valueKeyframe(0, 0.2, 'ratio'),
   new AFT.valueKeyframe(1, 100, 'miliseconds'),
-
+  
   => Uncaught Error: Invalid Keyframes Object!
 ]); */
 // keyframes.addKeyframe(new AFT.valueKeyframe(0, 0, 'ratio'));
-animation.run((x) => {
-    if (!x)
-        debugger;
-    console.log(x);
+animation.run((x, y) => {
+    // tslint:disable-next-line:no-debugger
+    console.log(x, (y * 100).toFixed(1));
 });
 // animation.run((x: number) => console.log(keyframes.test(x)));
 
@@ -367,7 +419,7 @@ exports.passPreset = passPreset;
 
 /***/ }),
 
-/***/ 448:
+/***/ 100:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 // ESM COMPAT FLAG
@@ -379,7 +431,7 @@ __webpack_require__.d(__webpack_exports__, {
   "Keyframes": () => (/* binding */ Keyframes)
 });
 
-;// CONCATENATED MODULE: ../node_modules/algoframe/utils.js
+;// CONCATENATED MODULE: ./algoframe/utils.js
 const EasingFunctions = {
   // no easing, no acceleration
   linear: (t) => t,
@@ -412,7 +464,7 @@ const EasingFunctions = {
     t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t,
 };
 
-;// CONCATENATED MODULE: ../node_modules/algoframe/index.js
+;// CONCATENATED MODULE: ./algoframe/index.js
 
 class AlgoFrame {
   constructor(
@@ -669,7 +721,7 @@ class AlgoFrame {
           requestAnimationFrame(animate.bind(this));
         } else if (runtime + this.last.last > this.duration) {
           this.animationFrame++;
-          this.keyframes.nextTime();
+          // this.keyframes.nextTime();
           this.callback(this.keyframes.test(1), 1, {
             lastFrame: this.lastFrameRate.last,
             currentTime: this.lastFrameRate.currenttime,
@@ -677,12 +729,13 @@ class AlgoFrame {
             timestamp,
           });
           this.done = true;
-          this.keyframes.restart();
+          // this.keyframes.restart();
+          debugger;
           if (this.loop) requestAnimationFrame(animate.bind(this));
           this.next?.();
-        } else {
+        } else if(!this.done) {
           this.done = true;
-          this.keyframes.restart();
+          // this.keyframes.restart();
           if (this.loop) requestAnimationFrame(animate.bind(this));
           this.next?.();
         }
