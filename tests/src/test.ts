@@ -1,5 +1,5 @@
 // @ts-ignore
-import * as AF from 'algoframe'; // * AlgoFrame 4.4.4
+import * as AF from './algoframe'; // * AlgoFrame 4.4.4
 import * as AFT from './modules/Timeline';
 
 // Animation engine
@@ -19,6 +19,12 @@ const keyframes = new AFT.Sequence(1000, [
 ]);
 
 unitLinearAnimation = new AFT.Sequence(1000, [
+  new AFT.valueKeyframe(100, 0, 'ratio'),
+  new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
+  new AFT.valueKeyframe(50, 0.75, 'ratio'),
+  new AFT.valueKeyframe(100, 0.9, 'ratio'),
+]);
+window['anim'] = new AFT.Sequence(1000, [
   new AFT.valueKeyframe(100, 0, 'ratio'),
   new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
   new AFT.valueKeyframe(50, 0.75, 'ratio'),

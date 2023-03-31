@@ -103,10 +103,6 @@ abstract class KeyChanger {
       return;
     }
     if (this.run.length > 1) {
-      if (!this.run.some(k => k.time(1) === 1)) {
-        this.restart();
-        console.log(this.test(1));
-      }
       this.current = this.run.reduce((previousValue, currentValue) => {
         return currentValue!.time(this.duration) <
           previousValue!.time(this.duration)
@@ -124,11 +120,7 @@ abstract class KeyChanger {
               ? currentValue
               : previousValue
           ) || this.current;
-      console.log(
-        this.current?.time(1),
-        this.next.time(1),
-        this.run.map(k => k.time(1))
-      );
+      console.log(this.current?.time(1), this.next.time(1), this.run);
     } else {
       this.restart();
     }
@@ -164,6 +156,7 @@ abstract class KeyChanger {
     runAdaptative: boolean = false,
     nextValue?: valueKeyframe
   ): number | undefined {
+    progress = progress <= 1 ? progress : 1;
     let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
       throw new Error(
@@ -174,7 +167,7 @@ abstract class KeyChanger {
     else if (miliseconds)
       throw new Error('miliseconds mode not allowe when adaptative');
     if (next && this.current) {
-      if (next.time(1) <= progress) {
+      while (next!.time(1) <= progress && !(next!.time(1) === 1)) {
         this.nextTime(); //bug-proof
         next = this.next;
       }

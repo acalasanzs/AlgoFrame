@@ -1,0 +1,32 @@
+{
+  "name": "algoframe",
+  "version": "4.4.4",
+  "description": "A lightweight package for doing algebraic animation with requestAnimatioFrame natively, even with Bezier",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acalasanzs/AlgoFrame.git"
+  },
+  "keywords": [
+    "Bezier",
+    "requestAnimationFrame",
+    "callback"
+  ],
+  "scripts": {
+    "build": "webpack --mode=production"
+  },
+  "author": "Albert Calasanz Sallen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/acalasanzs/AlgoFrame/issues"
+  },
+  "homepage": "https://github.com/acalasanzs/AlgoFrame#readme",
+  "devDependencies": {
+    "unminified-webpack-plugin": "^3.0.0",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  }
+}
