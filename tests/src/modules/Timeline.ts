@@ -9,7 +9,8 @@ class _keyframe {
   constructor(
     public timing: number,
     public type: 'ratio' | 'miliseconds' = 'ratio',
-    public delay?: number
+    public delay?: number,
+    public hold: boolean = false
   ) {
     this.id = _keyframe.instances++;
   }
@@ -36,9 +37,11 @@ export class valueKeyframe extends _keyframe {
   constructor(
     public value: number,
     timing: number,
-    type: 'ratio' | 'miliseconds' = 'miliseconds'
+    type: 'ratio' | 'miliseconds' = 'miliseconds',
+    delay?: number,
+    hold: boolean = false
   ) {
-    super(timing, type);
+    super(timing, type, delay, hold);
   }
 }
 // unknown now but maybe a special kind of AlgoFrame + Timeline for nested sequencees! And must fit in the timeline keyframe
@@ -46,9 +49,11 @@ export class nestedKeyframe extends _keyframe {
   constructor(
     public obj: Sequence,
     timing: number,
-    type: 'ratio' | 'miliseconds' = 'miliseconds'
+    type: 'ratio' | 'miliseconds' = 'miliseconds',
+    delay?: number,
+    hold: boolean = false
   ) {
-    super(timing, type);
+    super(timing, type, delay, hold);
   }
 }
 
@@ -58,9 +63,10 @@ export class ChannelBlock extends _keyframe {
     public seq: Sequence,
     timing: number,
     type: 'ratio' | 'miliseconds',
-    delay: number
+    delay?: number,
+    hold: boolean = false
   ) {
-    super(timing, type, delay);
+    super(timing, type, delay, hold);
     this.duration = seq.duration;
   }
 }
@@ -194,12 +200,15 @@ abstract class KeyChanger {
         );
         const a = next.time(1) - this.current.time(1);
         const trace = progress / a;
+        const kProgress =
+          progress < progress - a
+            ? trace
+            : (progress - this.current.time(1)) / a;
+        console.log(String([this.current.time(1), next.time(1)]));
         const lerp = KeyChanger.lerp(
           this.current.value,
           next.value,
-          progress < progress - a
-            ? trace
-            : (progress - this.current.time(1)) / a
+          next.hold ? kProgress : 0
         );
         // debugger;
         // console.log(this.current, next);

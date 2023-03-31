@@ -10,9 +10,10 @@ const delay: number = 300;
 
 // For reversed timelines, 1 pass to 0 and 0 pass to 1 cosntantly during the animation.
 
+// Blocked keyframes like AE? DONE
 const basic = new Sequence(false, [
   new valueKeyframe(2222, 0, 'ratio'),
-  new valueKeyframe(4444, 0.5, 'ratio'),
+  new valueKeyframe(4444, 0.5, 'ratio', undefined, true),
   new valueKeyframe(6666, 1, 'ratio'),
 ]);
 const first = new Sequence(false, [
