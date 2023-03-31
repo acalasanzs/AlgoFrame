@@ -50,10 +50,9 @@ export class nestedKeyframe extends _keyframe {
     public obj: Sequence,
     timing: number,
     type: 'ratio' | 'miliseconds' = 'miliseconds',
-    delay?: number,
-    hold: boolean = false
+    delay?: number
   ) {
-    super(timing, type, delay, hold);
+    super(timing, type, delay);
   }
 }
 
@@ -63,10 +62,9 @@ export class ChannelBlock extends _keyframe {
     public seq: Sequence,
     timing: number,
     type: 'ratio' | 'miliseconds',
-    delay?: number,
-    hold: boolean = false
+    delay?: number
   ) {
-    super(timing, type, delay, hold);
+    super(timing, type, delay);
     this.duration = seq.duration;
   }
 }
