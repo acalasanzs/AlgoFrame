@@ -39,6 +39,6 @@ const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
 // keyframes.addKeyframe(new AFT.valueKeyframe(0, 0, 'ratio'));
 animation.run((x: any, y: number) => {
   // tslint:disable-next-line:no-debugger
-  console.log(x);
+  console.log(x, (y * 100).toFixed(1));
 });
 // animation.run((x: number) => console.log(keyframes.test(x)));

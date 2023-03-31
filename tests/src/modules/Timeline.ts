@@ -103,6 +103,10 @@ abstract class KeyChanger {
       return;
     }
     if (this.run.length > 1) {
+      if (!this.run.some(k => k.time(1) === 1)) {
+        this.restart();
+        console.log(this.test(1));
+      }
       this.current = this.run.reduce((previousValue, currentValue) => {
         return currentValue!.time(this.duration) <
           previousValue!.time(this.duration)
@@ -120,6 +124,11 @@ abstract class KeyChanger {
               ? currentValue
               : previousValue
           ) || this.current;
+      console.log(
+        this.current?.time(1),
+        this.next.time(1),
+        this.run.map(k => k.time(1))
+      );
     } else {
       this.restart();
     }
