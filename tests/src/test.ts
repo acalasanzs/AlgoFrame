@@ -26,9 +26,7 @@ const second = new Sequence(3 ** 3 * 1000, [
   new nestedKeyframe(first.clone(), 1, 'ratio'),
 ]);
 
-// console.log(second, second.clone());
-
-// Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw
+// Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw; not in 5.0.0
 const animation = new AF.AlgoFrame(1000, delay, 'linear', second);
 
 // Keyframes

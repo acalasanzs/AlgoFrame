@@ -1,5 +1,5 @@
 import { passPreset, EasingFunctions, Preset } from './utils';
-import { Channels, Sequence } from './src/Timeline';
+import { Channels, Sequence } from './modules/Timeline';
 
 //Remove this and replace by Timeline
 // module Animate {

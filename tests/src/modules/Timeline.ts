@@ -52,6 +52,19 @@ export class nestedKeyframe extends _keyframe {
   }
 }
 
+export class ChannelBlock extends _keyframe {
+  public duration!: number;
+  constructor(
+    public seq: Sequence,
+    timing: number,
+    type: 'ratio' | 'miliseconds',
+    delay: number
+  ) {
+    super(timing, type, delay);
+    this.duration = seq.duration;
+  }
+}
+
 // Enumerables
 type _simple = valueKeyframe[];
 type _nested = nestedKeyframe[];
@@ -73,11 +86,11 @@ export type __valueKeyframe = {
 };
 
 abstract class KeyChanger {
-  protected duration: number;
+  public duration: number;
   run: (nestedKeyframe | valueKeyframe)[];
   next: (valueKeyframe | nestedKeyframe) | null = null;
   current: (valueKeyframe | nestedKeyframe) | null = null;
-  protected adaptative: boolean = false;
+  public adaptative: boolean = false;
   keyframes?: (
     | __valueKeyframe
     | __objectKeyframe
@@ -374,10 +387,27 @@ export class ChannelsTimeline extends KeyChanger {
   // So in that case, call every AlgoFrame Sequence/timeline better.
   constructor(
     duration: number,
-    public channels: Sequence[], // Main sequences means a whole channel, but all must have the same length in miliseconds. If not, all will be extended to the largest one.
+    public channels: ChannelBlock[], // Main sequences means a whole channel, but all must have the same length in miliseconds. If not, all will be extended to the largest one.
     easing: Preset = 'linear'
   ) {
     super(duration, easing);
+    // All sequences, if not overlaping, return that: undefined, which won't be called on its own Sequence.callback
+    //
+    const toMaxDuration: Sequence[] = [];
+    const maxDuration = channels.reduce((prev: number, cur: ChannelBlock) => {
+      if (cur.seq.adaptative) {
+        toMaxDuration.push(cur.seq);
+        return prev;
+      }
+      return prev < cur.seq.duration ? cur.seq.duration : prev;
+    }, 1);
+
+    // All channels with the same length
+    channels.forEach(channel => {
+      if (channel.duration < maxDuration) {
+        channel.enlarge(maxDuration - channel.duration);
+      }
+    });
   }
   protected currentAsSequence(object: nestedKeyframe, progress: number) {}
   protected reset(): void {}
