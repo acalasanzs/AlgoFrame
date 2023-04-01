@@ -2,7 +2,7 @@ import { Preset, EasingFunctions, passPreset } from '../utils';
 
 // Classes
 
-class _keyframe {
+export class _keyframe {
   static instances = 0;
   readonly id: number;
   public duration!: number;
@@ -55,17 +55,24 @@ export class nestedKeyframe extends _keyframe {
     super(timing, type, delay);
   }
 }
-
+//                                            seq   seq   seq
+//.repeat(times:number) in sequence |---------****-****---***----------|
 export class ChannelBlock extends _keyframe {
-  public duration!: number;
+  public size!: number;
+  // public timing: number = 0;
   constructor(
     public seq: Sequence,
-    timing: number,
-    type: 'ratio' | 'miliseconds',
+    type: 'miliseconds' = 'miliseconds',
     delay?: number
   ) {
-    super(timing, type, delay);
+    super(0, type, delay);
     this.duration = seq.duration;
+  }
+  public end() {
+    return this.time() + this.duration;
+  }
+  public time() {
+    return super.time(this.duration);
   }
 }
 
@@ -388,26 +395,35 @@ export class Sequence extends KeyChanger {
   }
 }
 
+export class ChannelSequence extends KeyChanger {
+  constructor(blocks: ChannelBlock[]) {
+    blocks.forEach(block => {});
+    super();
+  }
+}
 export class ChannelsTimeline extends KeyChanger {
   //AllRun? to all channels simultaneously
   // Return a nested object of all the results in a given time?
   // So in that case, call every AlgoFrame Sequence/timeline better.
   constructor(
     duration: number,
-    public channels: ChannelBlock[], // Main sequences means a whole channel, but all must have the same length in miliseconds. If not, all will be extended to the largest one.
+    public channels: ChannelSequence[], // Main sequences means a whole channel, but all must have the same length in miliseconds. If not, all will be extended to the largest one.
     easing: Preset = 'linear'
   ) {
     super(duration, easing);
     // All sequences, if not overlaping, return that: undefined, which won't be called on its own Sequence.callback
     //
     const toMaxDuration: Sequence[] = [];
-    const maxDuration = channels.reduce((prev: number, cur: ChannelBlock) => {
-      if (cur.seq.adaptative) {
-        toMaxDuration.push(cur.seq);
-        return prev;
-      }
-      return prev < cur.seq.duration ? cur.seq.duration : prev;
-    }, 1);
+    const maxDuration = channels.reduce(
+      (prev: number, cur: ChannelSequence) => {
+        if (cur.seq.adaptative) {
+          toMaxDuration.push(cur.seq);
+          return prev;
+        }
+        return prev < cur.seq.duration ? cur.seq.duration : prev;
+      },
+      1
+    );
 
     // All channels with the same length
     channels.forEach(channel => {

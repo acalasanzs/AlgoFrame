@@ -17,14 +17,15 @@ return /******/ (() => { // webpackBootstrap
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ChannelsTimeline = exports.Sequence = exports.nestedKeyframe = exports.valueKeyframe = void 0;
+exports.ChannelsTimeline = exports.Sequence = exports.ChannelBlock = exports.nestedKeyframe = exports.valueKeyframe = void 0;
 const utils_1 = __webpack_require__(626);
 // Classes
 class _keyframe {
-    constructor(timing, type = 'ratio', delay) {
+    constructor(timing, type = 'ratio', delay, hold = false) {
         this.timing = timing;
         this.type = type;
         this.delay = delay;
+        this.hold = hold;
         this.id = _keyframe.instances++;
     }
     time(duration) {
@@ -45,20 +46,28 @@ class _keyframe {
 }
 _keyframe.instances = 0;
 class valueKeyframe extends _keyframe {
-    constructor(value, timing, type = 'miliseconds') {
-        super(timing, type);
+    constructor(value, timing, type = 'miliseconds', delay, hold = false) {
+        super(timing, type, delay, hold);
         this.value = value;
     }
 }
 exports.valueKeyframe = valueKeyframe;
 // unknown now but maybe a special kind of AlgoFrame + Timeline for nested sequencees! And must fit in the timeline keyframe
 class nestedKeyframe extends _keyframe {
-    constructor(obj, timing, type = 'miliseconds') {
-        super(timing, type);
+    constructor(obj, timing, type = 'miliseconds', delay) {
+        super(timing, type, delay);
         this.obj = obj;
     }
 }
 exports.nestedKeyframe = nestedKeyframe;
+class ChannelBlock extends _keyframe {
+    constructor(seq, timing, type, delay) {
+        super(timing, type, delay);
+        this.seq = seq;
+        this.duration = seq.duration;
+    }
+}
+exports.ChannelBlock = ChannelBlock;
 class KeyChanger {
     constructor(duration, easing = 'linear') {
         this.next = null;
@@ -75,7 +84,6 @@ class KeyChanger {
         this.easing = (0, utils_1.passPreset)(easing);
     }
     nextTime() {
-        var _a;
         if (!this.run.length) {
             this.next = null;
             return;
@@ -94,7 +102,7 @@ class KeyChanger {
                     previousValue.time(this.duration)
                     ? currentValue
                     : previousValue) || this.current;
-            console.log((_a = this.current) === null || _a === void 0 ? void 0 : _a.time(1), this.next.time(1), this.run);
+            // console.log(this.current?.time(1), this.next.time(1), this.run);
         }
         else {
             this.restart();
@@ -140,9 +148,13 @@ class KeyChanger {
                 progress = Math.min(this.easing(progress), miliseconds ? this.duration : 1);
                 const a = next.time(1) - this.current.time(1);
                 const trace = progress / a;
-                const lerp = KeyChanger.lerp(this.current.value, next.value, progress < progress - a
+                const kProgress = progress < progress - a
                     ? trace
-                    : (progress - this.current.time(1)) / a);
+                    : (progress - this.current.time(1)) / a;
+                console.log(String([this.current.time(1), next.time(1)]));
+                const lerp = KeyChanger.lerp(this.current.value, next.value, next.hold ? kProgress : 0);
+                // debugger;
+                // console.log(this.current, next);
                 return lerp;
             }
             else if (next instanceof nestedKeyframe &&
@@ -156,7 +168,7 @@ class KeyChanger {
             }
             else if (this.current instanceof nestedKeyframe &&
                 next instanceof nestedKeyframe) {
-                this.nextTime();
+                // this.nextTime();
                 // debugger;
                 const res = this.currentAsSequence(this.current, progress, this.next ? this.next.time(1) : 1);
                 return res;
@@ -188,9 +200,10 @@ class KeyChanger {
 //    Adaptative Sequence duration DONE
 // P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
 class Sequence extends KeyChanger {
-    constructor(duration, keyframes, easing = 'linear') {
+    constructor(duration, keyframes, easing = 'linear', callback = null) {
         super(duration, easing);
         this.keyframes = keyframes;
+        this.callback = callback;
         this.type = 'simple';
         // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
         this.taken = [];
@@ -258,7 +271,8 @@ class Sequence extends KeyChanger {
         // console.log((progress - object.time(1)) / (end - object.time(1)));
         const rProgress = (progress - object.time(1)) / (end - object.time(1));
         let res;
-        if (rProgress <= 1.05) {
+        if (rProgress <= 1) {
+            // console.log(object.obj);
             res = object.obj.test(rProgress, undefined, true);
             return res;
         }
@@ -281,6 +295,22 @@ class ChannelsTimeline extends KeyChanger {
     easing = 'linear') {
         super(duration, easing);
         this.channels = channels;
+        // All sequences, if not overlaping, return that: undefined, which won't be called on its own Sequence.callback
+        //
+        const toMaxDuration = [];
+        const maxDuration = channels.reduce((prev, cur) => {
+            if (cur.seq.adaptative) {
+                toMaxDuration.push(cur.seq);
+                return prev;
+            }
+            return prev < cur.seq.duration ? cur.seq.duration : prev;
+        }, 1);
+        // All channels with the same length
+        channels.forEach(channel => {
+            if (channel.duration < maxDuration) {
+                channel.enlarge(maxDuration - channel.duration);
+            }
+        });
     }
     currentAsSequence(object, progress) { }
     reset() { }
@@ -329,30 +359,29 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 // @ts-ignore
 const AF = __importStar(__webpack_require__(100)); // * AlgoFrame 4.4.4
-const AFT = __importStar(__webpack_require__(784));
+const Timeline_1 = __webpack_require__(784);
 // Animation engine
 // Falta la transición entre nested y value;
-const delay = 500;
-let unitLinearAnimation = new AF.Keyframes([new AF.Keyframes.keyframe(0, 0), new AF.Keyframes.keyframe(1, 1)], 'linear');
-const keyframes = new AFT.Sequence(1000, [
-    new AFT.valueKeyframe(0, 0.2, 'ratio'),
-    new AFT.valueKeyframe(10, 0.5, 'ratio'),
-    new AFT.valueKeyframe(50, 1, 'ratio'),
+const delay = 300;
+// For reversed timelines, 1 pass to 0 and 0 pass to 1 cosntantly during the animation.
+// Blocked keyframes like AE? DONE
+const basic = new Timeline_1.Sequence(false, [
+    new Timeline_1.valueKeyframe(2222, 0, 'ratio'),
+    new Timeline_1.valueKeyframe(4444, 0.5, 'ratio'),
+    new Timeline_1.valueKeyframe(6666, 1, 'ratio'),
 ]);
-unitLinearAnimation = new AFT.Sequence(1000, [
-    new AFT.valueKeyframe(100, 0, 'ratio'),
-    new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
-    new AFT.valueKeyframe(50, 0.75, 'ratio'),
-    new AFT.valueKeyframe(100, 0.9, 'ratio'),
+const first = new Timeline_1.Sequence(false, [
+    new Timeline_1.nestedKeyframe(basic.clone(), 0, 'ratio'),
+    new Timeline_1.nestedKeyframe(basic.clone(), 0.5, 'ratio'),
+    new Timeline_1.nestedKeyframe(basic.clone(), 1, 'ratio'),
 ]);
-window['anim'] = new AFT.Sequence(1000, [
-    new AFT.valueKeyframe(100, 0, 'ratio'),
-    new AFT.nestedKeyframe(keyframes, 0.5, 'ratio'),
-    new AFT.valueKeyframe(50, 0.75, 'ratio'),
-    new AFT.valueKeyframe(100, 0.9, 'ratio'),
+const second = new Timeline_1.Sequence(3 ** 3 * 1000, [
+    new Timeline_1.nestedKeyframe(first.clone(), 0, 'ratio'),
+    new Timeline_1.nestedKeyframe(first.clone(), 0.5, 'ratio'),
+    new Timeline_1.nestedKeyframe(first.clone(), 1, 'ratio'),
 ]);
-// Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw
-const animation = new AF.AlgoFrame(1000, delay, 'linear', unitLinearAnimation);
+// Invalid Keyframes Object AlgoFrame 4.4.4 if(!keyframes instanceof Keyframes) throw; not in 5.0.0
+const animation = new AF.AlgoFrame(1000, delay, 'linear', second);
 // Keyframes
 // Needs to allow ratios and miliseconds values on duration
 /* const keyframes = new AFT.Sequence(500, [
@@ -730,10 +759,10 @@ class AlgoFrame {
           });
           this.done = true;
           // this.keyframes.restart();
-          debugger;
+          // debugger;
           if (this.loop) requestAnimationFrame(animate.bind(this));
           this.next?.();
-        } else if(!this.done) {
+        } else if (!this.done) {
           this.done = true;
           // this.keyframes.restart();
           if (this.loop) requestAnimationFrame(animate.bind(this));
