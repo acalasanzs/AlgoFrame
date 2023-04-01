@@ -62,8 +62,8 @@ export class ChannelBlock extends _keyframe {
   // public timing: number = 0;
   constructor(
     public seq: Sequence,
-    type: 'miliseconds' = 'miliseconds',
-    delay?: number
+    delay?: number,
+    type: 'miliseconds' = 'miliseconds'
   ) {
     super(0, type, delay);
     this.duration = seq.duration;
@@ -96,18 +96,13 @@ export type __valueKeyframe = {
   duration?: number;
 };
 
-abstract class KeyChanger {
+abstract class KeyChanger<Keyframe extends _keyframe> {
   public duration: number;
-  run: (nestedKeyframe | valueKeyframe)[];
-  next: (valueKeyframe | nestedKeyframe) | null = null;
-  current: (valueKeyframe | nestedKeyframe) | null = null;
+  run: Keyframe[];
+  next: Keyframe | null = null;
+  current: Keyframe | null = null;
   public adaptative: boolean = false;
-  keyframes?: (
-    | __valueKeyframe
-    | __objectKeyframe
-    | valueKeyframe
-    | nestedKeyframe
-  )[];
+  keyframes?: Keyframe[];
   easing: (t: number) => number;
 
   constructor(duration: number | false, easing: Preset = 'linear') {
@@ -151,15 +146,6 @@ abstract class KeyChanger {
     this.run.shift();
   }
   protected abstract reset(): void;
-  protected passKeyframe(k: any | nestedKeyframe | valueKeyframe) {
-    if (k instanceof nestedKeyframe || k instanceof valueKeyframe) return k;
-    return this.is_value(k)
-      ? new valueKeyframe(k.value, k.timing, k.type)
-      : new nestedKeyframe(k.obj, k.timing, k.type);
-  }
-  protected is_value(object: any): object is __valueKeyframe {
-    return 'val' in object;
-  }
   public restart() {
     while (this.run.length) this.run.pop();
     this.reset();
@@ -281,25 +267,20 @@ abstract class KeyChanger {
 // 1. Nested Sequence instances DONE
 //    Adaptative Sequence duration DONE
 // P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
-export class Sequence extends KeyChanger {
+export class Sequence extends KeyChanger<valueKeyframe | nestedKeyframe> {
   type: 'nested' | 'simple' = 'simple';
   taken: number[];
   constructor(
     duration: number | false,
-    public keyframes: (
-      | __valueKeyframe
-      | __objectKeyframe
-      | valueKeyframe
-      | nestedKeyframe
-    )[],
+    public keyframes: (valueKeyframe | nestedKeyframe)[],
     easing: Preset = 'linear',
     public callback: Function | null = null
   ) {
     super(duration, easing);
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
     this.taken = [];
-    const zero = this.passKeyframe(keyframes[0]);
-    const final = this.passKeyframe(keyframes[keyframes.length - 1]);
+    const zero = keyframes[0];
+    const final = keyframes[keyframes.length - 1];
     zero.duration = this.duration;
     final.duration = this.duration;
     if (zero.time(1) > 0) {
@@ -324,7 +305,7 @@ export class Sequence extends KeyChanger {
     }
     this.keyframes.forEach((k: any, i) => {
       k.duration = this.duration;
-      k = this.passKeyframe(k);
+      k = k;
       const timing = k.time(this.duration);
       if (timing > this.duration) throw new Error('Keyframe timing overflow');
       if (this.taken.includes(timing))
@@ -344,6 +325,15 @@ export class Sequence extends KeyChanger {
         'Identical time signatures on keyframes are not allowed on a single animation channel'
       );
     }
+  }
+  static passKeyframe(k: any | nestedKeyframe | valueKeyframe) {
+    if (k instanceof nestedKeyframe || k instanceof valueKeyframe) return k;
+    return this.is_value(k)
+      ? new valueKeyframe(k.value, k.timing, k.type)
+      : new nestedKeyframe(k.obj, k.timing, k.type);
+  }
+  static is_value(object: any): object is __valueKeyframe {
+    return 'val' in object;
   }
   public addKeyframe(
     /**
@@ -386,7 +376,7 @@ export class Sequence extends KeyChanger {
     }
   }
   protected reset(): void {
-    this.keyframes.forEach(k => this.run.push(this.passKeyframe(k)));
+    this.keyframes.forEach(k => this.run.push(k));
   }
   // public restart(): void in abstract parent class
   clone() {
@@ -396,10 +386,40 @@ export class Sequence extends KeyChanger {
 }
 
 export class ChannelSequence extends KeyChanger {
-  constructor(blocks: ChannelBlock[]) {
-    blocks.forEach(block => {});
-    super();
+  size: number;
+  start: number;
+  end: number;
+
+  constructor(public blocks: ChannelBlock[], easing: Preset = 'linear') {
+    let max = 1;
+    let min = 0;
+    const intervals = blocks.map(block => {
+      max = max < block.end() ? block.end() : max;
+      min = min > block.time() ? block.time() : min;
+      return [block.time(), block.end()];
+    });
+    let taken: [number, number][];
+    function inIntervals(val: number, intervals = taken) {
+      return intervals.some(interval => {
+        return val - interval[0] <= interval[1];
+      });
+    }
+    intervals.forEach(block => {
+      if (inIntervals(block[0], taken) && inIntervals(block[1], taken)) {
+        throw new Error('Sequences overlapping on the same channel!');
+      }
+    });
+    super(max, easing);
+    this.size = max - min;
+    this.start = min;
+    this.end = max;
   }
+  protected currentAsSequence(
+    object: nestedKeyframe,
+    progress: number,
+    end: number
+  ) {}
+  protected reset(): void {}
 }
 export class ChannelsTimeline extends KeyChanger {
   //AllRun? to all channels simultaneously
