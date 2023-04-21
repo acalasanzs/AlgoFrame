@@ -1,6 +1,6 @@
 // @ts-ignore
 import * as AF from './algoframe'; // * AlgoFrame 4.4.4
-import { Sequence, nestedKeyframe, valueKeyframe } from './modules/Timeline';
+import { Sequence, nestedKeyframe, valueKeyframe } from './modules/timeline';
 
 // Animation engine
 

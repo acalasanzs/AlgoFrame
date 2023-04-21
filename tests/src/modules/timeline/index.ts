@@ -1,8 +1,20 @@
-import { Preset, EasingFunctions, passPreset } from '../utils';
-
+import { Preset, EasingFunctions, passPreset } from '../../utils';
 // Classes
 
-export class _keyframe {
+export interface BaseKeyframe {
+  time(duration: number): number;
+}
+
+export interface ObjectKeyframe extends BaseKeyframe {
+  [x: string]: any;
+  obj: unknown;
+}
+export interface SimpleKeyframe extends BaseKeyframe {
+  [x: string]: any;
+  value: number;
+}
+
+export class _keyframe implements BaseKeyframe {
   static instances = 0;
   readonly id: number;
   public duration!: number;
@@ -33,7 +45,7 @@ export class _keyframe {
   }
 }
 
-export class valueKeyframe extends _keyframe {
+export class valueKeyframe extends _keyframe implements SimpleKeyframe {
   constructor(
     public value: number,
     timing: number,
@@ -45,7 +57,7 @@ export class valueKeyframe extends _keyframe {
   }
 }
 // unknown now but maybe a special kind of AlgoFrame + Timeline for nested sequencees! And must fit in the timeline keyframe
-export class nestedKeyframe extends _keyframe {
+export class nestedKeyframe extends _keyframe implements ObjectKeyframe {
   constructor(
     public obj: Sequence,
     timing: number,
@@ -55,30 +67,17 @@ export class nestedKeyframe extends _keyframe {
     super(timing, type, delay);
   }
 }
-//                                            seq   seq   seq
-//.repeat(times:number) in sequence |---------****-****---***----------|
-export class ChannelBlock extends _keyframe {
-  public size!: number;
-  // public timing: number = 0;
-  constructor(
-    public seq: Sequence,
-    delay?: number,
-    type: 'miliseconds' = 'miliseconds'
-  ) {
-    super(0, type, delay);
-    this.duration = seq.duration;
-  }
-  public end() {
-    return this.time() + this.duration;
-  }
-  public time() {
-    return super.time(this.duration);
-  }
-}
 
 // Enumerables
-type _simple = valueKeyframe[];
-type _nested = nestedKeyframe[];
+type SimpleKeyframes = BaseKeyframe[];
+type ComplexKeyframes = ObjectKeyframe[];
+
+export function isSimple(object: any): object is SimpleKeyframe {
+  return 'value' in object && object instanceof _keyframe;
+}
+export function isComplex(object: any): object is ObjectKeyframe {
+  return 'obj' in object && object instanceof _keyframe;
+}
 
 // Anonymous Interfaces
 export type __objectKeyframe = {
@@ -96,7 +95,7 @@ export type __valueKeyframe = {
   duration?: number;
 };
 
-abstract class KeyChanger<Keyframe extends _keyframe> {
+export abstract class KeyChanger<Keyframe extends _keyframe> {
   public duration: number;
   run: Keyframe[];
   next: Keyframe | null = null;
@@ -164,7 +163,7 @@ abstract class KeyChanger<Keyframe extends _keyframe> {
     progress: number,
     miliseconds: boolean = false,
     runAdaptative: boolean = false,
-    nextValue?: valueKeyframe
+    nextValue?: SimpleKeyframe
   ): number | undefined {
     progress = progress <= 1 ? progress : 1;
     let next = nextValue ? nextValue : this.next;
@@ -181,10 +180,7 @@ abstract class KeyChanger<Keyframe extends _keyframe> {
         this.nextTime(); //bug-proof
         next = this.next;
       }
-      if (
-        next instanceof valueKeyframe &&
-        this.current instanceof valueKeyframe
-      ) {
+      if (isSimple(next) && isSimple(this.current)) {
         progress = Math.min(
           this.easing(progress),
           miliseconds ? this.duration : 1
@@ -195,7 +191,7 @@ abstract class KeyChanger<Keyframe extends _keyframe> {
           progress < progress - a
             ? trace
             : (progress - this.current.time(1)) / a;
-        console.log(String([this.current.time(1), next.time(1)]));
+        // console.log(String([this.current.time(1), next.time(1)]));
         const lerp = KeyChanger.lerp(
           this.current.value,
           next.value,
@@ -204,13 +200,10 @@ abstract class KeyChanger<Keyframe extends _keyframe> {
         // debugger;
         // console.log(this.current, next);
         return lerp;
-      } else if (
-        next instanceof nestedKeyframe &&
-        this.current instanceof valueKeyframe
-      ) {
+      } else if (isComplex(next) && isSimple(this.current)) {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
         const nextValueFromObj = new valueKeyframe(
-          this.getAbsoluteStartValue(next.obj),
+          this.getAbsoluteStartValue(next.obj as Sequence),
           next.time(1),
           'ratio'
         );
@@ -222,10 +215,7 @@ abstract class KeyChanger<Keyframe extends _keyframe> {
           nextValueFromObj
           // this.next.obj.run[0].value
         );
-      } else if (
-        this.current instanceof nestedKeyframe &&
-        next instanceof nestedKeyframe
-      ) {
+      } else if (isComplex(this.current) && isComplex(next)) {
         // this.nextTime();
         // debugger;
         const res = this.currentAsSequence(
@@ -267,7 +257,9 @@ abstract class KeyChanger<Keyframe extends _keyframe> {
 // 1. Nested Sequence instances DONE
 //    Adaptative Sequence duration DONE
 // P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
-export class Sequence extends KeyChanger<valueKeyframe | nestedKeyframe> {
+
+export type normalKeyframes = valueKeyframe | nestedKeyframe;
+export class Sequence extends KeyChanger<normalKeyframes> {
   type: 'nested' | 'simple' = 'simple';
   taken: number[];
   constructor(
@@ -383,77 +375,6 @@ export class Sequence extends KeyChanger<valueKeyframe | nestedKeyframe> {
     let orig = this;
     return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
   }
-}
-
-export class ChannelSequence extends KeyChanger {
-  size: number;
-  start: number;
-  end: number;
-
-  constructor(public blocks: ChannelBlock[], easing: Preset = 'linear') {
-    let max = 1;
-    let min = 0;
-    const intervals = blocks.map(block => {
-      max = max < block.end() ? block.end() : max;
-      min = min > block.time() ? block.time() : min;
-      return [block.time(), block.end()];
-    });
-    let taken: [number, number][];
-    function inIntervals(val: number, intervals = taken) {
-      return intervals.some(interval => {
-        return val - interval[0] <= interval[1];
-      });
-    }
-    intervals.forEach(block => {
-      if (inIntervals(block[0], taken) && inIntervals(block[1], taken)) {
-        throw new Error('Sequences overlapping on the same channel!');
-      }
-    });
-    super(max, easing);
-    this.size = max - min;
-    this.start = min;
-    this.end = max;
-  }
-  protected currentAsSequence(
-    object: nestedKeyframe,
-    progress: number,
-    end: number
-  ) {}
-  protected reset(): void {}
-}
-export class ChannelsTimeline extends KeyChanger {
-  //AllRun? to all channels simultaneously
-  // Return a nested object of all the results in a given time?
-  // So in that case, call every AlgoFrame Sequence/timeline better.
-  constructor(
-    duration: number,
-    public channels: ChannelSequence[], // Main sequences means a whole channel, but all must have the same length in miliseconds. If not, all will be extended to the largest one.
-    easing: Preset = 'linear'
-  ) {
-    super(duration, easing);
-    // All sequences, if not overlaping, return that: undefined, which won't be called on its own Sequence.callback
-    //
-    const toMaxDuration: Sequence[] = [];
-    const maxDuration = channels.reduce(
-      (prev: number, cur: ChannelSequence) => {
-        if (cur.seq.adaptative) {
-          toMaxDuration.push(cur.seq);
-          return prev;
-        }
-        return prev < cur.seq.duration ? cur.seq.duration : prev;
-      },
-      1
-    );
-
-    // All channels with the same length
-    channels.forEach(channel => {
-      if (channel.duration < maxDuration) {
-        channel.enlarge(maxDuration - channel.duration);
-      }
-    });
-  }
-  protected currentAsSequence(object: nestedKeyframe, progress: number) {}
-  protected reset(): void {}
 }
 
 function ratioAndMilisecons(
