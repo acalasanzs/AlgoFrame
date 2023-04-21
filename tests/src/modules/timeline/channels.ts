@@ -51,17 +51,19 @@ export class ChannelSequence extends KeyChanger<ChannelBlock> {
         throw new Error('Sequences overlapping on the same channel!');
       }
     });
+    blocks.forEach(b => this.run.push(b));
     super(max, easing);
     this.size = max - min;
     this.start = min;
     this.end = max;
   }
-  protected currentAsSequence(
-    object: nestedKeyframe,
-    progress: number,
-    end: number
-  ) {}
-  protected reset(): void {}
+  protected reset(): void {
+    this.blocks.forEach(k => this.run.push(k));
+  }
+  clone() {
+    let orig = this;
+    return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
+  }
 }
 export class ChannelsTimeline {
   //AllRun? to all channels simultaneously
