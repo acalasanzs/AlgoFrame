@@ -16,4 +16,7 @@ const second = new Sequence(1000, [
   new nestedKeyframe(first.clone(), 1, 'ratio'),
 ]);
 
-console.log(new ChannelBlock(second, 100).end());
+// console.log(new ChannelBlock(second, 100).end());
+console.log(second.duration);
+second.addKeyframe(new valueKeyframe(4444, 1001, 'miliseconds'));
+console.log(second.duration);

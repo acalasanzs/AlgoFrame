@@ -8,7 +8,8 @@ export function timeIntervals(blocks: _keyframe[]) {
     min = min > block.time() ? block.time() : min;
     return [block.time(), block.end()];
   });
-  let taken: [number, number][];
+  let taken: number[][] = [intervals[0]];
+  intervals.shift();
   function inIntervals(val: number, intervals = taken) {
     return intervals.some(interval => {
       return val - interval[0] <= interval[1];
@@ -60,17 +61,20 @@ export class _keyframe implements BaseKeyframe {
     public hold: boolean = false
   ) {
     this.id = _keyframe.instances++;
+    if (this.type === 'miliseconds') {
+      this.duration = 0;
+    }
   }
   public time(duration: number = this.duration): number {
     if (this.delay) {
-      if (!this.duration)
+      if (typeof this.duration !== 'number')
         throw new Error('Keyframe with delay has to have duration setted');
       this.timing =
         this.type === 'ratio'
           ? ratioAndMilisecons(this.timing, this.delay!, this.duration!)
           : this.timing + this.delay!;
     }
-    if (!this.duration)
+    if (typeof this.duration !== 'number')
       throw new Error(
         'Need to set this.duration to each keyframe in the keyframes manager'
       );
