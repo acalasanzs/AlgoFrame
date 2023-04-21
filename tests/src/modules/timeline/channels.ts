@@ -63,26 +63,25 @@ export class ChannelSequence extends KeyChanger<ChannelBlock> {
   ) {}
   protected reset(): void {}
 }
-export class ChannelsTimeline extends KeyChanger<ChannelSequence> {
+export class ChannelsTimeline {
   //AllRun? to all channels simultaneously
   // Return a nested object of all the results in a given time?
   // So in that case, call every AlgoFrame Sequence/timeline better.
   constructor(
-    duration: number,
+    public duration: number,
     public channels: ChannelSequence[], // Main sequences means a whole channel, but all must have the same length in miliseconds. If not, all will be extended to the largest one.
-    easing: Preset = 'linear'
+    public easing: Preset = 'linear'
   ) {
-    super(duration, easing);
     // All sequences, if not overlaping, return that: undefined, which won't be called on its own Sequence.callback
     //
     const toMaxDuration: Sequence[] = [];
     const maxDuration = channels.reduce(
       (prev: number, cur: ChannelSequence) => {
-        if (cur.seq.adaptative) {
-          toMaxDuration.push(cur.seq);
+        if (cur.adaptative) {
+          toMaxDuration.push(cur);
           return prev;
         }
-        return prev < cur.seq.duration ? cur.seq.duration : prev;
+        return prev < cur.duration ? cur.duration : prev;
       },
       1
     );
