@@ -6,6 +6,7 @@ import {
   nestedKeyframe,
 } from '.';
 import { Preset } from '../../utils';
+import { timeIntervals } from './utils';
 
 //                                            seq   seq   seq
 //.repeat(times:number) in sequence |---------****-****---***----------|
@@ -33,24 +34,7 @@ export class ChannelSequence extends KeyChanger<ChannelBlock> {
   end: number;
 
   constructor(public blocks: ChannelBlock[], easing: Preset = 'linear') {
-    let max = 1;
-    let min = 0;
-    const intervals = blocks.map(block => {
-      max = max < block.end() ? block.end() : max;
-      min = min > block.time() ? block.time() : min;
-      return [block.time(), block.end()];
-    });
-    let taken: [number, number][];
-    function inIntervals(val: number, intervals = taken) {
-      return intervals.some(interval => {
-        return val - interval[0] <= interval[1];
-      });
-    }
-    intervals.forEach(block => {
-      if (inIntervals(block[0], taken) && inIntervals(block[1], taken)) {
-        throw new Error('Sequences overlapping on the same channel!');
-      }
-    });
+    const { max, min } = timeIntervals(blocks);
     blocks.forEach(b => this.run.push(b));
     super(max, easing);
     this.size = max - min;

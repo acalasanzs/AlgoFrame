@@ -1,4 +1,27 @@
 import { KeyChanger, Sequence } from '.';
+
+export function timeIntervals(blocks: _keyframe[]) {
+  let max = 1;
+  let min = 0;
+  const intervals = blocks.map(block => {
+    max = max < block.end() ? block.end() : max;
+    min = min > block.time() ? block.time() : min;
+    return [block.time(), block.end()];
+  });
+  let taken: [number, number][];
+  function inIntervals(val: number, intervals = taken) {
+    return intervals.some(interval => {
+      return val - interval[0] <= interval[1];
+    });
+  }
+  intervals.forEach(block => {
+    if (inIntervals(block[0], taken) && inIntervals(block[1], taken)) {
+      throw new Error('Sequences overlapping on the same channel!');
+    }
+  });
+  return { max, min };
+}
+
 export function ratioAndMilisecons(
   ratio: number,
   miliseconds: number,
@@ -14,6 +37,7 @@ export function ratioAndMilisecons(
 }
 export interface BaseKeyframe {
   time(duration: number): number;
+  end(duration: number): number;
 }
 
 export interface ObjectKeyframe extends BaseKeyframe {
@@ -37,7 +61,7 @@ export class _keyframe implements BaseKeyframe {
   ) {
     this.id = _keyframe.instances++;
   }
-  time(duration: number): number {
+  public time(duration: number = this.duration): number {
     if (this.delay) {
       if (!this.duration)
         throw new Error('Keyframe with delay has to have duration setted');
@@ -53,6 +77,9 @@ export class _keyframe implements BaseKeyframe {
     return this.type === 'miliseconds'
       ? this.timing / (this.duration / duration)
       : duration * this.timing;
+  }
+  public end(duration: number = this.duration) {
+    return this.time(duration) + this.duration;
   }
 }
 

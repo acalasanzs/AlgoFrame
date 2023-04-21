@@ -9,6 +9,7 @@ import {
   SimpleKeyframe,
   isComplex,
   isSimple,
+  timeIntervals,
 } from './utils';
 export * from './utils';
 // Classes
@@ -266,6 +267,10 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       | valueKeyframe
       | nestedKeyframe
   ): Sequence {
+    const temp = [...this.run];
+    temp.push(Sequence.passKeyframe(keyframe));
+    const { max: duration } = timeIntervals(temp);
+    this.duration = duration;
     return this;
   }
   public replaceKeyframe(
