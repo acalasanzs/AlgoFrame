@@ -18,5 +18,7 @@ const second = new Sequence(1000, [
 
 // console.log(new ChannelBlock(second, 100).end());
 console.log(second.duration);
-second.addKeyframe(new valueKeyframe(4444, 1001, 'miliseconds'));
+second.addKeyframe(new valueKeyframe(4444, 1001, 'miliseconds', 200));
+second.addKeyframe(new valueKeyframe(4444, 1202, 'miliseconds', 200));
+second.addKeyframe(new valueKeyframe(4444, 1403, 'miliseconds', 200));
 console.log(second.duration);

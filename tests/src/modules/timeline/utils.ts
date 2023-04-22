@@ -3,10 +3,20 @@ import { KeyChanger, Sequence } from '.';
 export function timeIntervals(blocks: _keyframe[]) {
   let max = 1;
   let min = 0;
-  const intervals = blocks.map(block => {
-    max = max < block.end() ? block.end() : max;
-    min = min > block.time() ? block.time() : min;
-    return [block.time(), block.end()];
+  const intervals = blocks.map((block, i) => {
+    let kDuration = 0;
+    function tstart(block: _keyframe) {
+      return block.start ? block.start : 0 + block.time();
+    }
+    const start = tstart(block);
+    const end = block.end();
+    if (blocks[i + 1]) {
+      kDuration = tstart(blocks[i + 1]) - end;
+      console.log(kDuration);
+    }
+    max = max < end ? end : max;
+    min = min > start ? start : min;
+    return [start, end + kDuration];
   });
   let taken: number[][] = [intervals[0]];
   intervals.shift();
@@ -15,9 +25,13 @@ export function timeIntervals(blocks: _keyframe[]) {
       return val - interval[0] <= interval[1];
     });
   }
-  intervals.forEach(block => {
+  intervals.forEach((block, i) => {
+    taken.push(block);
     if (inIntervals(block[0], taken) && inIntervals(block[1], taken)) {
-      throw new Error('Sequences overlapping on the same channel!');
+      console.log(block, taken);
+      throw new Error(
+        'Sequences/_keyframe(s) overlapping on the same channel!'
+      );
     }
   });
   return { max, min };
@@ -58,18 +72,23 @@ export class _keyframe implements BaseKeyframe {
     public timing: number,
     public type: 'ratio' | 'miliseconds' = 'ratio',
     public delay?: number,
-    public hold: boolean = false
+    public hold: boolean = false,
+    public start: number = 0
   ) {
+    if (start < 0) {
+      throw new RangeError('Negative start times are not implemented yet');
+    }
     this.id = _keyframe.instances++;
     if (this.type === 'miliseconds') {
       this.duration = 0;
     }
   }
   public time(duration: number = this.duration): number {
+    let timing = this.timing;
     if (this.delay) {
       if (typeof this.duration !== 'number')
         throw new Error('Keyframe with delay has to have duration setted');
-      this.timing =
+      timing =
         this.type === 'ratio'
           ? ratioAndMilisecons(this.timing, this.delay!, this.duration!)
           : this.timing + this.delay!;
@@ -79,11 +98,11 @@ export class _keyframe implements BaseKeyframe {
         'Need to set this.duration to each keyframe in the keyframes manager'
       );
     return this.type === 'miliseconds'
-      ? this.timing / (this.duration / duration)
-      : duration * this.timing;
+      ? timing / (this.duration === 0 ? 1 : this.duration / duration)
+      : duration * timing;
   }
   public end(duration: number = this.duration) {
-    return this.time(duration) + this.duration;
+    return this.time(duration) + this.start;
   }
 }
 

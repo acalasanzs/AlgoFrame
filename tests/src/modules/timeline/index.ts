@@ -267,9 +267,8 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       | valueKeyframe
       | nestedKeyframe
   ): Sequence {
-    const temp = [...this.run];
-    temp.push(Sequence.passKeyframe(keyframe));
-    const { max: duration } = timeIntervals(temp);
+    this.run.push(Sequence.passKeyframe(keyframe));
+    const { max: duration } = timeIntervals(this.run);
     this.duration = duration;
     return this;
   }

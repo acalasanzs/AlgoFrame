@@ -15,14 +15,15 @@ export class ChannelBlock extends _keyframe implements ObjectKeyframe {
   // public timing: number = 0;
   constructor(
     public obj: Sequence,
+    start: number,
     delay?: number,
     type: 'miliseconds' = 'miliseconds'
   ) {
-    super(0, type, delay);
+    super(0, type, delay, undefined, start);
     this.duration = obj.duration;
   }
   public end() {
-    return this.time() + this.duration;
+    return this.time() + this.start;
   }
   public time() {
     return super.time(this.duration);
