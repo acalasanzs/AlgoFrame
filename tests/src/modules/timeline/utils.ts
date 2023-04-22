@@ -11,7 +11,7 @@ export function timeIntervals(blocks: _keyframe[]) {
     const start = tstart(block);
     const end = block.end();
     if (blocks[i + 1]) {
-      kDuration = tstart(blocks[i + 1]) - end;
+      kDuration = tstart(blocks[i + 1]) - end - 1;
       console.log(kDuration);
     }
     max = max < end ? end : max;
@@ -19,20 +19,23 @@ export function timeIntervals(blocks: _keyframe[]) {
     return [start, end + kDuration];
   });
   let taken: number[][] = [intervals[0]];
-  intervals.shift();
+  console.log(intervals);
   function inIntervals(val: number, intervals = taken) {
     return intervals.some(interval => {
-      return val - interval[0] <= interval[1];
+      return val - interval[0] >= interval[1];
     });
   }
-  intervals.forEach((block, i) => {
-    taken.push(block);
+  intervals.slice(1).forEach((block, i) => {
+    if (block[0] === block[1]) return;
+    console.log(i);
     if (inIntervals(block[0], taken) && inIntervals(block[1], taken)) {
-      console.log(block, taken);
+      console.log(block);
+      console.log(taken);
       throw new Error(
         'Sequences/_keyframe(s) overlapping on the same channel!'
       );
     }
+    taken.push(block);
   });
   return { max, min };
 }
