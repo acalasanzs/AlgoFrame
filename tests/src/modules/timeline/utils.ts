@@ -18,33 +18,9 @@ export function timeIntervals(blocks: _keyframe[]) {
       }
     }
     const end = block.start ? block.start : 0 + time + kDuration;
-    debugger;
     max = max < end ? end : max;
     min = min > time ? time : min;
     return [time, end];
-  });
-  console.log(intervals);
-  return { max, min };
-  throw new Error();
-  intervals.pop();
-  let taken: number[][] = [intervals[intervals.length - 1]];
-  console.log(intervals, 'intervals');
-  function inIntervals(val: number, intervals = taken) {
-    return intervals.some(interval => {
-      return val >= interval[0];
-    });
-  }
-  intervals.reverse().forEach((block, i) => {
-    if (i === 1 - 1) return;
-    console.log(i, 'i reversed');
-    if (inIntervals(block[0], taken)) {
-      console.log(block, 'block');
-      console.log(taken, 'taken');
-      throw new Error(
-        'Sequences/_keyframe(s) overlapping on the same channel!'
-      );
-    }
-    taken.push(block);
   });
   return { max, min };
 }

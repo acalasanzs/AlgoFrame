@@ -123,7 +123,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
         const lerp = KeyChanger.lerp(
           this.current.value,
           next.value,
-          next.hold ? kProgress : 0
+          next.hold ? 0 : kProgress
         );
         // debugger;
         // console.log(this.current, next);
