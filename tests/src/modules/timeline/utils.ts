@@ -3,34 +3,43 @@ import { KeyChanger, Sequence } from '.';
 export function timeIntervals(blocks: _keyframe[]) {
   let max = 1;
   let min = 0;
+  console.log(blocks.map(b => b.time()));
   const intervals = blocks.map((block, i) => {
     let kDuration = 0;
     function tstart(block: _keyframe) {
       return block.start ? block.start : 0 + block.time();
     }
     const start = tstart(block);
-    const end = block.end();
-    if (blocks[i + 1]) {
-      kDuration = tstart(blocks[i + 1]) - end - 1;
-      console.log(kDuration);
+    const end = block.start ? block.start : 0 + block.end();
+    if (i < blocks.length - 1) {
+      kDuration = tstart(blocks[i + 1]) - end;
+      kDuration -= kDuration > 1 ? 1 : 0;
+      if (end + kDuration >= tstart(blocks[i + 1])) {
+        throw new Error(
+          'Sequences/_keyframe(s) overlapping on the same channel!'
+        );
+      }
     }
     max = max < end ? end : max;
     min = min > start ? start : min;
+    console.log(block.time(), block.end(), block.start);
     return [start, end + kDuration];
   });
-  let taken: number[][] = [intervals[0]];
-  console.log(intervals);
+  throw intervals;
+  intervals.pop();
+  let taken: number[][] = [intervals[intervals.length - 1]];
+  console.log(intervals, 'intervals');
   function inIntervals(val: number, intervals = taken) {
     return intervals.some(interval => {
-      return val - interval[0] >= interval[1];
+      return val >= interval[0];
     });
   }
-  intervals.slice(1).forEach((block, i) => {
-    if (block[0] === block[1]) return;
-    console.log(i);
-    if (inIntervals(block[0], taken) && inIntervals(block[1], taken)) {
-      console.log(block);
-      console.log(taken);
+  intervals.reverse().forEach((block, i) => {
+    if (i === 1 - 1) return;
+    console.log(i, 'i reversed');
+    if (inIntervals(block[0], taken)) {
+      console.log(block, 'block');
+      console.log(taken, 'taken');
       throw new Error(
         'Sequences/_keyframe(s) overlapping on the same channel!'
       );
@@ -74,7 +83,7 @@ export class _keyframe implements BaseKeyframe {
   constructor(
     public timing: number,
     public type: 'ratio' | 'miliseconds' = 'ratio',
-    public delay?: number,
+    public delay: number = 0,
     public hold: boolean = false,
     public start: number = 0
   ) {
@@ -91,10 +100,10 @@ export class _keyframe implements BaseKeyframe {
     if (this.delay) {
       if (typeof this.duration !== 'number')
         throw new Error('Keyframe with delay has to have duration setted');
-      timing =
+      this.timing =
         this.type === 'ratio'
-          ? ratioAndMilisecons(this.timing, this.delay!, this.duration!)
-          : this.timing + this.delay!;
+          ? ratioAndMilisecons(timing, this.delay!, this.duration!)
+          : timing + this.delay!;
     }
     if (typeof this.duration !== 'number')
       throw new Error(
@@ -105,7 +114,7 @@ export class _keyframe implements BaseKeyframe {
       : duration * timing;
   }
   public end(duration: number = this.duration) {
-    return this.time(duration) + this.start;
+    return this.time(duration) + this.delay;
   }
 }
 
