@@ -3,29 +3,29 @@ import { KeyChanger, Sequence } from '.';
 export function timeIntervals(blocks: _keyframe[]) {
   let max = 1;
   let min = 0;
-  console.log(blocks.map(b => b.time()));
   const intervals = blocks.map((block, i) => {
     let kDuration = 0;
     function tstart(block: _keyframe) {
       return block.start ? block.start : 0 + block.time();
     }
-    const start = tstart(block);
-    const end = block.start ? block.start : 0 + block.end();
+    const time = tstart(block);
     if (i < blocks.length - 1) {
-      kDuration = tstart(blocks[i + 1]) - end;
-      kDuration -= kDuration > 1 ? 1 : 0;
-      if (end + kDuration >= tstart(blocks[i + 1])) {
+      kDuration = tstart(blocks[i + 1]) - time - 1;
+      if (kDuration < block.delay) {
         throw new Error(
           'Sequences/_keyframe(s) overlapping on the same channel!'
         );
       }
     }
+    const end = block.start ? block.start : 0 + time + kDuration;
+    debugger;
     max = max < end ? end : max;
-    min = min > start ? start : min;
-    console.log(block.time(), block.end(), block.start);
-    return [start, end + kDuration];
+    min = min > time ? time : min;
+    return [time, end];
   });
-  throw intervals;
+  console.log(intervals);
+  return { max, min };
+  throw new Error();
   intervals.pop();
   let taken: number[][] = [intervals[intervals.length - 1]];
   console.log(intervals, 'intervals');
@@ -64,7 +64,6 @@ export function ratioAndMilisecons(
 }
 export interface BaseKeyframe {
   time(duration: number): number;
-  end(duration: number): number;
 }
 
 export interface ObjectKeyframe extends BaseKeyframe {
@@ -100,7 +99,7 @@ export class _keyframe implements BaseKeyframe {
     if (this.delay) {
       if (typeof this.duration !== 'number')
         throw new Error('Keyframe with delay has to have duration setted');
-      this.timing =
+      timing =
         this.type === 'ratio'
           ? ratioAndMilisecons(timing, this.delay!, this.duration!)
           : timing + this.delay!;
@@ -112,9 +111,6 @@ export class _keyframe implements BaseKeyframe {
     return this.type === 'miliseconds'
       ? timing / (this.duration === 0 ? 1 : this.duration / duration)
       : duration * timing;
-  }
-  public end(duration: number = this.duration) {
-    return this.time(duration) + this.delay;
   }
 }
 

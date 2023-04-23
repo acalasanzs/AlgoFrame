@@ -1,4 +1,9 @@
-import { nestedKeyframe, Sequence, valueKeyframe } from './modules/timeline';
+import {
+  _keyframe,
+  nestedKeyframe,
+  Sequence,
+  valueKeyframe,
+} from './modules/timeline';
 import { ChannelBlock } from './modules/timeline/channels';
 const basic = new Sequence(false, [
   new valueKeyframe(2222, 0, 'ratio'),
@@ -18,9 +23,13 @@ const second = new Sequence(1000, [
 
 // console.log(new ChannelBlock(second, 100).end());
 console.log(second.duration);
-function display(block) {
-  console.log(block.time(), block.end(), block.start, 'a');
+function display(block: _keyframe) {
+  console.log(block.time(), 'unknown next keyframe', block.start, 'a');
 }
-second.addKeyframe(new valueKeyframe(4444, 1001, 'miliseconds', 200));
-
+const nK = new valueKeyframe(4444, 1001, 'miliseconds', 200);
+display(nK);
+display(nK);
+display(nK);
+second.addKeyframe(nK);
+second.addKeyframe(new valueKeyframe(4444, 1201, 'miliseconds', 200));
 console.log(second.duration);
