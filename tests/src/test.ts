@@ -52,7 +52,7 @@ const custom = 3 || 12;
 const getNewK = ({ duration }: { duration: number }) =>
   new valueKeyframe(4444, duration + 1, 'miliseconds', 200);
 for (let i = 0; i < custom; i++) {
-  second.addKeyframe(getNewK(second));
+  second.addKeyframes(getNewK(second));
 }
 
 second.reset();
@@ -61,8 +61,12 @@ console.log(
   'duration',
   second.keyframes.map(k => [k.time(1), k.duration])
 );
-// console.log(second.addKeyframe(getNewK({ duration: second.duration + 200 })));
-// second.transpose(second.clone());
-// console.log(second.keyframes);
+console.log(
+  second
+    .addKeyframes(getNewK({ duration: second.duration + 200 }))
+    .keyframes.map(k => [k.time(1), k.duration])
+);
+second.extendToSequence(second.clone());
+console.log(second.keyframes.map(k => [k.time(1), k.duration]));
 // keyframes deep clone
 // start(second);

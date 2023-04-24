@@ -274,7 +274,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   static is_value(object: any): object is __valueKeyframe {
     return 'val' in object;
   }
-  public addKeyframe(
+  public addKeyframes(
     /**
      * Adds a new keyframe to the entire set,
      *
@@ -283,14 +283,12 @@ export class Sequence extends KeyChanger<normalKeyframes> {
      *
      * @param keyframe - A valid AlgoFrame's keyframe object
      */
-    keyframe:
-      | __valueKeyframe
-      | __objectKeyframe
-      | valueKeyframe
-      | nestedKeyframe
+    ...keyframes: normalKeyframes[]
   ): Sequence {
-    const nkeyframe = Sequence.passKeyframe(keyframe);
-    this.keyframes.push(nkeyframe);
+    keyframes.forEach(keyframe => {
+      const nkeyframe = Sequence.passKeyframe(keyframe);
+      this.keyframes.push(nkeyframe);
+    });
     const { max: duration } = timeIntervals(this.keyframes);
     this.keyframes.forEach(k => {
       if (k.type == 'ratio') {
@@ -302,14 +300,13 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     this.init(this.keyframes);
     return this;
   }
-  public transpose(seq: Sequence): Sequence {
-    console.log(
-      seq.keyframes.map(x => x.time(1000)),
-      this.duration,
-      seq
-    );
-    seq.keyframes.forEach(x => (x.timing = x.time(this.duration / x.duration)));
-    console.log(seq.keyframes.map(x => x.time(1000)));
+  public extendToSequence(seq: Sequence) {
+    seq.keyframes.forEach(k => {
+      k.timing = (k.timing * this.duration) / k.duration;
+      k.duration += this.duration;
+    });
+    console.log(seq.keyframes.map(k => [k.time(1), k.duration]));
+    this.addKeyframes(...seq.keyframes);
     return this;
   }
   public reset(): void {
