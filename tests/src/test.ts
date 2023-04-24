@@ -38,7 +38,8 @@ function animate() {
       second
     );
     animation.run(
-      (b, a) => console.log(b, (a * 100).toFixed(0)),
+      (b: number, a: number, c: { timestamp: number }) =>
+        console.log(b, (a * 100).toFixed(0), c.timestamp - global.delay),
       'Animation ' + number
     );
   };
@@ -47,12 +48,13 @@ const start = animate();
 // console.log(new ChannelBlock(second, 100).end());
 console.log(second.duration);
 
-start(second);
-const custom = 1 || 3 || 12;
+const custom = 3 || 12;
 
 for (let i = 0; i < custom; i++) {
   second.addKeyframe(
     new valueKeyframe(4444, second.duration + 1, 'miliseconds', 200)
   );
 }
-console.log(second.duration);
+second.restart();
+console.log(second);
+start(second);

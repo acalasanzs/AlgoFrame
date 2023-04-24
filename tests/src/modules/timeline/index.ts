@@ -64,9 +64,11 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     this.run.shift();
   }
   protected abstract reset(): void;
+  protected abstract init(keyframes: Keyframe[]): void;
   public restart() {
     while (this.run.length) this.run.pop();
     this.reset();
+    this.init(this.run);
   }
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
   protected currentAsSequence(
@@ -186,7 +188,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
 export type normalKeyframes = valueKeyframe | nestedKeyframe;
 export class Sequence extends KeyChanger<normalKeyframes> {
   type: 'nested' | 'simple' = 'simple';
-  taken: number[];
+  taken: number[] = [];
   constructor(
     duration: number | false,
     public keyframes: (valueKeyframe | nestedKeyframe)[],
@@ -194,7 +196,10 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     public callback: Function | null = null
   ) {
     super(duration, easing);
+    this.init(keyframes);
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
+  }
+  protected init(keyframes: typeof this.keyframes) {
     this.taken = [];
     const zero = keyframes[0];
     const final = keyframes[keyframes.length - 1];
@@ -267,8 +272,8 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       | valueKeyframe
       | nestedKeyframe
   ): Sequence {
-    this.run.push(Sequence.passKeyframe(keyframe));
-    const { max: duration } = timeIntervals(this.run);
+    this.keyframes.push(Sequence.passKeyframe(keyframe));
+    const { max: duration } = timeIntervals(this.keyframes);
     this.duration = duration;
     return this;
   }
