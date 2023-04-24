@@ -10,6 +10,7 @@ import {
   isComplex,
   isSimple,
   timeIntervals,
+  propertyOf,
 } from './utils';
 export * from './utils';
 // Classes
@@ -178,6 +179,22 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     }
     return last;
   }
+  protected clone(keyframes_property: keyof this) {
+    const clone = Object.assign(
+      Object.create(Object.getPrototypeOf(this)),
+      this
+    );
+    clone.reset();
+    const keyframes = clone[keyframes_property].map((k: Keyframe) => {
+      if (isComplex(k)) (k.obj as typeof this).clone(keyframes_property);
+      return k;
+    });
+    console.log(keyframes);
+    while (clone.keyframes.length) clone.keyframes.pop();
+    clone.keyframes = keyframes;
+    clone.restart();
+    return clone;
+  }
 }
 
 // TODO:
@@ -277,21 +294,21 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     this.duration = duration;
     return this;
   }
-  public replaceKeyframe(
-    keyframe:
-      | __valueKeyframe
-      | __objectKeyframe
-      | valueKeyframe
-      | nestedKeyframe
-  ): Sequence {
+  public transpose(keyframes: Sequence): Sequence {
+    console.log(
+      keyframes.keyframes.map(x => x.time(1000)),
+      this.duration,
+      keyframes
+    );
+    keyframes.keyframes.forEach(x => (x.timing = x.time(1 / x.duration)));
+    console.log(keyframes.keyframes.map(x => x.time(1000)));
     return this;
   }
   protected reset(): void {
     this.keyframes.forEach(k => this.run.push(k));
   }
   // public restart(): void in abstract parent class
-  clone() {
-    let orig = this;
-    return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
+  public clone() {
+    super.clone(propertyOf<this>('keyframes'));
   }
 }

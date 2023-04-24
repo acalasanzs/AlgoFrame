@@ -1,5 +1,9 @@
 import { KeyChanger, Sequence } from '.';
 
+export function propertyOf<TObj>(name: keyof TObj) {
+  return name;
+}
+
 export function timeIntervals(blocks: _keyframe[]) {
   let max = 1;
   let min = 0;

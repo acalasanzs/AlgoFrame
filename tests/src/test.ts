@@ -56,5 +56,8 @@ for (let i = 0; i < custom; i++) {
   );
 }
 second.restart();
-console.log(second);
-start(second);
+console.log(second.keyframes);
+console.log(second.clone().keyframes);
+// second.transpose(second.clone());
+// keyframes deep clone
+// start(second);
