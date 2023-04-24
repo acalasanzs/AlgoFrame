@@ -49,15 +49,15 @@ const start = animate();
 console.log(second.duration);
 
 const custom = 3 || 12;
-
+const getNewK = ({ duration }: { duration: number }) =>
+  new valueKeyframe(4444, duration + 1, 'miliseconds', 200);
 for (let i = 0; i < custom; i++) {
-  second.addKeyframe(
-    new valueKeyframe(4444, second.duration + 1, 'miliseconds', 200)
-  );
+  second.addKeyframe(getNewK(second));
 }
-second.restart();
-console.log(second.keyframes);
-console.log(second.clone().keyframes);
+
+second.reset();
+console.log(second);
+console.log(second.addKeyframe(getNewK({ duration: second.duration + 200 })));
 // second.transpose(second.clone());
 // keyframes deep clone
 // start(second);

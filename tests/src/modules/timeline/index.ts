@@ -11,6 +11,7 @@ import {
   isSimple,
   timeIntervals,
   propertyOf,
+  BaseKeyframe,
 } from './utils';
 export * from './utils';
 // Classes
@@ -18,10 +19,10 @@ export * from './utils';
 export abstract class KeyChanger<Keyframe extends _keyframe> {
   public duration: number;
   run: Keyframe[];
+  keyframes!: Keyframe[];
   next: Keyframe | null = null;
   current: Keyframe | null = null;
   public adaptative: boolean = false;
-  keyframes?: Keyframe[];
   easing: (t: number) => number;
 
   constructor(duration: number | false, easing: Preset = 'linear') {
@@ -60,17 +61,12 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
           ) || this.current;
       // console.log(this.current?.time(1), this.next.time(1), this.run);
     } else {
-      this.restart();
+      this.reset();
     }
     this.run.shift();
   }
-  protected abstract reset(): void;
+  public abstract reset(): void;
   protected abstract init(keyframes: Keyframe[]): void;
-  public restart() {
-    while (this.run.length) this.run.pop();
-    this.reset();
-    this.init(this.run);
-  }
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
   protected currentAsSequence(
     object: ObjectKeyframe,
@@ -179,20 +175,17 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     }
     return last;
   }
-  protected clone(keyframes_property: keyof this) {
+  protected clone(keyframes_property: keyof this): any {
     const clone = Object.assign(
       Object.create(Object.getPrototypeOf(this)),
       this
     );
-    clone.reset();
     const keyframes = clone[keyframes_property].map((k: Keyframe) => {
       if (isComplex(k)) (k.obj as typeof this).clone(keyframes_property);
       return k;
     });
-    console.log(keyframes);
-    while (clone.keyframes.length) clone.keyframes.pop();
     clone.keyframes = keyframes;
-    clone.restart();
+    clone.reset();
     return clone;
   }
 }
@@ -279,7 +272,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
      * Adds a new keyframe to the entire set,
      *
      * @remarks
-     * To apply new keyframes, must do .restart() before
+     * To apply new keyframes, must do .reset() before
      *
      * @param keyframe - A valid AlgoFrame's keyframe object
      */
@@ -304,11 +297,11 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     console.log(keyframes.keyframes.map(x => x.time(1000)));
     return this;
   }
-  protected reset(): void {
+  public reset(): void {
     this.keyframes.forEach(k => this.run.push(k));
   }
-  // public restart(): void in abstract parent class
-  public clone() {
-    super.clone(propertyOf<this>('keyframes'));
+  // public reset(): void in abstract parent class
+  public clone(): Sequence {
+    return super.clone(propertyOf<this>('keyframes'));
   }
 }
