@@ -81,13 +81,14 @@ export class _keyframe implements BaseKeyframe {
         throw new Error('Keyframe with delay has to have duration setted');
       timing =
         this.type === 'ratio'
-          ? ratioAndMilisecons(timing, this.delay!, this.duration!)
+          ? ratioAndMilisecons(timing, this.delay, this.duration)
           : timing + this.delay!;
     }
     if (typeof this.duration !== 'number')
       throw new Error(
         'Need to set this.duration to each keyframe in the keyframes manager'
       );
+    // if (this.type === 'miliseconds' && !this.duration) console.log(this);
     return this.type === 'miliseconds'
       ? timing / (this.duration === 0 ? 1 : this.duration / duration)
       : duration * timing;

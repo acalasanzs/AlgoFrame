@@ -46,7 +46,7 @@ function animate() {
 }
 const start = animate();
 // console.log(new ChannelBlock(second, 100).end());
-console.log(second.duration);
+console.log(second, second.duration, 'duration');
 
 const custom = 3 || 12;
 const getNewK = ({ duration }: { duration: number }) =>
@@ -56,8 +56,13 @@ for (let i = 0; i < custom; i++) {
 }
 
 second.reset();
-console.log(second);
-console.log(second.addKeyframe(getNewK({ duration: second.duration + 200 })));
+console.log(
+  second.duration,
+  'duration',
+  second.keyframes.map(k => [k.time(1), k.duration])
+);
+// console.log(second.addKeyframe(getNewK({ duration: second.duration + 200 })));
 // second.transpose(second.clone());
+// console.log(second.keyframes);
 // keyframes deep clone
 // start(second);

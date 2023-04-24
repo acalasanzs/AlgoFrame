@@ -210,6 +210,12 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
   }
   protected init(keyframes: typeof this.keyframes) {
+    keyframes.forEach(k => {
+      if (k.type == 'ratio') {
+        k.timing = k.timing * this.duration;
+        k.type = 'miliseconds';
+      }
+    });
     this.taken = [];
     const zero = keyframes[0];
     const final = keyframes[keyframes.length - 1];
@@ -235,6 +241,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       this.keyframes.push(last);
       this.run.push(last);
     }
+
     this.keyframes.forEach((k: any, i) => {
       k.duration = this.duration;
       k = k;
@@ -282,19 +289,27 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       | valueKeyframe
       | nestedKeyframe
   ): Sequence {
-    this.keyframes.push(Sequence.passKeyframe(keyframe));
+    const nkeyframe = Sequence.passKeyframe(keyframe);
+    this.keyframes.push(nkeyframe);
     const { max: duration } = timeIntervals(this.keyframes);
+    this.keyframes.forEach(k => {
+      if (k.type == 'ratio') {
+        k.timing = k.timing * duration;
+        k.type = 'miliseconds';
+      }
+    });
     this.duration = duration;
+    this.init(this.keyframes);
     return this;
   }
-  public transpose(keyframes: Sequence): Sequence {
+  public transpose(seq: Sequence): Sequence {
     console.log(
-      keyframes.keyframes.map(x => x.time(1000)),
+      seq.keyframes.map(x => x.time(1000)),
       this.duration,
-      keyframes
+      seq
     );
-    keyframes.keyframes.forEach(x => (x.timing = x.time(1 / x.duration)));
-    console.log(keyframes.keyframes.map(x => x.time(1000)));
+    seq.keyframes.forEach(x => (x.timing = x.time(this.duration / x.duration)));
+    console.log(seq.keyframes.map(x => x.time(1000)));
     return this;
   }
   public reset(): void {
