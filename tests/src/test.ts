@@ -1,5 +1,5 @@
 // @ts-ignore
-import * as AF from './algoframe'; // * AlgoFrame 4.4.4
+import * as AF from './modules/algoframe'; // * AlgoFrame 4.4.4
 const global = {
   delay: 300,
 };

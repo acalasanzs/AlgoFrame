@@ -14,6 +14,7 @@ import {
   IBaseKeyframe,
   safePad,
   safeShift,
+  normalKeyframes,
   // BaseKeyframe,
 } from './utils';
 export * from './utils';
@@ -27,6 +28,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
   public adaptative: boolean = false;
   easing: (t: number) => number;
   object = Symbol();
+  changer!: () => any;
 
   constructor(
     duration: number | false,
@@ -71,6 +73,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     } else {
       this.restart();
     }
+    this.changer?.();
     this.run.shift();
   }
   public abstract reset(): void;
@@ -194,8 +197,6 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
 // 1. Nested Sequence instances DONE
 //    Adaptative Sequence duration DONE
 // P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
-
-export type normalKeyframes = valueKeyframe | nestedKeyframe;
 export class Sequence extends KeyChanger<normalKeyframes> {
   type: 'nested' | 'simple' = 'simple';
   taken: number[] = [];

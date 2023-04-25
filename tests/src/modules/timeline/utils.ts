@@ -122,7 +122,7 @@ export class nestedKeyframe extends _keyframe implements IObjectKeyframe {
     super(timing, type, delay);
   }
 }
-
+export type normalKeyframes = valueKeyframe | nestedKeyframe;
 // Enumerables
 // export type SimpleKeyframes = BaseKeyframe[];
 // export type ComplexKeyframes = ObjectKeyframe[];

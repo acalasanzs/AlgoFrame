@@ -14,7 +14,7 @@ class AlgoFrame {
       this.easing = easing;
     }
     this.starttime = starttime ? starttime : 0;
-    this._starttime = this.starttime;
+    // this._starttime = this.starttime;
     this.duration = duration;
     this.startafterwait = null;
     this.startanimationtime = null;
@@ -293,75 +293,6 @@ class AlgoFrame {
         break;
     }
   }
-}
-class Keyframes {
-  constructor(keyframes, easing) {
-    this.keyframes = [];
-    this.run = [];
-    keyframes.every((keyframe, i) => {
-      if (
-        !(keyframe instanceof Keyframes.keyframe) ||
-        this.keyframes.some(k => k.time === keyframe.time)
-      ) {
-        console.error(new Error(`Invalid Keyframe ${i + 1}!`));
-        return false;
-      } else {
-        this.keyframes.push(keyframe);
-        return true;
-      }
-    });
-    this.keyframes.forEach(k => this.run.push(k));
-    if (typeof easing !== 'function') {
-      this.easing = EasingFunctions[easing];
-    } else {
-      this.easing = easing;
-    }
-    this.nextTime();
-  }
-  nextTime() {
-    if (!this.run.length) {
-      return (this.next = null);
-    }
-
-    if (this.run.length > 1) {
-      this.current = this.run.reduce((previousValue, currentValue) =>
-        currentValue.time < previousValue.time ? currentValue : previousValue
-      );
-      this.next = this.run
-        .filter(v => v.time !== this.current.time)
-        .reduce((previousValue, currentValue) =>
-          currentValue.time < previousValue ? currentValue : previousValue
-        );
-    } else {
-      this.restart();
-      this.next = this.run.reduce((previousValue, currentValue) =>
-        currentValue.time < previousValue.time ? currentValue : previousValue
-      );
-    }
-    this.run.shift();
-  }
-  restart() {
-    while (this.run.length) this.run.pop();
-    this.keyframes.forEach(k => this.run.push(k));
-  }
-  test(progress) {
-    if (this.next.time <= progress) this.nextTime();
-    progress = Math.min(this.easing(progress), 1);
-    const dif = this.next.val - this.current.val;
-    const a = this.next.time - this.current.time;
-    const sum = dif * progress;
-    return (this.current.val + sum) / a;
-  }
-  clone() {
-    let orig = this;
-    return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
-  }
-  static keyframe = class {
-    constructor(totalProgress, value) {
-      this.time = totalProgress;
-      this.val = value;
-    }
-  };
 }
 
 // const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
