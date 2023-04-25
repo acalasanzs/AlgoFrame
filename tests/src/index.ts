@@ -1,45 +1,31 @@
-import { passPreset, EasingFunctions, Preset } from './utils';
-import { /* Channels, */ Sequence } from './modules/timeline';
+import { Sequence } from './modules/timeline';
+import { Framer, Initiator, Controller, Animator } from './utils';
 
-class Framer {
-  _FPS: number | null = null;
-  rate: number = 0;
-  _delay!: number;
-  count: number = -1; // this.frame
-  frame: number = -1; // this.animationFrame
+type animationCallback = (frame: Framer) => void;
 
-  constructor() {}
-  set FPS(value: number | null) {
-    try {
-      value = Math.abs(value as number);
-      this._FPS = value;
-    } catch {}
-  }
-  get FPS(): number | null {
-    return this._FPS ? 1000 / this._FPS : null;
-  }
-  get delay() {
-    if (!this._FPS) throw new Error('Not initialized');
-    return 1000 / this._FPS;
-  }
-}
-class Initiator {
-  // Refers to this.start___ whatever
-  time: number = 0;
-}
-class Controller {
-  stop: boolean = false;
-  _start!: (value?: () => void | PromiseLike<() => void>) => void;
-  __start: Promise<unknown> = new Promise(resolve => (this._start = resolve));
-  completed: boolean = false;
-}
 class Animate {
   // Frame properties
   frame: Framer = new Framer();
   start: Initiator = new Initiator();
+  control: Controller = new Controller();
+  engine: Animator = new Animator();
+  sequence!: Sequence;
   duration!: number;
 
   constructor() {}
+  public finally(callback: () => void) {
+    this.control.finally = callback;
+    return this;
+  }
+  public break() {
+    this.control.stop = false;
+    return this;
+  }
+  public precision(value: number) {
+    this.frame.precision = value;
+    return this;
+  }
+  public run(callback: animationCallback) {}
 }
 class AlgoFrame {
   constructor() {}

@@ -13,29 +13,29 @@ class AlgoFrame {
     } else {
       this.easing = easing;
     }
-    this.starttime = starttime ? starttime : 0;
+    // this.starttime = starttime ? starttime : 0;
     // this._starttime = this.starttime;
-    this.duration = duration;
-    this.startafterwait = null;
-    this.startanimationtime = null;
-    this.stop = false;
-    this._start = new Promise(res => (this.__start = res));
+    // this.duration = duration;
+    // this.startafterwait = null;
+    // this.startanimationtime = null;
+    // this.stop = false;
+    // this._start = new Promise(res => (this.__start = res));
     // if (!(keyframes instanceof Keyframes)) {
     //   throw new Error('Invalid Keyframes Object!');
     // }
-    this.keyframes = keyframes;
-    this.done = false;
-    this.next = undefined;
+    // this.keyframes = keyframes;
+    // this.done = false;
+    // this.next = undefined;
 
-    this._FPS = FPS;
-    this.frameDelay = 1000 / this._FPS;
-    this.frameRate = 0;
-    this.frame = -1;
-    this.animationFrame = -1;
+    // this._FPS = FPS;
+    // this.frameDelay = 1000 / this._FPS;
+    // this.frameRate = 0;
+    // this.frame = -1;
+    // this.animationFrame = -1;
 
-    this.loop = loop;
+    // this.loop = loop;
   }
-  get FPS() {
+  /*   get FPS() {
     return this._FPS ? 1000 / this._FPS : null;
   }
   set FPS(value) {
@@ -46,7 +46,7 @@ class AlgoFrame {
       // this.frame = -1;
       // this.starttime = null;
     } else throw new Error('Not a valid Number');
-  }
+  } */
   nextTime(arr = this._running) {
     if (!arr.length) {
       console.log(new Error());
