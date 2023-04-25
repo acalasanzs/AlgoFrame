@@ -1,4 +1,11 @@
 import { KeyChanger, Sequence } from '.';
+export type safePad = {
+  mode: 'pad';
+  value: number;
+};
+export type safeShift = {
+  mode: 'shift';
+};
 
 export function timeIntervals(blocks: _keyframe[]) {
   let max = 1;
@@ -12,6 +19,7 @@ export function timeIntervals(blocks: _keyframe[]) {
     if (i < blocks.length - 1) {
       kDuration = tstart(blocks[i + 1]) - time - 1;
       if (kDuration < block.delay) {
+        // debugger;
         throw new Error(
           'Sequences/_keyframe(s) overlapping on the same channel!'
         );

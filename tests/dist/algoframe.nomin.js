@@ -37,7 +37,8 @@ const utils_2 = __webpack_require__(148);
 __exportStar(__webpack_require__(148), exports);
 // Classes
 class KeyChanger {
-    constructor(duration, easing = 'linear') {
+    constructor(duration, easing = 'linear', keyframes) {
+        this.keyframes = keyframes;
         this.next = null;
         this.current = null;
         this.adaptative = false;
@@ -50,6 +51,7 @@ class KeyChanger {
                 })();
         this.run = [];
         this.easing = (0, utils_1.passPreset)(easing);
+        this.init(keyframes);
     }
     nextTime() {
         if (!this.run.length) {
@@ -73,15 +75,9 @@ class KeyChanger {
             // console.log(this.current?.time(1), this.next.time(1), this.run);
         }
         else {
-            this.restart();
+            this.reset();
         }
         this.run.shift();
-    }
-    restart() {
-        while (this.run.length)
-            this.run.pop();
-        this.reset();
-        this.init(this.run);
     }
     // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
     currentAsSequence(object, progress, end) {
@@ -164,15 +160,23 @@ class KeyChanger {
 exports.KeyChanger = KeyChanger;
 class Sequence extends KeyChanger {
     constructor(duration, keyframes, easing = 'linear', callback = null) {
-        super(duration, easing);
+        super(duration, easing, keyframes);
         this.keyframes = keyframes;
         this.callback = callback;
         this.type = 'simple';
         this.taken = [];
-        this.init(keyframes);
         // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
     }
     init(keyframes) {
+        if (window['debug'])
+            debugger;
+        this.type = 'simple';
+        keyframes.forEach(k => {
+            if (k.type == 'ratio') {
+                k.timing = k.timing * this.duration;
+                k.type = 'miliseconds';
+            }
+        });
         this.taken = [];
         const zero = keyframes[0];
         const final = keyframes[keyframes.length - 1];
@@ -229,31 +233,67 @@ class Sequence extends KeyChanger {
     static is_value(object) {
         return 'val' in object;
     }
-    addKeyframe(
+    addKeyframes(
     /**
      * Adds a new keyframe to the entire set,
      *
      * @remarks
-     * To apply new keyframes, must do .restart() before
+     * To apply new keyframes, must do .reset() before
      *
      * @param keyframe - A valid AlgoFrame's keyframe object
      */
-    keyframe) {
-        this.keyframes.push(Sequence.passKeyframe(keyframe));
+    ...keyframes) {
+        keyframes.forEach(keyframe => {
+            const nkeyframe = Sequence.passKeyframe(keyframe);
+            this.keyframes.push(nkeyframe);
+        });
         const { max: duration } = (0, utils_2.timeIntervals)(this.keyframes);
+        this.keyframes.forEach(k => {
+            if (k.type == 'ratio') {
+                k.timing = k.timing * duration;
+                k.type = 'miliseconds';
+            }
+        });
         this.duration = duration;
+        this.init(this.keyframes);
         return this;
     }
-    replaceKeyframe(keyframe) {
+    extendToSequence(seq) {
+        seq.keyframes.forEach(k => {
+            k.timing =
+                k.timing +
+                    (k.duration + this.duration) *
+                        (k.duration / (this.duration + k.duration));
+            k.duration += this.duration;
+        });
+        this.keyframes.forEach(k => {
+            k.timing =
+                k.timing +
+                    (k.duration + this.duration) *
+                        (k.duration / (this.duration + k.duration));
+            k.duration += this.duration;
+        });
+        this.keyframes.forEach(k => {
+            console.log(k.duration);
+        });
+        console.log(seq.keyframes.map(k => [k.time(1), k.duration]));
+        this.addKeyframes(...seq.keyframes);
         return this;
     }
     reset() {
         this.keyframes.forEach(k => this.run.push(k));
     }
-    // public restart(): void in abstract parent class
     clone() {
-        let orig = this;
-        return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
+        const keyframes = this.keyframes.map(k => {
+            if ((0, utils_2.isComplex)(k)) {
+                const copy = (0, utils_2.replicate)(k);
+                copy.obj = copy.obj.clone();
+                return copy;
+            }
+            return (0, utils_2.replicate)(k);
+        });
+        let copy = new Sequence(this.duration, keyframes, this.easing, this.callback);
+        return copy;
     }
 }
 exports.Sequence = Sequence;
@@ -266,7 +306,7 @@ exports.Sequence = Sequence;
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isComplex = exports.isSimple = exports.nestedKeyframe = exports.valueKeyframe = exports._keyframe = exports.ratioAndMilisecons = exports.timeIntervals = void 0;
+exports.isComplex = exports.isSimple = exports.nestedKeyframe = exports.valueKeyframe = exports._keyframe = exports.ratioAndMilisecons = exports.replicate = exports.timeIntervals = void 0;
 function timeIntervals(blocks) {
     let max = 1;
     let min = 0;
@@ -290,6 +330,10 @@ function timeIntervals(blocks) {
     return { max, min };
 }
 exports.timeIntervals = timeIntervals;
+function replicate(obj) {
+    return Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
+}
+exports.replicate = replicate;
 function ratioAndMilisecons(ratio, miliseconds, duration) {
     /**
      * @param ratio - The ratio of the basic measure, between 0 and 1
@@ -327,6 +371,7 @@ class _keyframe {
         }
         if (typeof this.duration !== 'number')
             throw new Error('Need to set this.duration to each keyframe in the keyframes manager');
+        // if (this.type === 'miliseconds' && !this.duration) console.log(this);
         return this.type === 'miliseconds'
             ? timing / (this.duration === 0 ? 1 : this.duration / duration)
             : duration * timing;
@@ -423,14 +468,25 @@ function animate() {
 }
 const start = animate();
 // console.log(new ChannelBlock(second, 100).end());
-console.log(second.duration);
+console.log(second, second.duration, 'duration');
 const custom = 3 || 0;
+const getNewK = ({ duration }) => new timeline_1.valueKeyframe(4444, duration + 1, 'miliseconds', 200);
 for (let i = 0; i < custom; i++) {
-    second.addKeyframe(new timeline_1.valueKeyframe(4444, second.duration + 1, 'miliseconds', 200));
+    second.addKeyframes(getNewK(second));
 }
-second.restart();
-console.log(second);
-start(second);
+second.reset();
+console.log(second.duration, 'duration', second.keyframes.map(k => [k.time(1), k.duration]));
+console.log(second
+    .addKeyframes(getNewK({ duration: second.duration + 200 }))
+    .keyframes.map(k => [k.time(1), k.duration]));
+// keyframes deep clone
+// second.extendToSequence(second.clone());
+console.log(second.keyframes.map(k => [k.time(1), k.duration]));
+// start(second);
+console.error('FROM HERE');
+let copy = second.clone();
+copy.addKeyframes(getNewK({ duration: second.duration + 200 }));
+console.log(second.keyframes.length, copy.keyframes.length);
 
 
 /***/ }),

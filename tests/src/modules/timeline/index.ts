@@ -12,6 +12,8 @@ import {
   timeIntervals,
   replicate,
   IBaseKeyframe,
+  safePad,
+  safeShift,
   // BaseKeyframe,
 } from './utils';
 export * from './utils';
@@ -24,6 +26,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
   current: Keyframe | null = null;
   public adaptative: boolean = false;
   easing: (t: number) => number;
+  object = Symbol();
 
   constructor(
     duration: number | false,
@@ -201,7 +204,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
   }
   protected init(keyframes: typeof this.keyframes) {
-    if (window['debug']) debugger;
+    // if (window['debug']) debugger;
     this.type = 'simple';
     keyframes.forEach(k => {
       if (k.type == 'ratio') {
@@ -276,11 +279,12 @@ export class Sequence extends KeyChanger<normalKeyframes> {
      *
      * @param keyframe - A valid AlgoFrame's keyframe object
      */
+    method: 'push' | 'unshift' = 'push',
     ...keyframes: normalKeyframes[]
   ): Sequence {
     keyframes.forEach(keyframe => {
       const nkeyframe = Sequence.passKeyframe(keyframe);
-      this.keyframes.push(nkeyframe);
+      this.keyframes[method as 'push' | 'unshift'](nkeyframe);
     });
     const { max: duration } = timeIntervals(this.keyframes);
     this.keyframes.forEach(k => {
@@ -293,26 +297,39 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     this.init(this.keyframes);
     return this;
   }
-  public extendToSequence(seq: Sequence) {
-    seq.keyframes.forEach(k => {
+  public extendToSequence(seq: Sequence, safe: safePad | safeShift) {
+    if (seq.object === this.object)
+      throw new Error('Cannot reextend to my own self');
+    let safePad = 0 || (safe as any).value * 2;
+    if (safePad) {
+      seq.duration += 1;
+    }
+    seq.keyframes.forEach((k, i) => {
+      const safing = i < seq.keyframes.length - 1 ? 1 : 0;
+      const safeOffset = safe ? safing : 0;
       k.timing =
         k.timing +
-        (k.duration + this.duration) *
+        (k.duration + this.duration + safeOffset * safePad) *
           (k.duration / (this.duration + k.duration));
       k.duration += this.duration;
+      if (!safing && safe) {
+        k.timing += 1;
+      }
     });
+    if (safe && !safePad) {
+      // safeShift
+      this.keyframes.pop();
+    }
     this.keyframes.forEach(k => {
-      k.timing =
-        k.timing +
-        (k.duration + this.duration) *
-          (k.duration / (this.duration + k.duration));
       k.duration += this.duration;
     });
     this.keyframes.forEach(k => {
       console.log(k.duration);
     });
-    console.log(seq.keyframes.map(k => [k.time(1), k.duration]));
-    this.addKeyframes(...seq.keyframes);
+    const display = (seq: Sequence) =>
+      seq.keyframes.map(k => [k.time(k.duration), k.duration]);
+    console.log(display(seq), display(this));
+    this.addKeyframes('push', ...seq.keyframes);
     return this;
   }
   public reset(): void {
