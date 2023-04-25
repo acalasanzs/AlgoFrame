@@ -300,13 +300,14 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   public extendToSequence(seq: Sequence, safe: safePad | safeShift) {
     if (seq.object === this.object)
       throw new Error('Cannot reextend to my own self');
-    let safePad = 0 || (safe as any).value * 2;
+    let safePad = (safe as any).value * 2;
+    safePad = safePad ? safePad : 0;
     if (safePad) {
       seq.duration += 1;
     }
     seq.keyframes.forEach((k, i) => {
       const safing = i < seq.keyframes.length - 1 ? 1 : 0;
-      const safeOffset = safe ? safing : 0;
+      const safeOffset = safePad ? safing : 0;
       k.timing =
         k.timing +
         (k.duration + this.duration + safeOffset * safePad) *

@@ -70,5 +70,5 @@ console.log(
 console.error('FROM HERE');
 
 // keyframes deep clone DONE
-second.extendToSequence(second.clone(), { mode: 'pad', value: 201 });
+second.extendToSequence(second.clone(), { mode: 'shift' });
 // start(second);
