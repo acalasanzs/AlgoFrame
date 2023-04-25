@@ -50,7 +50,11 @@ export class Framer {
   count: number = -1; // this.frame
   frame: number = -1; // this.animationFrame
   _precision: number = 30;
-  last!: Refresher;
+  last!: {
+    time: Refresher;
+    frameRate: Refresher;
+  };
+  value!: number;
   sequence!: Sequence;
   start: Initiator = new Initiator();
   duration!: number;
@@ -86,12 +90,17 @@ export class Controller {
   stop: boolean = false;
   _start!: (value?: () => void | PromiseLike<() => void>) => void;
   __start: Promise<unknown> = new Promise(resolve => (this._start = resolve));
+  _completed!: boolean;
   get completed(): boolean {
-    return !this.stop;
+    return this._completed || !this.stop;
+  }
+  set completed(value: boolean) {
+    this._completed = value;
   }
   finally!: () => void; // this.next
   loop: boolean = false;
   callback!: animationCallback;
+  sent!: boolean;
 }
 export class Refresher {
   history: number[];
@@ -112,7 +121,56 @@ export class Refresher {
     this.currenttime = timestamp;
   }
 }
+export type EngineTypes = {
+  runtime: number;
+  relativeProgress: number;
+  easedProgress: number;
+  condition: boolean;
+  timestamp: number;
+  seg: number;
+  requestAnimation: Function;
+};
 export class Animator {
   // And add Spring and other physics
   easing!: (x: number) => number;
+  constructor(public origin: any) {}
+  engine(parameters: EngineTypes) {
+    function send() {
+      self.control.sent = true;
+      self.frame.value = self.frame.sequence.test(
+        Math.min(parameters.easedProgress, 1)
+      ) as number;
+      self.control.callback(self.frame);
+    }
+    let self = this.origin;
+    if (parameters.condition) {
+      self.frame.count = parameters.seg;
+      self.frame.start.animationTime =
+        typeof self.frame.start.animationTime === 'number'
+          ? self.frame.start.animationTime + 1
+          : self.frame.start.animationTime;
+      self.frame.last.frameRate.refresh(parameters.timestamp);
+      send();
+    }
+    if (!self.stop) {
+      if (parameters.runtime < self.duration) {
+        requestAnimationFrame(parameters.requestAnimation.bind(self));
+      } else if (parameters.runtime + self.last.last > self.duration) {
+        self.animationFrame++;
+
+        send();
+        self.control.completed = true;
+        // debugger;
+        if (self.loop)
+          requestAnimationFrame(parameters.requestAnimation.bind(self));
+        self.control.finally?.();
+      } else if (!self.done) {
+        self.control.completed = true;
+        if (self.loop)
+          requestAnimationFrame(parameters.requestAnimation.bind(self));
+        self.control.finally?.();
+      }
+    }
+    if (self.animationFrame === 0) self.__start();
+  }
 }
