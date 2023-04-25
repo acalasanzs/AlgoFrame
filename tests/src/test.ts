@@ -82,8 +82,8 @@ const display = (seq: Sequence) =>
 // second.extendToSequence(second.clone(), { mode: 'shift' });
 console.log(display(second));
 // second.restart();
-// start(second);
-let val = 0;
+start(second);
+/* let val = 0;
 while (++val < 1000) {
   console.log(second.test(val / 1000));
-}
+} */

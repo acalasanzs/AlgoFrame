@@ -8,7 +8,6 @@ import {
   Preset,
   passPreset,
 } from './utils';
-
 type timeReferences = {
   duration?: number;
   delay: number;

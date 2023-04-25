@@ -12,6 +12,113 @@ return /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 267:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Animate = void 0;
+const utils_1 = __webpack_require__(22);
+class Animate {
+    constructor(options) {
+        // Frame properties
+        this.frame = new utils_1.Framer();
+        this.control = new utils_1.Controller();
+        this.progress = 0;
+        // Engine
+        this.engine = new utils_1.Animator(this);
+        const { sequence, easing, controls, timing } = options;
+        this.engine.easing = (0, utils_1.passPreset)(easing ? easing : 'linear');
+        this.frame.sequence = sequence;
+        if (controls === null || controls === void 0 ? void 0 : controls.FPS)
+            this.frame.FPS = controls.FPS; // also implicitily declares Framer._precision
+        if (controls === null || controls === void 0 ? void 0 : controls.loop)
+            this.control.loop = controls.loop;
+        this.frame.start.time = timing.delay;
+        this.frame.duration = timing.duration || sequence.duration;
+    }
+    finally(callback) {
+        this.control.finally = callback;
+        return this;
+    }
+    break() {
+        this.control.stop = false;
+        return this;
+    }
+    precision(value) {
+        this.frame.precision = value;
+        return this;
+    }
+    run(callback) {
+        let condition, seg;
+        if (callback) {
+            this.control.callback = callback;
+        }
+        if (!this.control.callback)
+            throw new Error('Main callback is required for the animation');
+        this.frame.last.time = new utils_1.Refresher();
+        this.frame.last.frameRate = this.frame.last.frameRate
+            ? this.frame.last.frameRate
+            : new utils_1.Refresher(this.frame.precision);
+        function refresh(timestamp) {
+            if (this.control.completed) {
+                this.frame.frame = -1;
+                this.frame.start.animationTime = timestamp;
+                this.control.completed = !this.control.completed;
+            }
+            if (this.frame._FPS) {
+                seg = Math.floor((timestamp - this.frame.start.time) / this.frame.delay);
+                condition = Boolean(seg > this.frame.count);
+            }
+            else {
+                condition = true;
+            }
+            this.frame.last.time.refresh(timestamp);
+        }
+        function animate(timestamp) {
+            refresh.call(this, timestamp);
+            let runtime, relativeProgress, easedProgress;
+            if (this.frame.start.animationTime) {
+                runtime = timestamp - this.frame.start.animationTime;
+                relativeProgress = runtime / this.frame.duration;
+                easedProgress = this.engine.easing(relativeProgress);
+                this.progress = easedProgress;
+                this.engine.engine({
+                    relativeProgress,
+                    easedProgress,
+                    runtime,
+                    timestamp,
+                    seg,
+                    condition,
+                    requestAnimation: animate,
+                });
+            }
+            else if (this.frame.start.time > 0) {
+                this.frame.start.animationTime = timestamp;
+                let last = 0;
+                if (typeof this.frame.last.time.last === 'number') {
+                    last = this.frame.last.time.last;
+                }
+                this.frame.start.time =
+                    this.frame.start.time - last < last * 0.7
+                        ? 0
+                        : this.frame.start.time - last;
+                requestAnimationFrame(animate.bind(this));
+                return;
+            }
+        }
+        requestAnimationFrame(animate.bind(this));
+        return this;
+    }
+}
+exports.Animate = Animate;
+class AlgoFrame {
+    constructor() { }
+}
+
+
+/***/ }),
+
 /***/ 103:
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
@@ -42,6 +149,7 @@ class KeyChanger {
         this.next = null;
         this.current = null;
         this.adaptative = false;
+        this.object = Symbol();
         this.duration =
             typeof duration === 'number'
                 ? Math.floor(duration)
@@ -54,6 +162,7 @@ class KeyChanger {
         this.init(keyframes);
     }
     nextTime() {
+        var _a;
         if (!this.run.length) {
             this.next = null;
             return;
@@ -75,9 +184,15 @@ class KeyChanger {
             // console.log(this.current?.time(1), this.next.time(1), this.run);
         }
         else {
-            this.reset();
+            this.restart();
         }
+        (_a = this.changer) === null || _a === void 0 ? void 0 : _a.call(this);
         this.run.shift();
+    }
+    restart() {
+        while (this.run.length)
+            this.run.pop();
+        this.reset();
     }
     // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
     currentAsSequence(object, progress, end) {
@@ -95,6 +210,8 @@ class KeyChanger {
         return lerp;
     }
     test(progress, miliseconds = false, runAdaptative = false, nextValue) {
+        if (progress < 0)
+            debugger;
         progress = progress <= 1 ? progress : 1;
         let next = nextValue ? nextValue : this.next;
         if (this.adaptative && !runAdaptative) {
@@ -158,6 +275,10 @@ class KeyChanger {
     }
 }
 exports.KeyChanger = KeyChanger;
+// TODO:
+// 1. Nested Sequence instances DONE
+//    Adaptative Sequence duration DONE
+// P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
 class Sequence extends KeyChanger {
     constructor(duration, keyframes, easing = 'linear', callback = null) {
         super(duration, easing, keyframes);
@@ -168,8 +289,7 @@ class Sequence extends KeyChanger {
         // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
     }
     init(keyframes) {
-        if (window['debug'])
-            debugger;
+        // if (window['debug']) debugger;
         this.type = 'simple';
         keyframes.forEach(k => {
             if (k.type == 'ratio') {
@@ -242,10 +362,10 @@ class Sequence extends KeyChanger {
      *
      * @param keyframe - A valid AlgoFrame's keyframe object
      */
-    ...keyframes) {
+    method = 'push', ...keyframes) {
         keyframes.forEach(keyframe => {
             const nkeyframe = Sequence.passKeyframe(keyframe);
-            this.keyframes.push(nkeyframe);
+            this.keyframes[method](nkeyframe);
         });
         const { max: duration } = (0, utils_2.timeIntervals)(this.keyframes);
         this.keyframes.forEach(k => {
@@ -258,26 +378,40 @@ class Sequence extends KeyChanger {
         this.init(this.keyframes);
         return this;
     }
-    extendToSequence(seq) {
-        seq.keyframes.forEach(k => {
+    extendToSequence(seq, safe) {
+        if (seq.object === this.object)
+            throw new Error('Cannot reextend to my own self');
+        let safePad = safe.value * 2;
+        safePad = safePad ? safePad : 0;
+        if (safePad) {
+            seq.duration += 1;
+        }
+        seq.keyframes.forEach((k, i) => {
+            const safing = i < seq.keyframes.length - 1 ? 1 : 0;
+            const safeOffset = safePad ? safing : 0;
             k.timing =
                 k.timing +
-                    (k.duration + this.duration) *
+                    (k.duration + this.duration + safeOffset * safePad) *
                         (k.duration / (this.duration + k.duration));
             k.duration += this.duration;
+            if (!safing && safe) {
+                k.timing += 1;
+            }
         });
+        if (safe && !safePad) {
+            // safeShift
+            this.keyframes.pop();
+        }
         this.keyframes.forEach(k => {
-            k.timing =
-                k.timing +
-                    (k.duration + this.duration) *
-                        (k.duration / (this.duration + k.duration));
             k.duration += this.duration;
         });
         this.keyframes.forEach(k => {
             console.log(k.duration);
         });
-        console.log(seq.keyframes.map(k => [k.time(1), k.duration]));
-        this.addKeyframes(...seq.keyframes);
+        /*     const display = (seq: Sequence) =>
+          seq.keyframes.map(k => [k.time(k.duration), k.duration]);
+        console.log(display(seq), display(this)); */
+        this.addKeyframes('push', ...seq.keyframes);
         return this;
     }
     reset() {
@@ -413,32 +547,19 @@ exports.isComplex = isComplex;
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-// @ts-ignore
-const AF = __importStar(__webpack_require__(100)); // * AlgoFrame 4.4.4
+const _1 = __webpack_require__(267);
 const global = {
     delay: 300,
 };
@@ -462,31 +583,48 @@ function animate() {
     let number = 0;
     return function startAnimation(sequence) {
         number++;
-        const animation = new AF.AlgoFrame(sequence.duration, global.delay, 'linear', second);
-        animation.run((b, a, c) => console.log(b, (a * 100).toFixed(0), c.timestamp - global.delay), 'Animation ' + number);
+        const animation = new _1.Animate({
+            sequence,
+            easing: 'linear',
+            timing: {
+                delay: global.delay,
+            },
+        });
+        animation.run((_a) => {
+            var { value } = _a, other = __rest(_a, ["value"]);
+            console.log('Animation ' + number);
+            console.log(value, [...Object.values(other)]);
+        });
     };
 }
 const start = animate();
 // console.log(new ChannelBlock(second, 100).end());
 console.log(second, second.duration, 'duration');
 const custom = 3 || 0;
-const getNewK = ({ duration }) => new timeline_1.valueKeyframe(4444, duration + 1, 'miliseconds', 200);
+let time = 2;
+const getNewK = ({ duration }) => {
+    time++;
+    return new timeline_1.valueKeyframe(2222 * (((time % 3) / 3) * 3 + 1), duration + 1, 'miliseconds', 200);
+};
 for (let i = 0; i < custom; i++) {
-    second.addKeyframes(getNewK(second));
+    second.addKeyframes('push', getNewK(second));
 }
-second.reset();
+// second.reset();
 console.log(second.duration, 'duration', second.keyframes.map(k => [k.time(1), k.duration]));
 console.log(second
-    .addKeyframes(getNewK({ duration: second.duration + 200 }))
+    .addKeyframes('push', getNewK({ duration: second.duration + 200 }))
     .keyframes.map(k => [k.time(1), k.duration]));
-// keyframes deep clone
-// second.extendToSequence(second.clone());
-console.log(second.keyframes.map(k => [k.time(1), k.duration]));
-// start(second);
 console.error('FROM HERE');
-let copy = second.clone();
-copy.addKeyframes(getNewK({ duration: second.duration + 200 }));
-console.log(second.keyframes.length, copy.keyframes.length);
+// keyframes deep clone DONE
+const display = (seq) => seq.keyframes.map(k => [k.time(k.duration), k.duration, k.value]);
+// second.extendToSequence(second.clone(), { mode: 'shift' });
+console.log(display(second));
+// second.restart();
+start(second);
+/* let val = 0;
+while (++val < 1000) {
+  console.log(second.test(val / 1000));
+} */
 
 
 /***/ }),
@@ -496,10 +634,9 @@ console.log(second.keyframes.length, copy.keyframes.length);
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.passPreset = exports.EasingFunctions = void 0;
+exports.Animator = exports.Refresher = exports.Controller = exports.Initiator = exports.Framer = exports.passPreset = exports.EasingFunctions = void 0;
 class EasingFunctions {
 }
-exports.EasingFunctions = EasingFunctions;
 // no easing; no acceleration
 EasingFunctions.linear = t => t;
 // accelerating from zero velocity
@@ -526,6 +663,7 @@ EasingFunctions.easeInQuint = t => t * t * t * t * t;
 EasingFunctions.easeOutQuint = t => 1 + --t * t * t * t * t;
 // acceleration until halfway; then deceleration
 EasingFunctions.easeInOutQuint = t => t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
+exports.EasingFunctions = EasingFunctions;
 function passPreset(preset) {
     if (typeof preset !== 'function') {
         return EasingFunctions[preset];
@@ -535,426 +673,126 @@ function passPreset(preset) {
     }
 }
 exports.passPreset = passPreset;
-
-
-/***/ }),
-
-/***/ 100:
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-// ESM COMPAT FLAG
-__webpack_require__.r(__webpack_exports__);
-
-// EXPORTS
-__webpack_require__.d(__webpack_exports__, {
-  "AlgoFrame": () => (/* binding */ AlgoFrame),
-  "Keyframes": () => (/* binding */ Keyframes)
-});
-
-;// CONCATENATED MODULE: ./algoframe/utils.js
-const EasingFunctions = {
-  // no easing, no acceleration
-  linear: (t) => t,
-  // accelerating from zero velocity
-  easeInQuad: (t) => t * t,
-  // decelerating to zero velocity
-  easeOutQuad: (t) => t * (2 - t),
-  // acceleration until halfway, then deceleration
-  easeInOutQuad: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
-  // accelerating from zero velocity
-  easeInCubic: (t) => t * t * t,
-  // decelerating to zero velocity
-  easeOutCubic: (t) => --t * t * t + 1,
-  // acceleration until halfway, then deceleration
-  easeInOutCubic: (t) =>
-    t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
-  // accelerating from zero velocity
-  easeInQuart: (t) => t * t * t * t,
-  // decelerating to zero velocity
-  easeOutQuart: (t) => 1 - --t * t * t * t,
-  // acceleration until halfway, then deceleration
-  easeInOutQuart: (t) =>
-    t < 0.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t,
-  // accelerating from zero velocity
-  easeInQuint: (t) => t * t * t * t * t,
-  // decelerating to zero velocity
-  easeOutQuint: (t) => 1 + --t * t * t * t * t,
-  // acceleration until halfway, then deceleration
-  easeInOutQuint: (t) =>
-    t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t,
-};
-
-;// CONCATENATED MODULE: ./algoframe/index.js
-
-class AlgoFrame {
-  constructor(
-    duration,
-    starttime,
-    easing,
-    keyframes,
-    FPS = null,
-    loop = false
-  ) {
-    if (typeof easing !== 'function') {
-      this.easing = EasingFunctions[easing];
-    } else {
-      this.easing = easing;
+class Framer {
+    constructor() {
+        this._FPS = null;
+        this.rate = 0;
+        this.count = -1; // this.frame
+        this.frame = -1; // this.animationFrame
+        this._precision = 30;
+        this.start = new Initiator();
     }
-    this.starttime = starttime ? starttime : 0;
-    this._starttime = this.starttime;
-    this.duration = duration;
-    this.startafterwait = null;
-    this.startanimationtime = null;
-    this.stop = false;
-    this._start = new Promise(res => (this.__start = res));
-    // if (!(keyframes instanceof Keyframes)) {
-    //   throw new Error('Invalid Keyframes Object!');
-    // }
-    this.keyframes = keyframes;
-    this.done = false;
-    this.next = undefined;
-
-    this._FPS = FPS;
-    this.frameDelay = 1000 / this._FPS;
-    this.frameRate = 0;
-    this.frame = -1;
-    this.animationFrame = -1;
-
-    this.loop = loop;
-  }
-  get FPS() {
-    return this._FPS ? 1000 / this._FPS : null;
-  }
-  set FPS(value) {
-    const FPS = parseFloat(value);
-    if (FPS) {
-      this._FPS = FPS;
-      this.frameDelay = 1000 / FPS;
-      // this.frame = -1;
-      // this.starttime = null;
-    } else throw new Error('Not a valid Number');
-  }
-  nextTime(arr = this._running) {
-    if (!arr.length) {
-      console.log(new Error());
+    set precision(value) {
+        value = Math.abs(value);
+        this._precision = value;
     }
-    return arr.reduce((previousValue, currentValue) =>
-      currentValue.time < previousValue.time ? currentValue : previousValue
-    );
-  }
-  save(callback, precision) {
-    this.callback = callback;
-    this.precision = precision;
-  }
-  restartKeyframes(t) {
-    this._timeline.forEach(t => {
-      if (t.id === this._current.id) return;
-      t._.keyframes.restart();
-      t._.keyframes.nextTime();
-      t.running = false;
-    });
-  }
-  restartTimeline() {
-    this._timeline.forEach(x => this._running.push(x));
-    this._next = this.nextTime();
-  }
-  timeline(array, real, reverseLoop) {
-    this._timeline = [];
-    this._running = [];
-    let data = [];
-    array.forEach(event => {
-      if (event.time >= 1 || event.time < 0 || isNaN(event.time)) {
-        throw new Error('Not valid');
-      }
-      data.push({
-        _: new AlgoFrame(
-          event.duration,
-          event.delay ? event.delay : 0,
-          event.easing ? event.easing : this.easing,
-          event.keyframes ? event.keyframes.clone() : this.keyframes.clone(),
-          this._FPS
-        ).finally(event.finally),
-        time: event.time,
-        callback: event.run,
-      });
-    });
-    let all = array.reduce((p, c) => {
-      return p + c.duration || 0 + c.delay || 0;
-    }, 0);
-    if (all / array[array.length - 1].time < array[array.length - 1].duration) {
-      this.duration +=
-        array[array.length - 1].duration - all / array[array.length - 1].time;
+    get precision() {
+        return this._precision || this._FPS;
     }
-    if (this.duration < all) {
-      this.duration = all;
-    }
-    const len = data.length;
-    for (let i = 0; i < len; i++) {
-      const cur = this.nextTime(data);
-      cur.id = i + 1;
-      cur._.id = i + 1;
-      this._timeline.push(cur);
-      data.splice(data.indexOf(this._timeline[i]), 1);
-    }
-    this.saved_timeline = this._timeline.map(l => l.time);
-    this.restartTimeline();
-    let first = this._next;
-    let last = this._timeline.reduce((previousValue, currentValue) =>
-      currentValue.time > previousValue.time ? currentValue : previousValue
-    );
-    this.reversed = false;
-    this.callback = function (X, easedProgress, params) {
-      real(X, easedProgress, params);
-      const next = () => {
-        this._next._.startanimationtime =
-          params.timestamp + this._next._._starttime;
-        this._next._.waiting = true;
-
-        //Parent info
-        this._next._.time = this._next.time;
-
-        this._next._.run(this._next.callback);
-        this._next.running = true;
-        this._current = this._next;
-        this._running.shift();
-        console.log(
-          this._next.time,
-          this._running.map(l => l.time)
-        );
-        if (this._running.length) {
-          this._next = this.nextTime();
+    set FPS(value) {
+        try {
+            value = Math.abs(value);
+            this._FPS = value;
         }
-      };
-      if (this._next) {
-        if (easedProgress >= this._next.time && !this._next.running) {
-          next();
-        }
-      } else {
-        console.log('REVERSED');
-        if (reverseLoop && !this.reversed) {
-          this._timeline.forEach((l, i) => {
-            l.time =
-              this.saved_timeline[this.saved_timeline.length - (i + 1)] -
-              this.nextTime(this.saved_timeline);
-          });
-        } else if (reverseLoop) {
-          this._timeline.forEach((l, i) => (l.time = this.saved_timeline[i]));
-        }
-
-        while (this._running.length) this._running.shift();
-        this.restartTimeline();
-        this.restartKeyframes();
-        if (reverseLoop && !this.reversed) this._running.reverse();
-        this.reversed = !this.reversed;
-        first = this._next;
-        last = this._timeline.reduce((previousValue, currentValue) =>
-          currentValue.time > previousValue.time ? currentValue : previousValue
-        );
-        this._running.shift();
-        this._next = this.nextTime();
-        next();
-      }
-    };
-    return this;
-  }
-  run(callback, precision = this._FPS) {
-    let condition, seg;
-    this.callback = callback ? callback : this.callback;
-
-    class Refresher {
-      constructor(precision = 1) {
+        catch (_a) { }
+    }
+    get FPS() {
+        return this._FPS ? 1000 / this._FPS : null;
+    }
+    get delay() {
+        if (!this._FPS)
+            throw new Error('Not initialized');
+        return 1000 / this._FPS;
+    }
+}
+exports.Framer = Framer;
+class Initiator {
+    constructor() {
+        // Refers to this.start___ whatever
+        this.time = 0;
+        this.afterWait = null;
+        this.animationTime = null;
+    }
+}
+exports.Initiator = Initiator;
+class Controller {
+    constructor() {
+        this.stop = false;
+        this.__start = new Promise(resolve => (this._start = resolve));
+        this.loop = false;
+    }
+    get completed() {
+        return this._completed || !this.stop;
+    }
+    set completed(value) {
+        this._completed = value;
+    }
+}
+exports.Controller = Controller;
+class Refresher {
+    constructor(precision = 1) {
         this.history = new Array(precision).fill(0);
         this.last = 0;
         this.currenttime = 0;
-      }
-      refresh(timestamp) {
+    }
+    refresh(timestamp) {
         this.history.unshift(0);
         this.history.pop();
         this.history[0] = timestamp - this.currenttime;
         this.last = this.history.includes(0)
-          ? 'Calculating...'
-          : this.history.reduce((prev, curr) => prev + curr) /
-            this.history.length;
+            ? 'Calculating...'
+            : this.history.reduce((prev, curr) => prev + curr) / this.history.length;
         this.currenttime = timestamp;
-      }
     }
-
-    this.last = new Refresher();
-    if (isNaN(precision)) {
-      console.log(new Error(`${precision} is NaN`));
-      precision = this._FPS;
-      if (!isNaN(this.precision)) precision = this.precision;
+}
+exports.Refresher = Refresher;
+class Animator {
+    constructor(origin) {
+        this.origin = origin;
     }
-    this.lastFrameRate = this.lastFrameRate
-      ? this.lastFrameRate
-      : new Refresher(precision);
-
-    function animate(timestamp) {
-      if (this.done) {
-        this.frame = -1;
-        this.startanimationtime = timestamp;
-        this.done = false;
-        this._next = null;
-      }
-      if (this._FPS) {
-        seg = Math.floor((timestamp - this.starttime) / this.frameDelay);
-        condition = Boolean(seg > this.frame);
-      } else {
-        condition = true;
-      }
-      this.last.refresh(timestamp);
-      const runtime = timestamp - this.startanimationtime;
-      let relativeProgress = runtime / this.duration;
-      const easedProgress = this.easing(relativeProgress);
-      this.progress = easedProgress;
-      if (!this.startanimationtime && this.starttime === 0) {
-        this.startanimationtime = timestamp;
-      } else if (this.starttime > 0) {
-        this.startanimationtime = timestamp;
-        this.starttime =
-          this.starttime - this.last.last < this.last.last * 0.7
-            ? 0
-            : this.starttime - this.last.last;
-        requestAnimationFrame(animate.bind(this));
-        return;
-      }
-      let sent = false;
-      if (condition) {
-        this.frame = seg;
-        this.animationFrame++;
-        this.lastFrameRate.refresh(timestamp);
-        sent = true;
-        this.callback(
-          this.waiting ? 0 : this.keyframes.test(Math.min(easedProgress, 1)),
-          Math.min(easedProgress, 1),
-          {
-            lastFrame: this.lastFrameRate.last,
-            currentTime: this.lastFrameRate.currentTime,
-            frame: this.animationFrame,
-            timestamp,
-          }
-        );
-        this.waiting = false;
-      }
-      if (!this.stop) {
-        if (runtime < this.duration) {
-          requestAnimationFrame(animate.bind(this));
-        } else if (runtime + this.last.last > this.duration) {
-          this.animationFrame++;
-          // this.keyframes.nextTime();
-          this.callback(this.keyframes.test(1), 1, {
-            lastFrame: this.lastFrameRate.last,
-            currentTime: this.lastFrameRate.currenttime,
-            frame: this.animationFrame,
-            timestamp,
-          });
-          this.done = true;
-          // this.keyframes.restart();
-          // debugger;
-          if (this.loop) requestAnimationFrame(animate.bind(this));
-          this.next?.();
-        } else if (!this.done) {
-          this.done = true;
-          // this.keyframes.restart();
-          if (this.loop) requestAnimationFrame(animate.bind(this));
-          this.next?.();
+    engine(parameters) {
+        var _a, _b, _c, _d;
+        let sent = false;
+        function send() {
+            sent = true;
+            self.frame.value = self.frame.sequence.test(Math.min(parameters.easedProgress, 1));
+            self.control.callback(self.frame);
         }
-      }
-      if (this.animationFrame === 0) this.__start();
+        let self = this.origin;
+        if (parameters.condition) {
+            self.frame.count = parameters.seg;
+            self.frame.start.animationTime =
+                typeof self.frame.start.animationTime === 'number'
+                    ? self.frame.start.animationTime + 1
+                    : self.frame.start.animationTime;
+            self.frame.last.frameRate.refresh(parameters.timestamp);
+            send();
+        }
+        if (!self.stop) {
+            if (parameters.runtime < self.duration) {
+                requestAnimationFrame(parameters.requestAnimation.bind(self));
+            }
+            else if (parameters.runtime + self.last.last > self.duration) {
+                self.animationFrame++;
+                send();
+                self.control.completed = true;
+                // debugger;
+                if (self.loop)
+                    requestAnimationFrame(parameters.requestAnimation.bind(self));
+                (_b = (_a = self.control).finally) === null || _b === void 0 ? void 0 : _b.call(_a);
+            }
+            else if (!self.done) {
+                self.control.completed = true;
+                if (self.loop)
+                    requestAnimationFrame(parameters.requestAnimation.bind(self));
+                (_d = (_c = self.control).finally) === null || _d === void 0 ? void 0 : _d.call(_c);
+            }
+        }
+        if (self.animationFrame === 0)
+            self.__start();
     }
-    requestAnimationFrame(animate.bind(this));
-    return this;
-  }
-  finally(callback) {
-    this.next = callback;
-    return this;
-  }
-  break() {
-    this.stop = false;
-    return this;
-  }
-  listen(type, callback) {
-    switch (type) {
-      case 'start':
-        this._start.then(callback);
-        break;
-    }
-  }
 }
-class Keyframes {
-  constructor(keyframes, easing) {
-    this.keyframes = [];
-    this.run = [];
-    keyframes.every((keyframe, i) => {
-      if (
-        !(keyframe instanceof Keyframes.keyframe) ||
-        this.keyframes.some(k => k.time === keyframe.time)
-      ) {
-        console.error(new Error(`Invalid Keyframe ${i + 1}!`));
-        return false;
-      } else {
-        this.keyframes.push(keyframe);
-        return true;
-      }
-    });
-    this.keyframes.forEach(k => this.run.push(k));
-    if (typeof easing !== 'function') {
-      this.easing = EasingFunctions[easing];
-    } else {
-      this.easing = easing;
-    }
-    this.nextTime();
-  }
-  nextTime() {
-    if (!this.run.length) {
-      return (this.next = null);
-    }
-
-    if (this.run.length > 1) {
-      this.current = this.run.reduce((previousValue, currentValue) =>
-        currentValue.time < previousValue.time ? currentValue : previousValue
-      );
-      this.next = this.run
-        .filter(v => v.time !== this.current.time)
-        .reduce((previousValue, currentValue) =>
-          currentValue.time < previousValue ? currentValue : previousValue
-        );
-    } else {
-      this.restart();
-      this.next = this.run.reduce((previousValue, currentValue) =>
-        currentValue.time < previousValue.time ? currentValue : previousValue
-      );
-    }
-    this.run.shift();
-  }
-  restart() {
-    while (this.run.length) this.run.pop();
-    this.keyframes.forEach(k => this.run.push(k));
-  }
-  test(progress) {
-    if (this.next.time <= progress) this.nextTime();
-    progress = Math.min(this.easing(progress), 1);
-    const dif = this.next.val - this.current.val;
-    const a = this.next.time - this.current.time;
-    const sum = dif * progress;
-    return (this.current.val + sum) / a;
-  }
-  clone() {
-    let orig = this;
-    return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
-  }
-  static keyframe = class {
-    constructor(totalProgress, value) {
-      this.time = totalProgress;
-      this.val = value;
-    }
-  };
-}
-
-// const anim = new AlgoFrame(2500, 2000, "easeInQuad", 50, 150);
-// anim.run((x) => console.log(x));
-
-
+exports.Animator = Animator;
 
 
 /***/ })
@@ -984,35 +822,6 @@ class Keyframes {
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-/******/ 	
-/************************************************************************/
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__webpack_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/make namespace object */
-/******/ 	(() => {
-/******/ 		// define __esModule on exports
-/******/ 		__webpack_require__.r = (exports) => {
-/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 			}
-/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 		};
-/******/ 	})();
 /******/ 	
 /************************************************************************/
 /******/ 	
