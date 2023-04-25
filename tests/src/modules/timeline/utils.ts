@@ -19,7 +19,6 @@ export function timeIntervals(blocks: _keyframe[]) {
     if (i < blocks.length - 1) {
       kDuration = tstart(blocks[i + 1]) - time - 1;
       if (kDuration < block.delay) {
-        // debugger;
         throw new Error(
           'Sequences/_keyframe(s) overlapping on the same channel!'
         );
