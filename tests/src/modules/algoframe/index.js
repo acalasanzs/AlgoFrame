@@ -174,24 +174,6 @@ class AlgoFrame {
     let condition, seg;
     this.callback = callback ? callback : this.callback;
 
-    class Refresher {
-      constructor(precision = 1) {
-        this.history = new Array(precision).fill(0);
-        this.last = 0;
-        this.currenttime = 0;
-      }
-      refresh(timestamp) {
-        this.history.unshift(0);
-        this.history.pop();
-        this.history[0] = timestamp - this.currenttime;
-        this.last = this.history.includes(0)
-          ? 'Calculating...'
-          : this.history.reduce((prev, curr) => prev + curr) /
-            this.history.length;
-        this.currenttime = timestamp;
-      }
-    }
-
     this.last = new Refresher();
     if (isNaN(precision)) {
       console.log(new Error(`${precision} is NaN`));

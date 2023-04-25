@@ -1,3 +1,5 @@
+import { Sequence } from './modules/timeline';
+
 export class EasingFunctions {
   // no easing; no acceleration
   static linear: (t: number) => number = t => t;
@@ -40,7 +42,7 @@ export function passPreset(preset: Preset) {
     return preset as (t: number) => number;
   }
 }
-
+export type animationCallback = (frame: Framer) => void;
 export class Framer {
   _FPS: number | null = null;
   rate: number = 0;
@@ -48,6 +50,10 @@ export class Framer {
   count: number = -1; // this.frame
   frame: number = -1; // this.animationFrame
   _precision: number = 30;
+  last!: Refresher;
+  sequence!: Sequence;
+  start: Initiator = new Initiator();
+  duration!: number;
   constructor() {}
   set precision(value: number) {
     value = Math.abs(value);
@@ -85,6 +91,7 @@ export class Controller {
   }
   finally!: () => void; // this.next
   loop: boolean = false;
+  callback!: animationCallback;
 }
 export class Refresher {
   history: number[];
