@@ -110,7 +110,7 @@ class AlgoFrame {
       data.splice(data.indexOf(this._timeline[i]), 1);
     }
     this.saved_timeline = this._timeline.map(l => l.time);
-    this.restartTimeline();
+    // this.restartTimeline();
     let first = this._next;
     let last = this._timeline.reduce((previousValue, currentValue) =>
       currentValue.time > previousValue.time ? currentValue : previousValue
@@ -155,8 +155,8 @@ class AlgoFrame {
         }
 
         while (this._running.length) this._running.shift();
-        this.restartTimeline();
-        this.restartKeyframes();
+        // this.restartTimeline();
+        // this.restartKeyframes();
         if (reverseLoop && !this.reversed) this._running.reverse();
         this.reversed = !this.reversed;
         first = this._next;

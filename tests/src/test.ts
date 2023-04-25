@@ -37,10 +37,13 @@ function animate() {
       'linear',
       second
     );
-    animation.run(
-      (b: number, a: number, c: { timestamp: number }) =>
-        console.log(b, (a * 100).toFixed(0), c.timestamp - global.delay),
-      'Animation ' + number
+    animation.run((b: number, a: number, c: { timestamp: number }) =>
+      console.log(
+        b,
+        (a * 100).toFixed(0),
+        c.timestamp - global.delay,
+        'Animation ' + number
+      )
     );
   };
 }
@@ -49,13 +52,21 @@ const start = animate();
 console.log(second, second.duration, 'duration');
 
 const custom = 3 || 12;
-const getNewK = ({ duration }: { duration: number }) =>
-  new valueKeyframe(4444, duration + 1, 'miliseconds', 200);
+let time = 2;
+const getNewK = ({ duration }: { duration: number }) => {
+  time++;
+  return new valueKeyframe(
+    2222 * (((time % 3) / 3) * 3 + 1),
+    duration + 1,
+    'miliseconds',
+    200
+  );
+};
 for (let i = 0; i < custom; i++) {
   second.addKeyframes('push', getNewK(second));
 }
 
-second.reset();
+// second.reset();
 console.log(
   second.duration,
   'duration',
@@ -70,5 +81,14 @@ console.log(
 console.error('FROM HERE');
 
 // keyframes deep clone DONE
-second.extendToSequence(second.clone(), { mode: 'shift' });
+const display = (seq: Sequence) =>
+  seq.keyframes.map(k => [k.time(k.duration), k.duration, k.value]);
+
+// second.extendToSequence(second.clone(), { mode: 'shift' });
+console.log(display(second));
+// second.restart();
 // start(second);
+let val = 0;
+while (++val < 1000) {
+  console.log(second.test(val / 1000));
+}

@@ -69,11 +69,15 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
           ) || this.current;
       // console.log(this.current?.time(1), this.next.time(1), this.run);
     } else {
-      this.reset();
+      this.restart();
     }
     this.run.shift();
   }
   public abstract reset(): void;
+  public restart() {
+    while (this.run.length) this.run.pop();
+    this.reset();
+  }
   protected abstract init(keyframes: Keyframe[]): void;
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
   protected currentAsSequence(
@@ -100,6 +104,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     runAdaptative: boolean = false,
     nextValue?: ISimpleKeyframe
   ): number | undefined {
+    if (progress < 0) debugger;
     progress = progress <= 1 ? progress : 1;
     let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
