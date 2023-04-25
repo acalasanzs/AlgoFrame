@@ -1,17 +1,18 @@
 import { Preset, passPreset } from '../../utils';
 import {
   _keyframe,
-  ObjectKeyframe,
+  IObjectKeyframe,
   nestedKeyframe,
   valueKeyframe,
   __objectKeyframe,
   __valueKeyframe,
-  SimpleKeyframe,
+  ISimpleKeyframe,
   isComplex,
   isSimple,
   timeIntervals,
-  propertyOf,
-  BaseKeyframe,
+  replicate,
+  IBaseKeyframe,
+  // BaseKeyframe,
 } from './utils';
 export * from './utils';
 // Classes
@@ -19,13 +20,16 @@ export * from './utils';
 export abstract class KeyChanger<Keyframe extends _keyframe> {
   public duration: number;
   run: Keyframe[];
-  keyframes!: Keyframe[];
   next: Keyframe | null = null;
   current: Keyframe | null = null;
   public adaptative: boolean = false;
   easing: (t: number) => number;
 
-  constructor(duration: number | false, easing: Preset = 'linear') {
+  constructor(
+    duration: number | false,
+    easing: Preset = 'linear',
+    public keyframes: Keyframe[]
+  ) {
     this.duration =
       typeof duration === 'number'
         ? Math.floor(duration)
@@ -35,6 +39,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
           })();
     this.run = [];
     this.easing = passPreset(easing);
+    this.init(keyframes);
   }
   protected nextTime(): void {
     if (!this.run.length) {
@@ -69,7 +74,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
   protected abstract init(keyframes: Keyframe[]): void;
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
   protected currentAsSequence(
-    object: ObjectKeyframe,
+    object: IObjectKeyframe,
     progress: number,
     end: number
   ): number | undefined {
@@ -90,7 +95,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     progress: number,
     miliseconds: boolean = false,
     runAdaptative: boolean = false,
-    nextValue?: SimpleKeyframe
+    nextValue?: ISimpleKeyframe
   ): number | undefined {
     progress = progress <= 1 ? progress : 1;
     let next = nextValue ? nextValue : this.next;
@@ -175,19 +180,6 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     }
     return last;
   }
-  protected clone(keyframes_property: keyof this): any {
-    const clone = Object.assign(
-      Object.create(Object.getPrototypeOf(this)),
-      this
-    );
-    const keyframes = clone[keyframes_property].map((k: Keyframe) => {
-      if (isComplex(k)) (k.obj as typeof this).clone(keyframes_property);
-      return k;
-    });
-    clone.keyframes = keyframes;
-    clone.reset();
-    return clone;
-  }
 }
 
 // TODO:
@@ -205,11 +197,12 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     easing: Preset = 'linear',
     public callback: Function | null = null
   ) {
-    super(duration, easing);
-    this.init(keyframes);
+    super(duration, easing, keyframes);
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
   }
   protected init(keyframes: typeof this.keyframes) {
+    if (window['debug']) debugger;
+    this.type = 'simple';
     keyframes.forEach(k => {
       if (k.type == 'ratio') {
         k.timing = k.timing * this.duration;
@@ -302,8 +295,21 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   }
   public extendToSequence(seq: Sequence) {
     seq.keyframes.forEach(k => {
-      k.timing = (k.timing * this.duration) / k.duration;
+      k.timing =
+        k.timing +
+        (k.duration + this.duration) *
+          (k.duration / (this.duration + k.duration));
       k.duration += this.duration;
+    });
+    this.keyframes.forEach(k => {
+      k.timing =
+        k.timing +
+        (k.duration + this.duration) *
+          (k.duration / (this.duration + k.duration));
+      k.duration += this.duration;
+    });
+    this.keyframes.forEach(k => {
+      console.log(k.duration);
     });
     console.log(seq.keyframes.map(k => [k.time(1), k.duration]));
     this.addKeyframes(...seq.keyframes);
@@ -312,8 +318,25 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   public reset(): void {
     this.keyframes.forEach(k => this.run.push(k));
   }
-  // public reset(): void in abstract parent class
   public clone(): Sequence {
-    return super.clone(propertyOf<this>('keyframes'));
+    const keyframes = this.keyframes.map(k => {
+      if (isComplex(k)) {
+        const copy = replicate(
+          k
+        ) as Keyframe as IObjectKeyframe as nestedKeyframe;
+        copy.obj = copy.obj.clone();
+        return copy;
+      }
+      return replicate(k) as Keyframe;
+    });
+    let copy: Sequence = new Sequence(
+      this.duration,
+      keyframes as any,
+      this.easing,
+      this.callback
+    );
+
+    return copy;
   }
+  // public reset(): void in abstract parent class
 }

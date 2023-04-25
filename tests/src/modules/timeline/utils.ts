@@ -1,9 +1,5 @@
 import { KeyChanger, Sequence } from '.';
 
-export function propertyOf<TObj>(name: keyof TObj) {
-  return name;
-}
-
 export function timeIntervals(blocks: _keyframe[]) {
   let max = 1;
   let min = 0;
@@ -28,7 +24,9 @@ export function timeIntervals(blocks: _keyframe[]) {
   });
   return { max, min };
 }
-
+export function replicate(obj: object): object {
+  return Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
+}
 export function ratioAndMilisecons(
   ratio: number,
   miliseconds: number,
@@ -42,20 +40,20 @@ export function ratioAndMilisecons(
    */
   return ratio * duration + miliseconds;
 }
-export interface BaseKeyframe {
+export interface IBaseKeyframe {
   time(duration: number): number;
 }
 
-export interface ObjectKeyframe extends BaseKeyframe {
+export interface IObjectKeyframe extends IBaseKeyframe {
   [x: string]: any;
   obj: KeyChanger<any>;
 }
-export interface SimpleKeyframe extends BaseKeyframe {
+export interface ISimpleKeyframe extends IBaseKeyframe {
   [x: string]: any;
   value: number;
 }
 
-export class _keyframe implements BaseKeyframe {
+export class _keyframe implements IBaseKeyframe {
   static instances = 0;
   readonly id: number;
   public duration!: number;
@@ -95,7 +93,7 @@ export class _keyframe implements BaseKeyframe {
   }
 }
 
-export class valueKeyframe extends _keyframe implements SimpleKeyframe {
+export class valueKeyframe extends _keyframe implements ISimpleKeyframe {
   constructor(
     public value: number,
     timing: number,
@@ -107,7 +105,7 @@ export class valueKeyframe extends _keyframe implements SimpleKeyframe {
   }
 }
 // unknown now but maybe a special kind of AlgoFrame + Timeline for nested sequencees! And must fit in the timeline keyframe
-export class nestedKeyframe extends _keyframe implements ObjectKeyframe {
+export class nestedKeyframe extends _keyframe implements IObjectKeyframe {
   constructor(
     public obj: Sequence,
     timing: number,
@@ -122,10 +120,10 @@ export class nestedKeyframe extends _keyframe implements ObjectKeyframe {
 // export type SimpleKeyframes = BaseKeyframe[];
 // export type ComplexKeyframes = ObjectKeyframe[];
 
-export function isSimple(object: any): object is SimpleKeyframe {
+export function isSimple(object: any): object is ISimpleKeyframe {
   return 'value' in object && object instanceof _keyframe;
 }
-export function isComplex(object: any): object is ObjectKeyframe {
+export function isComplex(object: any): object is IObjectKeyframe {
   return 'obj' in object && object instanceof _keyframe;
 }
 

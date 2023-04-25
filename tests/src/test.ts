@@ -66,7 +66,13 @@ console.log(
     .addKeyframes(getNewK({ duration: second.duration + 200 }))
     .keyframes.map(k => [k.time(1), k.duration])
 );
-second.extendToSequence(second.clone());
-console.log(second.keyframes.map(k => [k.time(1), k.duration]));
 // keyframes deep clone
+// second.extendToSequence(second.clone());
+console.log(second.keyframes.map(k => [k.time(1), k.duration]));
 // start(second);
+
+console.error('FROM HERE');
+
+let copy = second.clone();
+copy.addKeyframes(getNewK({ duration: second.duration + 200 }));
+console.log(second.keyframes.length, copy.keyframes.length);
