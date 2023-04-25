@@ -10,14 +10,20 @@ import {
 } from './utils';
 
 type timeReferences = {
-  duration: number;
+  duration?: number;
   delay: number;
 };
 type controls = {
-  FPS: number;
-  loop: boolean;
+  FPS?: number;
+  loop?: boolean;
 };
-class Animate {
+type options = {
+  sequence: Sequence;
+  easing?: Preset;
+  controls?: controls;
+  timing: timeReferences;
+};
+export class Animate {
   // Frame properties
   frame: Framer = new Framer();
   control: Controller = new Controller();
@@ -25,18 +31,14 @@ class Animate {
   // Engine
   engine: Animator = new Animator(this);
 
-  constructor(
-    sequence: Sequence,
-    easing: Preset,
-    controls: controls,
-    timing: timeReferences
-  ) {
-    this.engine.easing = passPreset(easing);
+  constructor(options: options) {
+    const { sequence, easing, controls, timing } = options;
+    this.engine.easing = passPreset(easing ? easing : 'linear');
     this.frame.sequence = sequence;
-    this.frame.FPS = controls.FPS; // also implicitily declares Framer._precision
-    this.control.loop = controls.loop;
+    if (controls?.FPS) this.frame.FPS = controls.FPS; // also implicitily declares Framer._precision
+    if (controls?.loop) this.control.loop = controls.loop;
     this.frame.start.time = timing.delay;
-    this.frame.duration = timing.duration;
+    this.frame.duration = timing.duration || sequence.duration;
   }
   public finally(callback: () => void) {
     this.control.finally = callback;

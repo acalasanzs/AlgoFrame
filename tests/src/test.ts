@@ -1,11 +1,9 @@
-// @ts-ignore
-import * as AF from './modules/algoframe'; // * AlgoFrame 4.4.4
+import { Animate } from '.';
 const global = {
   delay: 300,
 };
 import {
   _keyframe,
-  KeyChanger,
   nestedKeyframe,
   Sequence,
   valueKeyframe,
@@ -29,22 +27,19 @@ const second = new Sequence(1000, [
 
 function animate() {
   let number = 0;
-  return function startAnimation(sequence: KeyChanger<any>): void {
+  return function startAnimation(sequence: Sequence): void {
     number++;
-    const animation = new AF.AlgoFrame(
-      sequence.duration,
-      global.delay,
-      'linear',
-      second
-    );
-    animation.run((b: number, a: number, c: { timestamp: number }) =>
-      console.log(
-        b,
-        (a * 100).toFixed(0),
-        c.timestamp - global.delay,
-        'Animation ' + number
-      )
-    );
+    const animation = new Animate({
+      sequence,
+      easing: 'linear',
+      timing: {
+        delay: global.delay,
+      },
+    });
+    animation.run(({ value, ...other }) => {
+      console.log('Animation ' + number);
+      console.log(value, [...Object.values(other)]);
+    });
   };
 }
 const start = animate();
