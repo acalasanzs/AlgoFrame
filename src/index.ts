@@ -105,7 +105,7 @@ export class Animate {
           last = this.frame.last.time.last;
         }
         this.frame.start.time =
-          this.frame.start.time - last < last * 0.7
+          this.frame.start.time - last < last * 0.9
             ? 0
             : this.frame.start.time - last;
         requestAnimationFrame(animate.bind(this));
