@@ -1,4 +1,4 @@
-import {
+/* import {
   _keyframe,
   ObjectKeyframe,
   Sequence,
@@ -83,3 +83,4 @@ export class ChannelsTimeline {
   protected currentAsSequence(object: nestedKeyframe, progress: number) {}
   protected reset(): void {}
 }
+ */

@@ -1,5 +1,13 @@
 lockfileVersion: '6.0'
 
+dependencies:
+  algoframe:
+    specifier: 5.0.10
+    version: 5.0.10
+  uuid:
+    specifier: ^9.0.0
+    version: 9.0.0
+
 devDependencies:
   html-webpack-plugin:
     specifier: ^5.5.0
@@ -414,6 +422,10 @@ packages:
       require-from-string: 2.0.2
       uri-js: 4.4.1
     dev: true
+
+  /algoframe@5.0.10:
+    resolution: {integrity: sha512-DuxEm1+3rvmN5WnF0FcCzeD5mrLsdA2KajJCNZtzEbM79sxNR6keQx251L2wNn/E661iOqgU+w3XYlCUXAlIGg==}
+    dev: false
 
   /ansi-html-community@0.0.8:
     resolution: {integrity: sha512-1APHAyr3+PCamwNw3bXCPp4HFLONZt/yIH0sZp0/469KWNTEy+qN5jQ3GVX6DMZ1UXAi34yVwtTeaG/HpBuuzw==}
@@ -2180,6 +2192,11 @@ packages:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
     dev: true
+
+  /uuid@9.0.0:
+    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
+    hasBin: true
+    dev: false
 
   /vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}

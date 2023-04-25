@@ -5,7 +5,7 @@ const config = {
   context: path.resolve(__dirname, '../src'),
   devtool: 'source-map',
   target: 'web',
-  entry: './test.ts',
+  entry: './index.ts',
   module: {
     rules: [
       {
@@ -44,8 +44,8 @@ const config = {
   },
   output: {
     path: path.resolve(__dirname, '../dist'),
-    filename: 'algoframe.js',
-    library: 'AlgoFrame',
+    filename: 'algoframetests.js',
+    library: 'AlgoFrameTests',
     libraryTarget: 'umd',
   },
   plugins: [

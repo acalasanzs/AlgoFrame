@@ -1,0 +1,30 @@
+{
+  "name": "algoframe",
+  "version": "5.0.10",
+  "description": "A TypeScript comprehensive and modulated libary for doing algebraic animation with requestAnimatioFrame natively, even with Bezier and Sequences",
+  "main": "index.ts",
+  "scripts": {
+    "compile": "wsl rm -rf dist/lib && tsc && tsc --build tsconfig.es5.json",
+    "push": "wsl cp package.json dist/lib/es6/package.json && cd dist/lib/es6 && npm publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acalasanzs/AlgoFrame.git"
+  },
+  "keywords": [
+    "Bezier",
+    "requestAnimationFrame",
+    "callback",
+    "TypeScript",
+    "Sequence"
+  ],
+  "author": "Albert Calasanz Sallen <acalasanzs@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/acalasanzs/AlgoFrame/issues"
+  },
+  "homepage": "https://github.com/acalasanzs/AlgoFrame#readme",
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  }
+}

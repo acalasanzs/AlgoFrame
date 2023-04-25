@@ -1,4 +1,4 @@
-import { Preset, passPreset } from '../../utils';
+import { Preset, passPreset } from "../utils";
 import {
   _keyframe,
   IObjectKeyframe,
@@ -16,8 +16,8 @@ import {
   safeShift,
   normalKeyframes,
   // BaseKeyframe,
-} from './utils';
-export * from './utils';
+} from "./utils";
+export * from "./utils";
 // Classes
 
 export abstract class KeyChanger<Keyframe extends _keyframe> {
@@ -32,13 +32,13 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
 
   constructor(
     duration: number | false,
-    easing: Preset = 'linear',
+    easing: Preset = "linear",
     public keyframes: Keyframe[]
   ) {
     this.duration =
-      typeof duration === 'number'
+      typeof duration === "number"
         ? Math.floor(duration)
-        : (_ => {
+        : ((_) => {
             this.adaptative = true;
             return 1;
           })();
@@ -61,7 +61,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       this.next =
         this.run
           .filter(
-            v => v!.time(this.duration) !== this.current!.time(this.duration)
+            (v) => v!.time(this.duration) !== this.current!.time(this.duration)
           )
           .reduce((previousValue, currentValue) =>
             currentValue!.time(this.duration) <
@@ -112,12 +112,12 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
       throw new Error(
-        'Adaptitive timed sequences cannot be played in first place'
+        "Adaptitive timed sequences cannot be played in first place"
       );
     }
     if (miliseconds && !runAdaptative) progress = progress * this.duration;
     else if (miliseconds)
-      throw new Error('miliseconds mode not allowe when adaptative');
+      throw new Error("miliseconds mode not allowe when adaptative");
     if (next && this.current) {
       while (next!.time(1) <= progress && !(next!.time(1) === 1)) {
         this.nextTime(); //bug-proof
@@ -148,7 +148,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
         const nextValueFromObj = new valueKeyframe(
           this.getAbsoluteStartValue(next.obj as Sequence),
           next.time(1),
-          'ratio'
+          "ratio"
         );
         nextValueFromObj.duration = this.duration;
         return this.test(
@@ -198,12 +198,12 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
 //    Adaptative Sequence duration DONE
 // P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
 export class Sequence extends KeyChanger<normalKeyframes> {
-  type: 'nested' | 'simple' = 'simple';
+  type: "nested" | "simple" = "simple";
   taken: number[] = [];
   constructor(
     duration: number | false,
     public keyframes: (valueKeyframe | nestedKeyframe)[],
-    easing: Preset = 'linear',
+    easing: Preset = "linear",
     public callback: Function | null = null
   ) {
     super(duration, easing, keyframes);
@@ -211,11 +211,11 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   }
   protected init(keyframes: typeof this.keyframes) {
     // if (window['debug']) debugger;
-    this.type = 'simple';
-    keyframes.forEach(k => {
-      if (k.type == 'ratio') {
+    this.type = "simple";
+    keyframes.forEach((k) => {
+      if (k.type == "ratio") {
         k.timing = k.timing * this.duration;
-        k.type = 'miliseconds';
+        k.type = "miliseconds";
       }
     });
     this.taken = [];
@@ -238,7 +238,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
         throw new Error(
           "Cannot set last keyframe as nested sequence, it's impossible"
         );
-      const last = new valueKeyframe(final.value, 1, 'ratio');
+      const last = new valueKeyframe(final.value, 1, "ratio");
       last.duration = this.duration;
       this.keyframes.push(last);
       this.run.push(last);
@@ -248,14 +248,14 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       k.duration = this.duration;
       k = k;
       const timing = k.time(this.duration);
-      if (timing > this.duration) throw new Error('Keyframe timing overflow');
+      if (timing > this.duration) throw new Error("Keyframe timing overflow");
       if (this.taken.includes(timing))
-        throw new Error('It must not have repeated times');
+        throw new Error("It must not have repeated times");
       this.taken.push(k.time(1));
-      if (k instanceof nestedKeyframe) this.type = 'nested';
+      if (k instanceof nestedKeyframe) this.type = "nested";
       this.run.push(k);
     });
-    if (!this.type) throw new Error('No events/keyframes provided');
+    if (!this.type) throw new Error("No events/keyframes provided");
 
     if (this.keyframes[0] instanceof valueKeyframe) {
     }
@@ -263,7 +263,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       this.nextTime();
     } catch {
       throw new Error(
-        'Identical time signatures on keyframes are not allowed on a single animation channel'
+        "Identical time signatures on keyframes are not allowed on a single animation channel"
       );
     }
   }
@@ -274,7 +274,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       : new nestedKeyframe(k.obj, k.timing, k.type);
   }
   static is_value(object: any): object is __valueKeyframe {
-    return 'val' in object;
+    return "val" in object;
   }
   public addKeyframes(
     /**
@@ -285,18 +285,18 @@ export class Sequence extends KeyChanger<normalKeyframes> {
      *
      * @param keyframe - A valid AlgoFrame's keyframe object
      */
-    method: 'push' | 'unshift' = 'push',
+    method: "push" | "unshift" = "push",
     ...keyframes: normalKeyframes[]
   ): Sequence {
-    keyframes.forEach(keyframe => {
+    keyframes.forEach((keyframe) => {
       const nkeyframe = Sequence.passKeyframe(keyframe);
-      this.keyframes[method as 'push' | 'unshift'](nkeyframe);
+      this.keyframes[method as "push" | "unshift"](nkeyframe);
     });
     const { max: duration } = timeIntervals(this.keyframes);
-    this.keyframes.forEach(k => {
-      if (k.type == 'ratio') {
+    this.keyframes.forEach((k) => {
+      if (k.type == "ratio") {
         k.timing = k.timing * duration;
-        k.type = 'miliseconds';
+        k.type = "miliseconds";
       }
     });
     this.duration = duration;
@@ -305,7 +305,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   }
   public extendToSequence(seq: Sequence, safe: safePad | safeShift) {
     if (seq.object === this.object)
-      throw new Error('Cannot reextend to my own self');
+      throw new Error("Cannot reextend to my own self");
     let safePad = (safe as any).value * 2;
     safePad = safePad ? safePad : 0;
     if (safePad) {
@@ -327,23 +327,23 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       // safeShift
       this.keyframes.pop();
     }
-    this.keyframes.forEach(k => {
+    this.keyframes.forEach((k) => {
       k.duration += this.duration;
     });
-    this.keyframes.forEach(k => {
+    this.keyframes.forEach((k) => {
       console.log(k.duration);
     });
     /*     const display = (seq: Sequence) =>
       seq.keyframes.map(k => [k.time(k.duration), k.duration]);
     console.log(display(seq), display(this)); */
-    this.addKeyframes('push', ...seq.keyframes);
+    this.addKeyframes("push", ...seq.keyframes);
     return this;
   }
   public reset(): void {
-    this.keyframes.forEach(k => this.run.push(k));
+    this.keyframes.forEach((k) => this.run.push(k));
   }
   public clone(): Sequence {
-    const keyframes = this.keyframes.map(k => {
+    const keyframes = this.keyframes.map((k) => {
       if (isComplex(k)) {
         const copy = replicate(
           k

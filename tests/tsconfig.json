@@ -2,7 +2,7 @@
   "compilerOptions": {
     "plugins": [{ "name": "typescript-plugin-css-modules" }],
     "target": "es2016" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
-    "module": "UMD" /* Specify what module code is generated. */,
+    "module": "ES6" /* Specify what module code is generated. */,
     "rootDir": "./src" /* Specify the root folder within your source files. */,
     "typeRoots": [
       "./node_modules/@types/",

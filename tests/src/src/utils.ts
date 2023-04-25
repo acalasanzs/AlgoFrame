@@ -1,4 +1,4 @@
-import { Sequence } from './modules/timeline';
+import { Sequence } from './timeline';
 
 export class EasingFunctions {
   // no easing; no acceleration
@@ -50,7 +50,13 @@ export class Framer {
   count: number = -1; // this.frame
   frame: number = -1; // this.animationFrame
   _precision: number = 30;
-  last!: {
+  last: {
+    time: Refresher;
+    frameRate: Refresher;
+  } = {
+    time: undefined,
+    frameRate: undefined,
+  } as unknown as {
     time: Refresher;
     frameRate: Refresher;
   };
@@ -152,25 +158,28 @@ export class Animator {
       self.frame.last.frameRate.refresh(parameters.timestamp);
       send();
     }
-    if (!self.stop) {
-      if (parameters.runtime < self.duration) {
+    if (!self.control.stop) {
+      if (parameters.runtime < self.frame.duration) {
         requestAnimationFrame(parameters.requestAnimation.bind(self));
-      } else if (parameters.runtime + self.last.last > self.duration) {
-        self.animationFrame++;
+      } else if (
+        parameters.runtime + self.frame.last.time.last >
+        self.duration
+      ) {
+        self.frame.frame++;
 
         send();
         self.control.completed = true;
         // debugger;
-        if (self.loop)
+        if (self.control.loop)
           requestAnimationFrame(parameters.requestAnimation.bind(self));
         self.control.finally?.();
-      } else if (!self.done) {
+      } else if (!self.control.completed) {
         self.control.completed = true;
         if (self.loop)
           requestAnimationFrame(parameters.requestAnimation.bind(self));
         self.control.finally?.();
       }
     }
-    if (self.animationFrame === 0) self.__start();
+    if (self.animationFrame === 0) self._start();
   }
 }
