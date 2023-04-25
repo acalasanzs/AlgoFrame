@@ -326,9 +326,9 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     this.keyframes.forEach(k => {
       console.log(k.duration);
     });
-    const display = (seq: Sequence) =>
+    /*     const display = (seq: Sequence) =>
       seq.keyframes.map(k => [k.time(k.duration), k.duration]);
-    console.log(display(seq), display(this));
+    console.log(display(seq), display(this)); */
     this.addKeyframes('push', ...seq.keyframes);
     return this;
   }
