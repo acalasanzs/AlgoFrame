@@ -100,7 +100,6 @@ export class Controller {
   finally!: () => void; // this.next
   loop: boolean = false;
   callback!: animationCallback;
-  sent!: boolean;
 }
 export class Refresher {
   history: number[];
@@ -135,8 +134,9 @@ export class Animator {
   easing!: (x: number) => number;
   constructor(public origin: any) {}
   engine(parameters: EngineTypes) {
+    let sent: boolean = false;
     function send() {
-      self.control.sent = true;
+      sent = true;
       self.frame.value = self.frame.sequence.test(
         Math.min(parameters.easedProgress, 1)
       ) as number;
