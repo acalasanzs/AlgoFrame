@@ -1,10 +1,25 @@
-import { passPreset } from "../utils";
-import { nestedKeyframe, valueKeyframe, isComplex, isSimple, timeIntervals, replicate,
-// BaseKeyframe,
- } from "./utils";
-export * from "./utils";
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Sequence = exports.KeyChanger = void 0;
+const utils_1 = require("../utils");
+const utils_2 = require("./utils");
+__exportStar(require("./utils"), exports);
 // Classes
-export class KeyChanger {
+class KeyChanger {
     constructor(duration, easing = "linear", keyframes) {
         this.keyframes = keyframes;
         this.next = null;
@@ -19,7 +34,7 @@ export class KeyChanger {
                     return 1;
                 })();
         this.run = [];
-        this.easing = passPreset(easing);
+        this.easing = (0, utils_1.passPreset)(easing);
         this.init(keyframes);
     }
     nextTime() {
@@ -87,7 +102,7 @@ export class KeyChanger {
                 this.nextTime(); //bug-proof
                 next = this.next;
             }
-            if (isSimple(next) && isSimple(this.current)) {
+            if ((0, utils_2.isSimple)(next) && (0, utils_2.isSimple)(this.current)) {
                 progress = Math.min(this.easing(progress), miliseconds ? this.duration : 1);
                 const a = next.time(1) - this.current.time(1);
                 const trace = progress / a;
@@ -100,21 +115,21 @@ export class KeyChanger {
                 // console.log(this.current, next);
                 return lerp;
             }
-            else if (isComplex(next) && isSimple(this.current)) {
+            else if ((0, utils_2.isComplex)(next) && (0, utils_2.isSimple)(this.current)) {
                 // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
-                const nextValueFromObj = new valueKeyframe(this.getAbsoluteStartValue(next.obj), next.time(1), "ratio");
+                const nextValueFromObj = new utils_2.valueKeyframe(this.getAbsoluteStartValue(next.obj), next.time(1), "ratio");
                 nextValueFromObj.duration = this.duration;
                 return this.test(progress, undefined, undefined, nextValueFromObj
                 // this.next.obj.run[0].value
                 );
             }
-            else if (isComplex(this.current) && isComplex(next)) {
+            else if ((0, utils_2.isComplex)(this.current) && (0, utils_2.isComplex)(next)) {
                 // this.nextTime();
                 // debugger;
                 const res = this.currentAsSequence(this.current, progress, this.next ? this.next.time(1) : 1);
                 return res;
             }
-            else if (isComplex(this.current) && (isSimple(next) || !next)) {
+            else if ((0, utils_2.isComplex)(this.current) && ((0, utils_2.isSimple)(next) || !next)) {
                 // console.log(progress.toFixed(2));
                 return this.currentAsSequence(this.current, progress, next ? next.time(1) : 1);
             }
@@ -122,24 +137,25 @@ export class KeyChanger {
     }
     getAbsoluteStartValue(sequence) {
         let last = sequence.current;
-        while (last instanceof nestedKeyframe) {
+        while (last instanceof utils_2.nestedKeyframe) {
             last = sequence.current;
         }
         return last.value;
     }
     getAbsoluteEndKeyframe(sequence) {
         let last = sequence.run[sequence.run.length - 1];
-        while (last instanceof nestedKeyframe) {
+        while (last instanceof utils_2.nestedKeyframe) {
             last = sequence.run[sequence.run.length - 1];
         }
         return last;
     }
 }
+exports.KeyChanger = KeyChanger;
 // TODO:
 // 1. Nested Sequence instances DONE
 //    Adaptative Sequence duration DONE
 // P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
-export class Sequence extends KeyChanger {
+class Sequence extends KeyChanger {
     constructor(duration, keyframes, easing = "linear", callback = null) {
         super(duration, easing, keyframes);
         this.keyframes = keyframes;
@@ -164,17 +180,17 @@ export class Sequence extends KeyChanger {
         final.duration = this.duration;
         if (zero.time(1) > 0) {
             // this.taken.push(0);
-            const first = zero instanceof valueKeyframe
-                ? new valueKeyframe(zero.value, 0)
-                : new nestedKeyframe(zero.obj, 0);
+            const first = zero instanceof utils_2.valueKeyframe
+                ? new utils_2.valueKeyframe(zero.value, 0)
+                : new utils_2.nestedKeyframe(zero.obj, 0);
             first.duration = this.duration;
             this.keyframes.unshift(first);
             this.run.push(first);
         }
         if (final.time(1) < 1) {
-            if (final instanceof nestedKeyframe)
+            if (final instanceof utils_2.nestedKeyframe)
                 throw new Error("Cannot set last keyframe as nested sequence, it's impossible");
-            const last = new valueKeyframe(final.value, 1, "ratio");
+            const last = new utils_2.valueKeyframe(final.value, 1, "ratio");
             last.duration = this.duration;
             this.keyframes.push(last);
             this.run.push(last);
@@ -188,13 +204,13 @@ export class Sequence extends KeyChanger {
             if (this.taken.includes(timing))
                 throw new Error("It must not have repeated times");
             this.taken.push(k.time(1));
-            if (k instanceof nestedKeyframe)
+            if (k instanceof utils_2.nestedKeyframe)
                 this.type = "nested";
             this.run.push(k);
         });
         if (!this.type)
             throw new Error("No events/keyframes provided");
-        if (this.keyframes[0] instanceof valueKeyframe) {
+        if (this.keyframes[0] instanceof utils_2.valueKeyframe) {
         }
         try {
             this.nextTime();
@@ -204,11 +220,11 @@ export class Sequence extends KeyChanger {
         }
     }
     static passKeyframe(k) {
-        if (k instanceof nestedKeyframe || k instanceof valueKeyframe)
+        if (k instanceof utils_2.nestedKeyframe || k instanceof utils_2.valueKeyframe)
             return k;
         return this.is_value(k)
-            ? new valueKeyframe(k.value, k.timing, k.type)
-            : new nestedKeyframe(k.obj, k.timing, k.type);
+            ? new utils_2.valueKeyframe(k.value, k.timing, k.type)
+            : new utils_2.nestedKeyframe(k.obj, k.timing, k.type);
     }
     static is_value(object) {
         return "val" in object;
@@ -227,7 +243,7 @@ export class Sequence extends KeyChanger {
             const nkeyframe = Sequence.passKeyframe(keyframe);
             this.keyframes[method](nkeyframe);
         });
-        const { max: duration } = timeIntervals(this.keyframes);
+        const { max: duration } = (0, utils_2.timeIntervals)(this.keyframes);
         this.keyframes.forEach((k) => {
             if (k.type == "ratio") {
                 k.timing = k.timing * duration;
@@ -279,14 +295,15 @@ export class Sequence extends KeyChanger {
     }
     clone() {
         const keyframes = this.keyframes.map((k) => {
-            if (isComplex(k)) {
-                const copy = replicate(k);
+            if ((0, utils_2.isComplex)(k)) {
+                const copy = (0, utils_2.replicate)(k);
                 copy.obj = copy.obj.clone();
                 return copy;
             }
-            return replicate(k);
+            return (0, utils_2.replicate)(k);
         });
         let copy = new Sequence(this.duration, keyframes, this.easing, this.callback);
         return copy;
     }
 }
+exports.Sequence = Sequence;

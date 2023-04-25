@@ -1,5 +1,5 @@
-import { Sequence } from "./timeline";
-import { Framer, Controller, Animator, animationCallback, Preset } from "./utils";
+import { Sequence } from './timeline';
+import { Framer, Controller, Animator, animationCallback, Preset } from './utils';
 type timeReferences = {
     duration?: number;
     delay: number;

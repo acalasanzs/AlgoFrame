@@ -1,4 +1,7 @@
-export function timeIntervals(blocks) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isComplex = exports.isSimple = exports.nestedKeyframe = exports.valueKeyframe = exports._keyframe = exports.ratioAndMilisecons = exports.replicate = exports.timeIntervals = void 0;
+function timeIntervals(blocks) {
     let max = 1;
     let min = 0;
     const intervals = blocks.map((block, i) => {
@@ -20,10 +23,12 @@ export function timeIntervals(blocks) {
     });
     return { max, min };
 }
-export function replicate(obj) {
+exports.timeIntervals = timeIntervals;
+function replicate(obj) {
     return Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
 }
-export function ratioAndMilisecons(ratio, miliseconds, duration) {
+exports.replicate = replicate;
+function ratioAndMilisecons(ratio, miliseconds, duration) {
     /**
      * @param ratio - The ratio of the basic measure, between 0 and 1
      * @param miliseconds - Miliseconds to delay on the ratio
@@ -32,6 +37,7 @@ export function ratioAndMilisecons(ratio, miliseconds, duration) {
      */
     return ratio * duration + miliseconds;
 }
+exports.ratioAndMilisecons = ratioAndMilisecons;
 class _keyframe {
     constructor(timing, type = 'ratio', delay = 0, hold = false, start = 0) {
         this.timing = timing;
@@ -66,26 +72,30 @@ class _keyframe {
     }
 }
 _keyframe.instances = 0;
-export { _keyframe };
-export class valueKeyframe extends _keyframe {
+exports._keyframe = _keyframe;
+class valueKeyframe extends _keyframe {
     constructor(value, timing, type = 'miliseconds', delay, hold = false) {
         super(timing, type, delay, hold);
         this.value = value;
     }
 }
+exports.valueKeyframe = valueKeyframe;
 // unknown now but maybe a special kind of AlgoFrame + Timeline for nested sequencees! And must fit in the timeline keyframe
-export class nestedKeyframe extends _keyframe {
+class nestedKeyframe extends _keyframe {
     constructor(obj, timing, type = 'miliseconds', delay) {
         super(timing, type, delay);
         this.obj = obj;
     }
 }
+exports.nestedKeyframe = nestedKeyframe;
 // Enumerables
 // export type SimpleKeyframes = BaseKeyframe[];
 // export type ComplexKeyframes = ObjectKeyframe[];
-export function isSimple(object) {
+function isSimple(object) {
     return 'value' in object && object instanceof _keyframe;
 }
-export function isComplex(object) {
+exports.isSimple = isSimple;
+function isComplex(object) {
     return 'obj' in object && object instanceof _keyframe;
 }
+exports.isComplex = isComplex;

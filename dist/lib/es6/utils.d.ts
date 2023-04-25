@@ -1,4 +1,4 @@
-import { Sequence } from "./timeline";
+import { Sequence } from './timeline';
 export declare class EasingFunctions {
     static linear: (t: number) => number;
     static easeInQuad: (t: number) => number;
@@ -57,7 +57,7 @@ export declare class Controller {
 }
 export declare class Refresher {
     history: number[];
-    last: number | "Calculating...";
+    last: number | 'Calculating...';
     currenttime: number;
     constructor(precision?: number);
     refresh(timestamp: number): void;

@@ -1,34 +1,34 @@
 class EasingFunctions {
 }
 // no easing; no acceleration
-EasingFunctions.linear = (t) => t;
+EasingFunctions.linear = t => t;
 // accelerating from zero velocity
-EasingFunctions.easeInQuad = (t) => t * t;
+EasingFunctions.easeInQuad = t => t * t;
 // decelerating to zero velocity
-EasingFunctions.easeOutQuad = (t) => t * (2 - t);
+EasingFunctions.easeOutQuad = t => t * (2 - t);
 // acceleration until halfway; then deceleration
-EasingFunctions.easeInOutQuad = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+EasingFunctions.easeInOutQuad = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 // accelerating from zero velocity
-EasingFunctions.easeInCubic = (t) => t * t * t;
+EasingFunctions.easeInCubic = t => t * t * t;
 // decelerating to zero velocity
-EasingFunctions.easeOutCubic = (t) => --t * t * t + 1;
+EasingFunctions.easeOutCubic = t => --t * t * t + 1;
 // acceleration until halfway; then deceleration
-EasingFunctions.easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+EasingFunctions.easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
 // accelerating from zero velocity
-EasingFunctions.easeInQuart = (t) => t * t * t * t;
+EasingFunctions.easeInQuart = t => t * t * t * t;
 // decelerating to zero velocity
-EasingFunctions.easeOutQuart = (t) => 1 - --t * t * t * t;
+EasingFunctions.easeOutQuart = t => 1 - --t * t * t * t;
 // acceleration until halfway; then deceleration
-EasingFunctions.easeInOutQuart = (t) => t < 0.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t;
+EasingFunctions.easeInOutQuart = t => t < 0.5 ? 8 * t * t * t * t : 1 - 8 * --t * t * t * t;
 // accelerating from zero velocity
-EasingFunctions.easeInQuint = (t) => t * t * t * t * t;
+EasingFunctions.easeInQuint = t => t * t * t * t * t;
 // decelerating to zero velocity
-EasingFunctions.easeOutQuint = (t) => 1 + --t * t * t * t * t;
+EasingFunctions.easeOutQuint = t => 1 + --t * t * t * t * t;
 // acceleration until halfway; then deceleration
-EasingFunctions.easeInOutQuint = (t) => t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
+EasingFunctions.easeInOutQuint = t => t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 export { EasingFunctions };
 export function passPreset(preset) {
-    if (typeof preset !== "function") {
+    if (typeof preset !== 'function') {
         return EasingFunctions[preset];
     }
     else {
@@ -42,6 +42,10 @@ export class Framer {
         this.count = -1; // this.frame
         this.frame = -1; // this.animationFrame
         this._precision = 30;
+        this.last = {
+            time: undefined,
+            frameRate: undefined,
+        };
         this.start = new Initiator();
     }
     set precision(value) {
@@ -63,7 +67,7 @@ export class Framer {
     }
     get delay() {
         if (!this._FPS)
-            throw new Error("Not initialized");
+            throw new Error('Not initialized');
         return 1000 / this._FPS;
     }
 }
@@ -78,7 +82,7 @@ export class Initiator {
 export class Controller {
     constructor() {
         this.stop = false;
-        this.__start = new Promise((resolve) => (this._start = resolve));
+        this.__start = new Promise(resolve => (this._start = resolve));
         this.loop = false;
     }
     get completed() {
@@ -99,7 +103,7 @@ export class Refresher {
         this.history.pop();
         this.history[0] = timestamp - this.currenttime;
         this.last = this.history.includes(0)
-            ? "Calculating..."
+            ? 'Calculating...'
             : this.history.reduce((prev, curr) => prev + curr) / this.history.length;
         this.currenttime = timestamp;
     }
@@ -120,26 +124,27 @@ export class Animator {
         if (parameters.condition) {
             self.frame.count = parameters.seg;
             self.frame.start.animationTime =
-                typeof self.frame.start.animationTime === "number"
+                typeof self.frame.start.animationTime === 'number'
                     ? self.frame.start.animationTime + 1
                     : self.frame.start.animationTime;
             self.frame.last.frameRate.refresh(parameters.timestamp);
             send();
         }
-        if (!self.stop) {
+        if (!self.control.stop) {
             if (parameters.runtime < self.duration) {
                 requestAnimationFrame(parameters.requestAnimation.bind(self));
             }
-            else if (parameters.runtime + self.last.last > self.duration) {
-                self.animationFrame++;
+            else if (parameters.runtime + self.frame.last.time.last >
+                self.duration) {
+                self.frame.frame++;
                 send();
                 self.control.completed = true;
                 // debugger;
-                if (self.loop)
+                if (self.control.loop)
                     requestAnimationFrame(parameters.requestAnimation.bind(self));
                 (_b = (_a = self.control).finally) === null || _b === void 0 ? void 0 : _b.call(_a);
             }
-            else if (!self.done) {
+            else if (!self.control.completed) {
                 self.control.completed = true;
                 if (self.loop)
                     requestAnimationFrame(parameters.requestAnimation.bind(self));
@@ -147,6 +152,6 @@ export class Animator {
             }
         }
         if (self.animationFrame === 0)
-            self.__start();
+            self._start();
     }
 }

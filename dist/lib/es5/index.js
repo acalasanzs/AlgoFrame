@@ -1,4 +1,4 @@
-import { Framer, Controller, Animator, Refresher, passPreset, } from "./utils";
+import { Framer, Controller, Animator, Refresher, passPreset, } from './utils';
 export class Animate {
     constructor(options) {
         // Frame properties
@@ -8,7 +8,7 @@ export class Animate {
         // Engine
         this.engine = new Animator(this);
         const { sequence, easing, controls, timing } = options;
-        this.engine.easing = passPreset(easing ? easing : "linear");
+        this.engine.easing = passPreset(easing ? easing : 'linear');
         this.frame.sequence = sequence;
         if (controls === null || controls === void 0 ? void 0 : controls.FPS)
             this.frame.FPS = controls.FPS; // also implicitily declares Framer._precision
@@ -35,7 +35,7 @@ export class Animate {
             this.control.callback = callback;
         }
         if (!this.control.callback)
-            throw new Error("Main callback is required for the animation");
+            throw new Error('Main callback is required for the animation');
         this.frame.last.time = new Refresher();
         this.frame.last.frameRate = this.frame.last.frameRate
             ? this.frame.last.frameRate
@@ -76,7 +76,7 @@ export class Animate {
             else if (this.frame.start.time > 0) {
                 this.frame.start.animationTime = timestamp;
                 let last = 0;
-                if (typeof this.frame.last.time.last === "number") {
+                if (typeof this.frame.last.time.last === 'number') {
                     last = this.frame.last.time.last;
                 }
                 this.frame.start.time =

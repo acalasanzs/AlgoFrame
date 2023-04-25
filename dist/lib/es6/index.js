@@ -1,14 +1,17 @@
-import { Framer, Controller, Animator, Refresher, passPreset, } from "./utils";
-export class Animate {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Animate = void 0;
+const utils_1 = require("./utils");
+class Animate {
     constructor(options) {
         // Frame properties
-        this.frame = new Framer();
-        this.control = new Controller();
+        this.frame = new utils_1.Framer();
+        this.control = new utils_1.Controller();
         this.progress = 0;
         // Engine
-        this.engine = new Animator(this);
+        this.engine = new utils_1.Animator(this);
         const { sequence, easing, controls, timing } = options;
-        this.engine.easing = passPreset(easing ? easing : "linear");
+        this.engine.easing = (0, utils_1.passPreset)(easing ? easing : 'linear');
         this.frame.sequence = sequence;
         if (controls === null || controls === void 0 ? void 0 : controls.FPS)
             this.frame.FPS = controls.FPS; // also implicitily declares Framer._precision
@@ -35,11 +38,11 @@ export class Animate {
             this.control.callback = callback;
         }
         if (!this.control.callback)
-            throw new Error("Main callback is required for the animation");
-        this.frame.last.time = new Refresher();
+            throw new Error('Main callback is required for the animation');
+        this.frame.last.time = new utils_1.Refresher();
         this.frame.last.frameRate = this.frame.last.frameRate
             ? this.frame.last.frameRate
-            : new Refresher(this.frame.precision);
+            : new utils_1.Refresher(this.frame.precision);
         function refresh(timestamp) {
             if (this.control.completed) {
                 this.frame.frame = -1;
@@ -76,7 +79,7 @@ export class Animate {
             else if (this.frame.start.time > 0) {
                 this.frame.start.animationTime = timestamp;
                 let last = 0;
-                if (typeof this.frame.last.time.last === "number") {
+                if (typeof this.frame.last.time.last === 'number') {
                     last = this.frame.last.time.last;
                 }
                 this.frame.start.time =
@@ -91,6 +94,7 @@ export class Animate {
         return this;
     }
 }
+exports.Animate = Animate;
 class AlgoFrame {
     constructor() { }
 }
