@@ -52,7 +52,10 @@ function theRealCallback(value, easedProgress) {
   document.querySelector('h2').textContent =
     Math.round(easedProgress * 100) + '%';
 }
-animation.timeline(timeline, theRealCallback, true).run();
+const now = new Date();
+animation
+  .timeline(timeline, theRealCallback, true)
+  .run(_ => console.log(new Date() - now));
 
 /* const keyframes = new Keyframes(
   [

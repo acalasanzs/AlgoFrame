@@ -48,10 +48,10 @@ export type callbackType = {
   progress: number;
   currentTime: number;
   frame: number;
-  timestamp: number;
   duration: number;
   startTime: number;
   frameRate: number | 'Calculating...';
+  timeDelayed: number;
 };
 export type animationCallback = (frame: callbackType) => void;
 export class Framer {
@@ -97,16 +97,16 @@ export class Framer {
     return 1000 / this._FPS;
   }
 
-  stats(timestamp: number) {
+  stats() {
     return {
       value: this.value,
       FPS: this.FPS,
       progress: this.progress,
       currentTime: this.last.frameRate.currenttime,
       frame: this.frame,
-      timestamp,
       duration: this.duration,
-      startTime: this.start.time,
+      startTime: this.start.animationTime!,
+      timeDelayed: this.start.time,
       frameRate: this.last.frameRate.last,
     };
   }

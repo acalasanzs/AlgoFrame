@@ -92,15 +92,15 @@ export class Animate {
         this.frame.value = this.frame.sequence.test(
           Math.min(easedProgress!, 1)
         ) as number;
-        this.control.callback(this.frame.stats(timestamp));
+        this.control.callback(this.frame.stats());
       };
       if (this.frame.start.animationTime) {
         // console.log(this.frame.start.animationTime - timestamp);
         runtime = timestamp - this.frame.start.animationTime;
         relativeProgress = runtime / this.frame.duration;
         easedProgress = this.engine.easing(relativeProgress);
-        this.progress = easedProgress;
-        this.frame.progress = easedProgress;
+        this.progress = Math.min(easedProgress, 1);
+        this.frame.progress = Math.min(easedProgress, 1);
       }
       // console.log(this.frame.start.time);
       if (!this.frame.start.animationTime && this.frame.start.time === 0) {
@@ -121,10 +121,7 @@ export class Animate {
       }
       if (condition) {
         this.frame.count = seg;
-        this.frame.start.animationTime =
-          typeof this.frame.start.animationTime === 'number'
-            ? this.frame.start.animationTime + 1
-            : this.frame.start.animationTime;
+        this.frame.frame++;
         this.frame.last.frameRate.refresh(timestamp);
         send();
       }

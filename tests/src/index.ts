@@ -1,6 +1,6 @@
 import { Animate } from './src';
 const global = {
-  delay: 300,
+  delay: 3000,
 };
 import {
   _keyframe,
@@ -35,10 +35,11 @@ function animate() {
         delay: global.delay,
       },
     });
+    const now = new Date();
     animation.run(({ value, ...other }) => {
       // throw new Error();
-      console.log('Animation ' + number, other);
-      console.log(value, { ...other });
+      console.log(new Date().getTime() - now.getTime());
+      console.log('Animation ' + number, value, other);
     });
   };
 }
