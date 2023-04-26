@@ -1,6 +1,6 @@
 {
   "name": "tests-algoframe",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "index.ts",
   "scripts": {
@@ -19,7 +19,7 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
-    "algoframe": "5.0.10",
+    "algoframe": "4.4.4",
     "uuid": "^9.0.0"
   }
 }

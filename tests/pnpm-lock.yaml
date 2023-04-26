@@ -2,8 +2,8 @@ lockfileVersion: '6.0'
 
 dependencies:
   algoframe:
-    specifier: 5.0.10
-    version: 5.0.10
+    specifier: 4.4.4
+    version: 4.4.4
   uuid:
     specifier: ^9.0.0
     version: 9.0.0
@@ -423,8 +423,8 @@ packages:
       uri-js: 4.4.1
     dev: true
 
-  /algoframe@5.0.10:
-    resolution: {integrity: sha512-DuxEm1+3rvmN5WnF0FcCzeD5mrLsdA2KajJCNZtzEbM79sxNR6keQx251L2wNn/E661iOqgU+w3XYlCUXAlIGg==}
+  /algoframe@4.4.4:
+    resolution: {integrity: sha512-YyGIH0tK/JoCCbg5jNEdXspLLTfIiCA8iFz5V1c3oWK+Hcyq83Vq1AkgkMkeJ6oUtWBawebCGSiW/Jod1vSkWQ==}
     dev: false
 
   /ansi-html-community@0.0.8:

@@ -68,7 +68,7 @@ export class Animate {
       if (this.control.completed) {
         this.frame.frame = -1;
         this.frame.start.animationTime = timestamp;
-        this.control.completed = !this.control.completed;
+        this.control.completed = false;
       }
       if (this.frame._FPS) {
         seg = Math.floor(
@@ -83,38 +83,75 @@ export class Animate {
 
     function animate(this: Animate, timestamp: number) {
       refresh.call(this, timestamp);
-      let runtime: number, relativeProgress: number, easedProgress: number;
+      let runtime: number | null = null,
+        relativeProgress: number | null = null,
+        easedProgress: number | null = null;
+      this.control.sent = false;
+      const send = () => {
+        this.control.sent = true;
+        this.frame.value = this.frame.sequence.test(
+          Math.min(easedProgress!, 1)
+        ) as number;
+        this.control.callback(this.frame.stats(timestamp));
+      };
       if (this.frame.start.animationTime) {
+        // console.log(this.frame.start.animationTime - timestamp);
         runtime = timestamp - this.frame.start.animationTime;
         relativeProgress = runtime / this.frame.duration;
         easedProgress = this.engine.easing(relativeProgress);
         this.progress = easedProgress;
-        this.engine.engine({
-          relativeProgress,
-          easedProgress,
-          runtime,
-          timestamp,
-          seg,
-          condition,
-          requestAnimation: animate,
-        });
-        if (!this.frame.start.animationTime && this.frame.start.time === 0) {
-          this.frame.start.animationTime = timestamp;
-        } else if (this.frame.start.time > 0) {
-          this.frame.start.animationTime = timestamp;
+        this.frame.progress = easedProgress;
+      }
+      // console.log(this.frame.start.time);
+      if (!this.frame.start.animationTime && this.frame.start.time === 0) {
+        this.frame.start.animationTime = timestamp;
+      } else if (this.frame.start.time > 0) {
+        this.frame.start.animationTime = timestamp;
 
-          let last: number = 0;
-          if (typeof this.frame.last.time.last === 'number') {
-            last = this.frame.last.time.last;
-          }
-          this.frame.start.time =
-            this.frame.start.time - last < last * sensibility
-              ? 0
-              : this.frame.start.time - last;
+        let last: number = 0;
+        if (typeof this.frame.last.time.last === 'number') {
+          last = this.frame.last.time.last;
+        }
+        this.frame.start.time =
+          this.frame.start.time - last < last * sensibility
+            ? 0
+            : this.frame.start.time - last;
+        requestAnimationFrame(animate.bind(this));
+        return;
+      }
+      if (condition) {
+        this.frame.count = seg;
+        this.frame.start.animationTime =
+          typeof this.frame.start.animationTime === 'number'
+            ? this.frame.start.animationTime + 1
+            : this.frame.start.animationTime;
+        this.frame.last.frameRate.refresh(timestamp);
+        send();
+      }
+      if (!this.control.stop) {
+        if (runtime && runtime < this.frame.duration) {
           requestAnimationFrame(animate.bind(this));
-          return;
+        } else if (
+          runtime &&
+          runtime +
+            (typeof this.frame.last.time.last === 'number'
+              ? this.frame.last.time.last
+              : 0) >
+            this.frame.duration
+        ) {
+          this.frame.frame++;
+
+          send();
+          this.control.completed = true;
+          if (this.control.loop) requestAnimationFrame(animate.bind(this));
+          this.control.finally?.();
+        } else if (!this.control.completed) {
+          this.control.completed = true;
+          if (this.control.loop) requestAnimationFrame(animate.bind(this));
+          this.control.finally?.();
         }
       }
+      if (this.frame.frame === 0) this.control._start();
     }
     requestAnimationFrame(animate.bind(this));
     return this;
