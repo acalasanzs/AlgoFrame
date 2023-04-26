@@ -26,5 +26,8 @@
   "homepage": "https://github.com/acalasanzs/AlgoFrame#readme",
   "devDependencies": {
     "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "esbuild": "0.17.18"
   }
 }
