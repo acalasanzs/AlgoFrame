@@ -42,10 +42,20 @@ export function passPreset(preset: Preset) {
     return preset as (t: number) => number;
   }
 }
-export type animationCallback = (frame: Framer) => void;
+export type callbackType = {
+  value: number;
+  FPS: number | null;
+  progress: number;
+  currentTime: number;
+  frame: number;
+  duration: number;
+  startTime: number;
+  frameRate: number | 'Calculating...';
+  timeDelayed: number;
+};
+export type animationCallback = (frame: callbackType) => void;
 export class Framer {
   _FPS: number | null = null;
-  rate: number = 0;
   _delay!: number;
   count: number = -1; // this.frame
   frame: number = -1; // this.animationFrame
@@ -64,6 +74,7 @@ export class Framer {
   sequence!: Sequence;
   start: Initiator = new Initiator();
   duration!: number;
+  progress: number = 0;
   constructor() {}
   set precision(value: number) {
     value = Math.abs(value);
@@ -85,6 +96,20 @@ export class Framer {
     if (!this._FPS) throw new Error('Not initialized');
     return 1000 / this._FPS;
   }
+
+  stats() {
+    return {
+      value: this.value,
+      FPS: this.FPS,
+      progress: this.progress,
+      currentTime: this.last.frameRate.currenttime,
+      frame: this.frame,
+      duration: this.duration,
+      startTime: this.start.animationTime!,
+      timeDelayed: this.start.time,
+      frameRate: this.last.frameRate.last,
+    };
+  }
 }
 export class Initiator {
   // Refers to this.start___ whatever
@@ -96,9 +121,9 @@ export class Controller {
   stop: boolean = false;
   _start!: (value?: () => void | PromiseLike<() => void>) => void;
   __start: Promise<unknown> = new Promise(resolve => (this._start = resolve));
-  _completed!: boolean;
+  _completed: boolean = false;
   get completed(): boolean {
-    return this._completed || !this.stop;
+    return this._completed || this.stop;
   }
   set completed(value: boolean) {
     this._completed = value;
@@ -106,6 +131,7 @@ export class Controller {
   finally!: () => void; // this.next
   loop: boolean = false;
   callback!: animationCallback;
+  sent: boolean = false;
 }
 export class Refresher {
   history: number[];
@@ -127,10 +153,10 @@ export class Refresher {
   }
 }
 export type EngineTypes = {
+  send: () => void;
   runtime: number;
   relativeProgress: number;
   easedProgress: number;
-  condition: boolean;
   timestamp: number;
   seg: number;
   requestAnimation: Function;
@@ -140,46 +166,6 @@ export class Animator {
   easing!: (x: number) => number;
   constructor(public origin: any) {}
   engine(parameters: EngineTypes) {
-    let sent: boolean = false;
-    function send() {
-      sent = true;
-      self.frame.value = self.frame.sequence.test(
-        Math.min(parameters.easedProgress, 1)
-      ) as number;
-      self.control.callback(self.frame);
-    }
-    let self = this.origin;
-    if (parameters.condition) {
-      self.frame.count = parameters.seg;
-      self.frame.start.animationTime =
-        typeof self.frame.start.animationTime === 'number'
-          ? self.frame.start.animationTime + 1
-          : self.frame.start.animationTime;
-      self.frame.last.frameRate.refresh(parameters.timestamp);
-      send();
-    }
-    if (!self.control.stop) {
-      if (parameters.runtime < self.duration) {
-        requestAnimationFrame(parameters.requestAnimation.bind(self));
-      } else if (
-        parameters.runtime + self.frame.last.time.last >
-        self.duration
-      ) {
-        self.frame.frame++;
-
-        send();
-        self.control.completed = true;
-        // debugger;
-        if (self.control.loop)
-          requestAnimationFrame(parameters.requestAnimation.bind(self));
-        self.control.finally?.();
-      } else if (!self.control.completed) {
-        self.control.completed = true;
-        if (self.loop)
-          requestAnimationFrame(parameters.requestAnimation.bind(self));
-        self.control.finally?.();
-      }
-    }
-    if (self.animationFrame === 0) self._start();
+    const self = this.origin;
   }
 }

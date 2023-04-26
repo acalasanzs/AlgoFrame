@@ -16,10 +16,20 @@ export declare class EasingFunctions {
 }
 export type Preset = string | ((x: number) => number);
 export declare function passPreset(preset: Preset): (t: number) => number;
-export type animationCallback = (frame: Framer) => void;
+export type callbackType = {
+    value: number;
+    FPS: number | null;
+    progress: number;
+    currentTime: number;
+    frame: number;
+    duration: number;
+    startTime: number;
+    frameRate: number | 'Calculating...';
+    timeDelayed: number;
+};
+export type animationCallback = (frame: callbackType) => void;
 export declare class Framer {
     _FPS: number | null;
-    rate: number;
     _delay: number;
     count: number;
     frame: number;
@@ -32,12 +42,24 @@ export declare class Framer {
     sequence: Sequence;
     start: Initiator;
     duration: number;
+    progress: number;
     constructor();
     set precision(value: number);
     get precision(): number;
     set FPS(value: number | null);
     get FPS(): number | null;
     get delay(): number;
+    stats(): {
+        value: number;
+        FPS: number | null;
+        progress: number;
+        currentTime: number;
+        frame: number;
+        duration: number;
+        startTime: number;
+        timeDelayed: number;
+        frameRate: number | "Calculating...";
+    };
 }
 export declare class Initiator {
     time: number;
@@ -54,6 +76,7 @@ export declare class Controller {
     finally: () => void;
     loop: boolean;
     callback: animationCallback;
+    sent: boolean;
 }
 export declare class Refresher {
     history: number[];
@@ -63,10 +86,10 @@ export declare class Refresher {
     refresh(timestamp: number): void;
 }
 export type EngineTypes = {
+    send: () => void;
     runtime: number;
     relativeProgress: number;
     easedProgress: number;
-    condition: boolean;
     timestamp: number;
     seg: number;
     requestAnimation: Function;

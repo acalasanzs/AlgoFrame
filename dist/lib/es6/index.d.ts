@@ -1,5 +1,6 @@
 import { Sequence } from './timeline';
 import { Framer, Controller, Animator, animationCallback, Preset } from './utils';
+export declare const sensibility: number;
 type timeReferences = {
     duration?: number;
     delay: number;
