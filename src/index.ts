@@ -95,7 +95,7 @@ export class Animate {
         ) as number;
         // TODO: Add a recursvie callback inside Sequence
         this.frame.sequence.callback?.(this.frame.stats());
-        // END
+        // console.log(this.frame.sequence)        // END
         this.control.callback(this.frame.stats());
       };
       // console.log(this.frame.start.time);

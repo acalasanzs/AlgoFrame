@@ -1,9 +1,25 @@
-import { valueKeyframe } from "@/timeline";
+import { nestedKeyframe, valueKeyframe } from "@/timeline";
 import "./style.css";
 import { createBoxes } from "./utils";
 import {Animate, Sequence} from "@";
 // import {Animate} from "@";
-
+const basic = new Sequence(false, [
+  new valueKeyframe(2222, 0, 'ratio'),
+  new valueKeyframe(4444, 0.5, 'ratio'),
+  new valueKeyframe(6666, 1, 'ratio'),
+],undefined,/* function (this: Sequence) {
+    console.log(this)
+} */undefined,()=>console.log("END BASIC"));
+const first = new Sequence(false, [
+  new nestedKeyframe(basic.clone(), 0, 'ratio'),
+  new nestedKeyframe(basic.clone(), 0.5, 'ratio'),
+  new nestedKeyframe(basic.clone(), 1, 'ratio'),
+]);
+const second = new Sequence( 1000, [
+  new nestedKeyframe(first.clone(), 0, 'ratio'),
+  new nestedKeyframe(first.clone(), 0.5, 'ratio'),
+  new nestedKeyframe(first.clone(), 1, 'ratio'),
+]);
 const root = document.getElementById("app")!;
 function trash({progress}) {
     // console.log(progress)
@@ -23,13 +39,14 @@ const sequence: Sequence = new Sequence(
 function version5() {
 
     const animation = new Animate({
-        sequence,
+        sequence: second,
         easing: "linear",
         timing: {
             delay: 0
         }
     });
     animation.run(trash);
+    console.log(second)
     console.log(animation)
 }
 /* function version4() {
