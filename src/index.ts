@@ -147,10 +147,12 @@ export class Animate {
           this.control.completed = true;
           if (this.control.loop) requestAnimationFrame(animate.bind(this));
           this.control.finally?.();
+          this.frame.sequence.finallyCallback?.();
         } else if (!this.control.completed) {
           this.control.completed = true;
           if (this.control.loop) requestAnimationFrame(animate.bind(this));
           this.control.finally?.();
+          this.frame.sequence.finallyCallback?.();
         }
       }
       if (this.frame.frame === 0) this.control._start();

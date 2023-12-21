@@ -96,7 +96,7 @@ export class Framer {
     if (!this._FPS) throw new Error('Not initialized');
     return 1000 / this._FPS;
   }
-
+  
   stats() {
     return {
       value: this.value,
@@ -111,6 +111,17 @@ export class Framer {
     };
   }
 }
+export type FrameStats = {
+  value: number;
+  FPS: number | null;
+  progress: number;
+  currentTime: number;
+  frame: number;
+  duration: number;
+  startTime: number;
+  timeDelayed: number;
+  frameRate: number;
+};
 export class Initiator {
   // Refers to this.start___ whatever
   time: number = 0;

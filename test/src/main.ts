@@ -14,10 +14,12 @@ function trash({progress}) {
 const theBox = createBoxes(root, 1);
 
 
-const sequence: Sequence = new Sequence(800, [
-    new valueKeyframe(0, 0, "ratio"),
-    new valueKeyframe(100, 1, "ratio")
-], undefined, trash);
+const sequence: Sequence = new Sequence(
+  800,
+  [new valueKeyframe(0, 0, 'ratio'), new valueKeyframe(100, 1, 'ratio')],
+  undefined,
+  console.log
+);
 function version5() {
 
     const animation = new Animate({
@@ -27,7 +29,7 @@ function version5() {
             delay: 0
         }
     });
-    animation.run(console.log);
+    animation.run(trash);
     console.log(animation)
 }
 /* function version4() {

@@ -1,4 +1,4 @@
-import { Preset, passPreset } from "../utils";
+import { FrameStats, Preset, passPreset } from "../utils";
 import {
   _keyframe,
   IObjectKeyframe,
@@ -32,13 +32,13 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
 
   constructor(
     duration: number | false,
-    easing: Preset = "linear",
+    easing: Preset = 'linear',
     public keyframes: Keyframe[]
   ) {
     this.duration =
-      typeof duration === "number"
+      typeof duration === 'number'
         ? Math.floor(duration)
-        : ((_) => {
+        : (_ => {
             this.adaptative = true;
             return 1;
           })();
@@ -61,7 +61,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       this.next =
         this.run
           .filter(
-            (v) => v!.time(this.duration) !== this.current!.time(this.duration)
+            v => v!.time(this.duration) !== this.current!.time(this.duration)
           )
           .reduce((previousValue, currentValue) =>
             currentValue!.time(this.duration) <
@@ -112,12 +112,12 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
       throw new Error(
-        "Adaptitive timed sequences cannot be played in first place"
+        'Adaptitive timed sequences cannot be played in first place'
       );
     }
     if (miliseconds && !runAdaptative) progress = progress * this.duration;
     else if (miliseconds)
-      throw new Error("miliseconds mode not allowe when adaptative");
+      throw new Error('miliseconds mode not allowe when adaptative');
     if (next && this.current) {
       while (next!.time(1) <= progress && !(next!.time(1) === 1)) {
         this.nextTime(); //bug-proof
@@ -148,7 +148,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
         const nextValueFromObj = new valueKeyframe(
           this.getAbsoluteStartValue(next.obj as Sequence),
           next.time(1),
-          "ratio"
+          'ratio'
         );
         nextValueFromObj.duration = this.duration;
         return this.test(
@@ -177,6 +177,21 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       }
     }
   }
+  getKeyframeForTime(time: number): Keyframe | null {
+    let current = this.current;
+    let next = this.next;
+
+    while (next && current) {
+      if (current.time(1) <= time && next.time(1) > time) {
+        return current;
+      }
+      this.nextTime();
+      current = this.current;
+      next = this.next;
+    }
+
+    return null;
+  }
   getAbsoluteStartValue(sequence: Sequence): number {
     let last = sequence.current;
     while (last instanceof nestedKeyframe) {
@@ -204,7 +219,8 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     duration: number | false,
     public keyframes: (valueKeyframe | nestedKeyframe)[],
     easing: Preset = "linear",
-    public callback: Function | null = null
+    public callback: Function | null = null,
+    public finallyCallback: Function | null = null
   ) {
     super(duration, easing, keyframes);
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
@@ -218,6 +234,27 @@ export class Sequence extends KeyChanger<normalKeyframes> {
         k.type = "miliseconds";
       }
     });
+    if (this.callback) {
+      const callback = this.callback;
+      this.callback = (all: FrameStats) => {
+        const { progress } = all;
+        const currentKeyframe = this.getKeyframeForTime(progress);
+        if (!currentKeyframe) {
+          return;
+        }
+        if(progress + all.frameRate > currentKeyframe?.start + currentKeyframe?.duration) {
+          if (isComplex(currentKeyframe)) {
+            currentKeyframe.obj.finallyCallback?.();
+          }
+        }else{
+
+          if (isComplex(currentKeyframe)) {
+            currentKeyframe.obj.callback?.(all);
+          }
+        }
+        return callback(all);
+      };
+    }
     this.taken = [];
     const zero = keyframes[0];
     const final = keyframes[keyframes.length - 1];
