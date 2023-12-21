@@ -11,7 +11,7 @@ import {
 export const sensibility: number = 0.9;
 type timeReferences = {
   duration?: number;
-  delay: number;
+  delay?: number;
 };
 type controls = {
   FPS?: number;
@@ -21,8 +21,9 @@ type options = {
   sequence: Sequence;
   easing?: Preset;
   controls?: controls;
-  timing: timeReferences;
+  timing?: timeReferences;
 };
+export { Sequence };
 export class Animate {
   // Frame properties
   frame: Framer = new Framer();
@@ -37,8 +38,8 @@ export class Animate {
     this.frame.sequence = sequence;
     if (controls?.FPS) this.frame.FPS = controls.FPS; // also implicitily declares Framer._precision
     if (controls?.loop) this.control.loop = controls.loop;
-    this.frame.start.time = timing.delay;
-    this.frame.duration = timing.duration || sequence.duration;
+    this.frame.start.time = timing?.delay || 0;
+    this.frame.duration = timing?.duration || sequence.duration;
   }
   public finally(callback: () => void) {
     this.control.finally = callback;
@@ -73,13 +74,13 @@ export class Animate {
       if (this.frame._FPS) {
         seg = Math.floor(
           (timestamp - this.frame.start.time) / this.frame.delay
-        );
-        condition = Boolean(seg > this.frame.count);
-      } else {
-        condition = true;
+          );
+          condition = Boolean(seg > this.frame.count);
+        } else {
+          condition = true;
+        }
+        this.frame.last.time.refresh(timestamp);
       }
-      this.frame.last.time.refresh(timestamp);
-    }
 
     function animate(this: Animate, timestamp: number) {
       refresh.call(this, timestamp);
@@ -92,8 +93,29 @@ export class Animate {
         this.frame.value = this.frame.sequence.test(
           Math.min(easedProgress!, 1)
         ) as number;
+        // TODO: Add a recursvie callback inside Sequence
+        this.frame.sequence.callback?.(this.frame.stats());
+        // END
         this.control.callback(this.frame.stats());
       };
+      // console.log(this.frame.start.time);
+      if (!this.frame.start.animationTime && this.frame.start.time === 0) {
+        this.frame.start.animationTime = timestamp;
+        
+      } else if (this.frame.start.time > 0) {
+        this.frame.start.animationTime = timestamp;
+        
+        let last: number = 0;
+        if (typeof this.frame.last.time.last === 'number') {
+          last = this.frame.last.time.last;
+        }
+        this.frame.start.time =
+        this.frame.start.time - last < last * sensibility
+        ? 0
+        : this.frame.start.time - last;
+        requestAnimationFrame(animate.bind(this));
+        return;
+      }
       if (this.frame.start.animationTime) {
         // console.log(this.frame.start.animationTime - timestamp);
         runtime = timestamp - this.frame.start.animationTime;
@@ -102,23 +124,6 @@ export class Animate {
         this.progress = Math.min(easedProgress, 1);
         this.frame.progress = Math.min(easedProgress, 1);
       }
-      // console.log(this.frame.start.time);
-      if (!this.frame.start.animationTime && this.frame.start.time === 0) {
-        this.frame.start.animationTime = timestamp;
-      } else if (this.frame.start.time > 0) {
-        this.frame.start.animationTime = timestamp;
-
-        let last: number = 0;
-        if (typeof this.frame.last.time.last === 'number') {
-          last = this.frame.last.time.last;
-        }
-        this.frame.start.time =
-          this.frame.start.time - last < last * sensibility
-            ? 0
-            : this.frame.start.time - last;
-        requestAnimationFrame(animate.bind(this));
-        return;
-      }
       if (condition) {
         this.frame.count = seg;
         this.frame.frame++;
@@ -126,7 +131,7 @@ export class Animate {
         send();
       }
       if (!this.control.stop) {
-        if (runtime && runtime < this.frame.duration) {
+        if (typeof runtime === 'number' && runtime < this.frame.duration) {
           requestAnimationFrame(animate.bind(this));
         } else if (
           runtime &&
