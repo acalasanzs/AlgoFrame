@@ -107,7 +107,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     runAdaptative: boolean = false,
     nextValue?: ISimpleKeyframe
   ): number | undefined {
-    if (progress < 0) debugger;
+    if (progress < 0) throw new Error('Progress cannot be negative');;
     progress = progress <= 1 ? progress : 1;
     let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
@@ -177,20 +177,21 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       }
     }
   }
-  getKeyframeForTime(time: number): Keyframe | null {
-    let current = this.current;
+  getKeyframeForTime(time: number, miliseconds:boolean = false): Keyframe | null {
+    if (time < 0) throw new Error('Time cannot be negative');
+    time = time <= 1 ? time : 1;
     let next = this.next;
-
-    while (next && current && next.time(1) !== 1) {
-      if (current.time(1) <= time && next.time(1) > time) {
-        return current;
+    if (miliseconds) time = time * this.duration;
+    if (next && this.current) {
+      while (next!.time(1) <= time && !(next!.time(1) === 1)) {
+        this.nextTime(); //bug-proof
+        next = this.next;
       }
+      return this.current;
+    }else{
       this.nextTime();
-      current = this.current;
-      next = this.next;
+      return this.current;
     }
-
-    return null;
   }
   getAbsoluteStartValue(sequence: Sequence): number {
     let last = sequence.current;
@@ -226,22 +227,10 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     super(duration, easing, keyframes);
     this.callback = (all: FrameStats) => {
       const { progress } = all;
-      const currentKeyframe = this.getKeyframeForTime(progress);
-      if (!currentKeyframe) {
-        return;
-      }
-      if (
-        progress + all.frameRate >
-        currentKeyframe?.start + currentKeyframe?.duration
-      ) {
-        if (isComplex(currentKeyframe)) {
-          currentKeyframe.obj.finallyCallback?.();
-        }
-      } else {
-        if (isComplex(currentKeyframe)) {
-          currentKeyframe.obj.callback?.(all);
-        }
-      }
+      let currentKeyframe = this.getKeyframeForTime(progress);
+      console.log(currentKeyframe?.id, progress);
+      currentKeyframe = currentKeyframe as valueKeyframe;
+      
       return this.Ocallback && this.Ocallback.bind(this)(all);
     };
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
