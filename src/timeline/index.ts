@@ -107,7 +107,6 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     runAdaptative: boolean = false,
     nextValue?: ISimpleKeyframe
   ): number | undefined {
-    if (progress < 0) throw new Error('Progress cannot be negative');;
     progress = progress <= 1 ? progress : 1;
     let next = nextValue ? nextValue : this.next;
     if (this.adaptative && !runAdaptative) {
@@ -177,7 +176,10 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       }
     }
   }
-  getKeyframeForTime(time: number, miliseconds:boolean = false): Keyframe | null {
+  getKeyframeForTime(
+    time: number,
+    miliseconds: boolean = false
+  ): Keyframe | null {
     if (time < 0) throw new Error('Time cannot be negative');
     time = time <= 1 ? time : 1;
     let next = this.next;
@@ -187,8 +189,9 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
         this.nextTime(); //bug-proof
         next = this.next;
       }
+      if (time === next?.time(miliseconds ? this.duration : 1)) return next;
       return this.current;
-    }else{
+    } else {
       this.nextTime();
       return this.current;
     }
@@ -225,14 +228,17 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     public finallyCallback: Function | null = null
   ) {
     super(duration, easing, keyframes);
-    this.callback = (all: FrameStats) => {
+    this.callback = function (all: FrameStats) {
       const { progress } = all;
       let currentKeyframe = this.getKeyframeForTime(progress);
-      console.log(currentKeyframe?.id, progress);
-      currentKeyframe = currentKeyframe as valueKeyframe;
-      
-      return this.Ocallback && this.Ocallback.bind(this)(all);
+      if (!currentKeyframe) return;
+      if (currentKeyframe instanceof nestedKeyframe) {
+        return currentKeyframe.obj.callback!.bind(currentKeyframe.obj)(all);
+      } else {
+        return Ocallback?.bind(this)(all);
+      }
     };
+
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
   }
   protected init(keyframes: typeof this.keyframes) {

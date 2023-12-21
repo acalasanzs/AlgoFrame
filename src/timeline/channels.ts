@@ -1,16 +1,16 @@
 /* import {
   _keyframe,
-  ObjectKeyframe,
+  IObjectKeyframe,
   Sequence,
   KeyChanger,
   nestedKeyframe,
 } from '.';
-import { Preset } from '../../utils';
+import { Preset } from '../utils';
 import { timeIntervals } from './utils';
 
 //                                            seq   seq   seq
 //.repeat(times:number) in sequence |---------****-****---***----------|
-export class ChannelBlock extends _keyframe implements ObjectKeyframe {
+export class ChannelBlock extends _keyframe implements IObjectKeyframe {
   public size!: number;
   // public timing: number = 0;
   constructor(
@@ -83,4 +83,5 @@ export class ChannelsTimeline {
   protected currentAsSequence(object: nestedKeyframe, progress: number) {}
   protected reset(): void {}
 }
+
  */
