@@ -1,7 +1,8 @@
 export function convertWrite(
   properties: IAny,
   options: IAny,
-  redirect?: string | ('get' | 'set')[]
+  redirect?: string | "__proto__",
+  recursive: boolean = false
 ) {
   /* 
         Returns a modified object for each option added and maybe a redirect. Useful for coverting properties to utilization in Object.defineProperties(obj, <return>)
@@ -13,21 +14,34 @@ export function convertWrite(
     for (let [k, v] of Object.entries(options)) {
       obj[prop][k] = v;
       if (redirect) {
-        if (Array.isArray(redirect)) {
-          for (let r of redirect) {
-            if (r === 'get' || r === 'set') {
-              let modifier: IAny = {};
-              modifier[redirect] = v.bind(properties[prop]);
-              Object.defineProperty(obj, prop, modifier);
-            }
-          }
+        if (redirect === "__proto__") {
+          if(k === "get" || k === "set")
+          obj[prop][k] = v.bind({
+            value: properties[prop],
+            parent: properties,
+            key: prop,
+          });
         } else {
-          obj[prop][redirect] = properties[prop];
+          if (hasNestedObjects(properties[prop]) && recursive) {
+            obj[prop][redirect] = convertWrite(
+              properties[prop],
+              options,
+              redirect
+            );
+          } else {
+            obj[prop][redirect] = properties[prop];
+          }
         }
       }
     }
   }
   return obj;
+}
+export function hasNestedObjects(obj: IAny) {
+  for (let prop of Object.keys(obj)) {
+    if (typeof obj[prop] === 'object') return true;
+  }
+  return false;
 }
 export function editWrite(properties: IAny, shallow: object) {
   for (let prop of Object.keys(properties)) {
@@ -94,12 +108,12 @@ export function createDOMTree(root: Element, props: IAny) {
         console.log(value);
       },
       get() {
-        return "a";
+        return this.value;
       },
-    },["get","set"]
+    },
+    "__proto__"
   );
   Object.defineProperties(props, next as PropertyDescriptorMap);
-  props.tagName = "div";
   const { children, ...rest } = props;
   const base = root
     ? createAndAdd(rest.tagName, rest, root)
