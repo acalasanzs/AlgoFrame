@@ -64,6 +64,7 @@ export class _keyframe implements IBaseKeyframe {
   static instances = 0;
   readonly id: number;
   public duration!: number;
+  public triggered: boolean = false;
   constructor(
     public timing: number,
     public type: 'ratio' | 'miliseconds' = 'ratio',

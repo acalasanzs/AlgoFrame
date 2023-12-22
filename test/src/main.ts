@@ -47,7 +47,7 @@ function version5() {
       delay: 0,
     },
   });
-  animation.run(trash);
+  animation.run(({ progress }) => console.log(progress));
   console.log(second);
   console.log(animation);
 }

@@ -78,7 +78,9 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
   }
   public abstract reset(): void;
   public restart() {
-    while (this.run.length) this.run.pop();
+    while (this.run.length) {
+      this.run.pop()!.triggered = false;
+    } 
     this.reset();
   }
   protected abstract init(keyframes: Keyframe[]): void;
@@ -176,24 +178,70 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       }
     }
   }
+  isLastKeyframe(time: number): boolean {
+    return (
+      !this.current!.triggered &&
+      time >= this.next!.time(1) - this.current!.time(1)
+    );
+  }
   getKeyframeForTime(
     time: number,
     miliseconds: boolean = false
-  ): Keyframe | null {
+  ): {
+    keyframe: Keyframe | null;
+    end: boolean;
+  } {
+    // Asegurarse de que el tiempo no sea negativo
     if (time < 0) throw new Error('Time cannot be negative');
+
+    // Si el tiempo es mayor que 1, lo limitamos a 1
     time = time <= 1 ? time : 1;
+
     let next = this.next;
+
+    // Si el tiempo está en milisegundos, lo convertimos a una escala de 0 a 1
     if (miliseconds) time = time * this.duration;
+
+    // Si hay un keyframe siguiente y un keyframe actual
     if (next && this.current) {
+      // Mientras el tiempo del keyframe siguiente sea menor o igual al tiempo dado
+      // y el tiempo del keyframe siguiente no sea 1 (el final de la secuencia)
       while (next!.time(1) <= time && !(next!.time(1) === 1)) {
-        this.nextTime(); //bug-proof
+        // Avanzamos al siguiente keyframe
+        this.nextTime();
         next = this.next;
       }
-      if (time === next?.time(miliseconds ? this.duration : 1)) return next;
-      return this.current;
+
+      // Comprobamos si el keyframe actual es el último de la secuencia
+      let end = this.isLastKeyframe(time);
+
+      // Si el tiempo dado es igual al tiempo del keyframe siguiente
+      if (time === next?.time(miliseconds ? this.duration : 1)) {
+        this.next!.triggered = true;
+        // Devolvemos el keyframe siguiente y si es el final de la secuencia
+        return {
+          keyframe: next,
+          end,
+        };
+      }
+      this.current!.triggered = true;
+
+      // Si el tiempo dado no es igual al tiempo del keyframe siguiente
+      // Devolvemos el keyframe actual y si es el final de la secuencia
+      return {
+        keyframe: this.current,
+        end,
+      };
     } else {
+      this.current!.triggered = true;
+      // Si no hay un keyframe siguiente o un keyframe actual
+      // Avanzamos al siguiente keyframe y devolvemos el keyframe actual
+      // y false para indicar que no es el final de la secuencia
       this.nextTime();
-      return this.current;
+      return {
+        keyframe: this.current,
+        end: false,
+      };
     }
   }
   getAbsoluteStartValue(sequence: Sequence): number {
@@ -230,12 +278,26 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     super(duration, easing, keyframes);
     this.callback = function (all: FrameStats) {
       const { progress } = all;
-      let currentKeyframe = this.getKeyframeForTime(progress);
+      let { keyframe: currentKeyframe, end: next } =
+        this.getKeyframeForTime(progress);
+      if (next) {
+        return this.finallyCallback?.bind(this)();
+      }
       if (!currentKeyframe) return;
       if (currentKeyframe instanceof nestedKeyframe) {
         return currentKeyframe.obj.callback!.bind(currentKeyframe.obj)(all);
       } else {
         return Ocallback?.bind(this)(all);
+      }
+    };
+    this.finallyCallback = function () {
+      let { keyframe: currentKeyframe } =
+        this.getKeyframeForTime(1);
+      if (!currentKeyframe) return;
+      if (currentKeyframe instanceof nestedKeyframe) {
+        return currentKeyframe.obj.finallyCallback!.bind(currentKeyframe.obj)();
+      } else {
+        return finallyCallback?.bind(this)();
       }
     };
 
