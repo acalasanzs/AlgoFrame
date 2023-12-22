@@ -1,7 +1,13 @@
+interface attrStrucutre {
+  value: any;
+  parent: object;
+  key: string;
+}
 export function convertWrite(
   properties: IAny,
   options: IAny,
-  redirect?: string | "__proto__",
+  redirect?: string,
+  proto: boolean = false,
   recursive: boolean = false
 ) {
   /* 
@@ -9,39 +15,49 @@ export function convertWrite(
     */
 
   const obj: IAny = {};
+  function recursiveAssign(obj: IAny, key: string, value: any) {
+    if (Array.isArray(value)) {
+      obj[key] = [];
+      for (let i = 0; i < value.length; i++) {
+        obj[key].push(
+          convertWrite(value[i], options, key)
+        );
+      }
+    } else if (
+      Array.isArray(value) ||
+      typeof value === 'object'
+    ) {
+      obj[key] = convertWrite(value, options, key);
+    }
+  }
   for (let prop of Object.keys(properties)) {
     obj[prop] = {};
     for (let [k, v] of Object.entries(options)) {
       obj[prop][k] = v;
-      if (redirect) {
-        if (redirect === "__proto__") {
-          if(k === "get" || k === "set")
-          obj[prop][k] = v.bind({
-            value: properties[prop],
-            parent: properties,
-            key: prop,
-          });
-        } else {
-          if (hasNestedObjects(properties[prop]) && recursive) {
-            obj[prop][redirect] = convertWrite(
-              properties[prop],
-              options,
-              redirect
-            );
-          } else {
-            obj[prop][redirect] = properties[prop];
+      if (proto) {
+        if (k === 'get' || k === 'set') {
+          if(recursive) {
+            recursiveAssign(obj[prop], k, properties[prop])
+          }else{
+            obj[prop][k] = v.bind({
+              value: properties[prop],
+              parent: properties,
+              key: prop,
+            });
           }
+        }
+          
+      }
+      if (redirect) {
+        if (recursive) {
+          recursiveAssign(obj, prop, properties[prop])
+        } else {
+          obj[prop][redirect] = properties[prop];
         }
       }
     }
   }
   return obj;
-}
-export function hasNestedObjects(obj: IAny) {
-  for (let prop of Object.keys(obj)) {
-    if (typeof obj[prop] === 'object') return true;
-  }
-  return false;
 }
 export function editWrite(properties: IAny, shallow: object) {
   for (let prop of Object.keys(properties)) {
@@ -100,34 +116,55 @@ export function createElement(props: IAny): HTMLElement {
   Object.assign(el, rest);
   return el;
 }
-export function createDOMTree(root: Element, props: IAny) {
+export function structuredObserve(
+  original: IAny,
+  attrs: {
+    set: (this: attrStrucutre, value: any) => any;
+    get: (this: attrStrucutre) => any;
+  }
+) {
+  if (!attrs.get) {
+    attrs.get = function (this: attrStrucutre) {
+      return this.value;
+    };
+  }
   const next = convertWrite(
-    props,
+    original,
     {
-      set(value) {
-        console.log(value);
-      },
-      get() {
-        return this.value;
-      },
+      get: attrs.get,
+      set: attrs.set,
     },
-    "__proto__"
+    undefined,
+    true,
+    true
   );
-  Object.defineProperties(props, next as PropertyDescriptorMap);
+  Object.defineProperties(original, next as PropertyDescriptorMap);
+}
+export function createDOMTree(root: Element, props: IAny) {
   const { children, ...rest } = props;
   const base = root
     ? createAndAdd(rest.tagName, rest, root)
     : createElement(rest);
+  props.ref = base;
   for (let child of children) {
-    createAndAdd(child.tagName, child, base);
+    child.ref = createAndAdd(child.tagName, child, base);
     if (child.children) {
       createDOMTree(base, child);
     }
   }
+  structuredObserve(props, {
+    get() {
+      return this.value;
+    },
+    set(value) {
+      console.log('a');
+      this.value.ref[this.key] = value;
+    },
+  });
   return base;
 }
 export function createUI(root: Element) {
-  const tree = createDOMTree(root, {
+  const props = {
     tagName: 'div',
     className: 'title',
     children: [
@@ -143,6 +180,7 @@ export function createUI(root: Element) {
         tagName: 'p',
       },
     ],
-  });
-  console.log(tree);
+  };
+  const tree = createDOMTree(root, props);
+  props.children[0].textContent = 'Ya no';
 }
