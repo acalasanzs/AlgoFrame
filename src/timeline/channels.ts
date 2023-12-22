@@ -1,4 +1,4 @@
-/* import {
+import {
   _keyframe,
   IObjectKeyframe,
   Sequence,
@@ -84,4 +84,3 @@ export class ChannelsTimeline {
   protected reset(): void {}
 }
 
- */

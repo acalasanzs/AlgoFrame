@@ -1,4 +1,121 @@
 import { EasingFunctions } from "./utils";
+/**
+ * Represents an animation frame with various features and actions.
+ * @class
+ */
+class AlgoFrame {
+  /**
+   * Creates an instance of AlgoFrame.
+   * @constructor
+   * @param {number} duration - The duration of the animation frame.
+   * @param {number} [starttime=0] - The start time of the animation frame.
+   * @param {string|function} easing - The easing function or the name of the easing function to be used.
+   * @param {object} keyframes - The keyframes object containing the animation properties.
+   * @param {number} [FPS=null] - The frames per second of the animation.
+   * @param {boolean} [loop=false] - Indicates whether the animation should loop.
+   */
+  constructor(duration, starttime = 0, easing, keyframes, FPS = null, loop = false) {
+    // ...
+  }
+
+  /**
+   * Gets the frames per second (FPS) of the animation.
+   * @type {number|null}
+   */
+  get FPS() {
+    // ...
+  }
+
+  /**
+   * Sets the frames per second (FPS) of the animation.
+   * @param {number} value - The frames per second value.
+   * @throws {Error} Throws an error if the value is not a valid number.
+   */
+  set FPS(value) {
+    // ...
+  }
+
+  /**
+   * Returns the next time from the given array of running animations.
+   * @param {Array} [arr=this._running] - The array of running animations.
+   * @returns {object} The animation object with the next time.
+   * @throws {Error} Throws an error if the array is empty.
+   */
+  nextTime(arr = this._running) {
+    // ...
+  }
+
+  /**
+   * Saves the callback and precision for the animation.
+   * @param {function} callback - The callback function to be executed during the animation.
+   * @param {number} precision - The precision value for the animation.
+   */
+  save(callback, precision) {
+    // ...
+  }
+
+  /**
+   * Restarts the keyframes of the animation.
+   * @param {number} t - The time to restart the keyframes from.
+   */
+  restartKeyframes(t) {
+    // ...
+  }
+
+  /**
+   * Restarts the timeline of the animation.
+   */
+  restartTimeline() {
+    // ...
+  }
+
+  /**
+   * Sets up the timeline for the animation.
+   * @param {Array} array - The array of events for the timeline.
+   * @param {function} real - The real function to be executed during the animation.
+   * @param {boolean} reverseLoop - Indicates whether the animation should reverse loop.
+   * @returns {AlgoFrame} The AlgoFrame instance.
+   */
+  timeline(array, real, reverseLoop) {
+    // ...
+  }
+
+  /**
+   * Runs the animation with the specified callback and precision.
+   * @param {function} callback - The callback function to be executed during the animation.
+   * @param {number} [precision=this._FPS] - The precision value for the animation.
+   * @returns {AlgoFrame} The AlgoFrame instance.
+   */
+  run(callback, precision = this._FPS) {
+    // ...
+  }
+
+  /**
+   * Sets up a callback function to be executed after the animation finishes.
+   * @param {function} callback - The callback function to be executed.
+   * @returns {AlgoFrame} The AlgoFrame instance.
+   */
+  finally(callback) {
+    // ...
+  }
+
+  /**
+   * Resumes the animation after it has been stopped.
+   * @returns {AlgoFrame} The AlgoFrame instance.
+   */
+  break() {
+    // ...
+  }
+
+  /**
+   * Listens for specific events during the animation.
+   * @param {string} type - The type of event to listen for.
+   * @param {function} callback - The callback function to be executed when the event occurs.
+   */
+  listen(type, callback) {
+    // ...
+  }
+}
 class AlgoFrame {
   constructor(
     duration,
