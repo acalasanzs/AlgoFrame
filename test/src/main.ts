@@ -1,6 +1,6 @@
 import { nestedKeyframe, valueKeyframe } from '@/timeline';
 import './style.css';
-import { createBoxes } from './utils';
+import { createBoxes, createUI } from './utils';
 import { Animate, Sequence } from '@';
 // import {Animate} from "@";
 const basic = new Sequence(
@@ -31,7 +31,8 @@ function trash({ progress }) {
 // const boxes = 5;
 
 // const boxElements = createBoxes(root, boxes);
-const theBox = createBoxes(root, 1);
+createUI(root);
+const theBox = createBoxes(root, 5);
 
 const sequence: Sequence = new Sequence(
   800,
@@ -47,7 +48,7 @@ function version5() {
       delay: 0,
     },
   });
-  animation.run(({ progress }) => console.log(progress));
+  // animation.run(({ progress }) => console.log(progress));
   console.log(second);
   console.log(animation);
 }
