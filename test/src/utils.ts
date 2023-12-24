@@ -1,3 +1,15 @@
+interface attrStrucutre {
+  value: any;
+  parent: object;
+  key: string;
+}
+interface structuredObservation {
+  set: (this: attrStrucutre, value: any) => any;
+  get: (this: attrStrucutre) => any;
+}
+interface structuredObject {
+  [x: string]: structuredObservation;
+}
 export function convertWrite(
   properties: IAny,
   options: IAny,
@@ -86,6 +98,76 @@ export function createElement(props: IAny): HTMLElement {
   Object.assign(el, rest);
   return el;
 }
+export function Array_hasNestedObject(arr: any[]) {
+  // Recorre cada elemento del array
+  for (let i = 0; i < arr.length; i++) {
+    // Si el elemento es un objeto
+    if (typeof arr[i] === 'object' && arr[i] !== null) {
+      // Devuelve true
+      return true;
+    }
+  }
+  // Si no se encontró ningún objeto, devuelve false
+  return false;
+}
+export function Object_hasNestedObject(obj: IAny) {
+  // Recorre cada elemento del object.values
+  for (let x of Object.values(obj)) {
+    // Si el elemento es un objeto
+    if (typeof x === 'object') {
+      // Devuelve true
+      return true;
+    }
+  }
+  // Si no se encontró ningún objeto, devuelve false
+  return false;
+}
+export function structuredObserve(
+  original: IAny,
+  attrs: {
+    set: (this: attrStrucutre, value: any) => any;
+    get: (this: attrStrucutre) => any;
+  }
+) {
+  if (!attrs.get) {
+    attrs.get = function (this: attrStrucutre) {
+      return this.value;
+    };
+  }
+
+  function getToConvert(obj) {
+    return convertWrite(
+      original,
+      {
+        get: attrs.get,
+        set: attrs.set,
+      },
+      ['get', 'set']
+    ) as structuredObject;
+  }
+  // Nested Til represents the amount of nesting of a object?-/array/object...
+  function getIntoExtract(original: IAny) {
+    let nestedTil = Object.keys(original).length;
+    for (let i = 0; i < nestedTil; i++) {
+      let last = original[Object.keys(original)[i]];
+      if (Object_hasNestedObject(last)) {
+        for (let item of Object.values(last)) {
+          getIntoExtract(item as IAny);
+        }
+      } else if (Array_hasNestedObject(last)) {
+        for (let item of last) {
+          getIntoExtract(item);
+        }
+      }
+      Object.defineProperties(
+        last,
+        getToConvert(last) as PropertyDescriptorMap
+      );
+    }
+  }
+  getIntoExtract(original);
+  Object.defineProperties(original, getToConvert(original) as PropertyDescriptorMap);
+}
 export function createDOMTree(root: Element, props: IAny) {
   const next = convertWrite(
     props,
@@ -94,12 +176,13 @@ export function createDOMTree(root: Element, props: IAny) {
         console.log(value);
       },
       get() {
-        return "a";
+        return 'a';
       },
-    },["get","set"]
+    },
+    ['get', 'set']
   );
   Object.defineProperties(props, next as PropertyDescriptorMap);
-  props.tagName = "div";
+  props.tagName = 'div';
   const { children, ...rest } = props;
   const base = root
     ? createAndAdd(rest.tagName, rest, root)
