@@ -28,9 +28,11 @@ export function convertWrite(
         if (Array.isArray(redirect)) {
           for (let r of redirect) {
             if (r === 'get' || r === 'set') {
-              let modifier: IAny = {};
-              modifier[redirect] = v.bind(properties[prop]);
-              Object.defineProperty(obj, prop, modifier);
+              obj[prop][k] = v.bind({
+                value: properties[prop],
+                parent: properties,
+                key: prop,
+              });
             }
           }
         } else {
@@ -137,7 +139,7 @@ export function structuredObserve(
 
   function getToConvert(obj) {
     return convertWrite(
-      original,
+      obj,
       {
         get: attrs.get,
         set: attrs.set,
@@ -146,43 +148,36 @@ export function structuredObserve(
     ) as structuredObject;
   }
   // Nested Til represents the amount of nesting of a object?-/array/object...
-  function getIntoExtract(original: IAny) {
-    let nestedTil = Object.keys(original).length;
+  function getIntoExtract(nOriginal: IAny) {
+    let nestedTil = Object.keys(nOriginal).length;
     for (let i = 0; i < nestedTil; i++) {
-      let last = original[Object.keys(original)[i]];
-      if (Object_hasNestedObject(last)) {
-        for (let item of Object.values(last)) {
+      if (Object_hasNestedObject(nOriginal)) {
+        for (let item of Object.values(nOriginal)) {
           getIntoExtract(item as IAny);
         }
-      } else if (Array_hasNestedObject(last)) {
-        for (let item of last) {
+      } else if (Array.isArray(nOriginal) && Array_hasNestedObject(nOriginal)) {
+        for (let item of nOriginal) {
           getIntoExtract(item);
         }
+      } else if (typeof nOriginal === 'object') {
+        let nextw: IAny = getToConvert(nOriginal);
+        Object.defineProperties(nOriginal, nextw as PropertyDescriptorMap);
       }
-      Object.defineProperties(
-        last,
-        getToConvert(last) as PropertyDescriptorMap
-      );
+      
     }
   }
   getIntoExtract(original);
   Object.defineProperties(original, getToConvert(original) as PropertyDescriptorMap);
 }
 export function createDOMTree(root: Element, props: IAny) {
-  const next = convertWrite(
-    props,
-    {
-      set(value) {
-        console.log(value);
-      },
-      get() {
-        return 'a';
-      },
+  structuredObserve(props, {
+    set(value) {
+      console.log(value);
     },
-    ['get', 'set']
-  );
-  Object.defineProperties(props, next as PropertyDescriptorMap);
-  props.tagName = 'div';
+    get() {
+      return this.value;
+    },
+  });
   const { children, ...rest } = props;
   const base = root
     ? createAndAdd(rest.tagName, rest, root)
