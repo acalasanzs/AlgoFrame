@@ -1,11 +1,11 @@
-interface attrStrucutre {
+interface attrStructure {
   value: any;
-  parent: object;
+  parent: IAny;
   key: string;
 }
 interface structuredObservation {
-  set: (this: attrStrucutre, value: any) => any;
-  get: (this: attrStrucutre) => any;
+  set: (this: attrStructure, value: any) => any;
+  get: (this: attrStructure) => any;
 }
 interface structuredObject {
   [x: string]: structuredObservation;
@@ -127,12 +127,12 @@ export function Object_hasNestedObject(obj: IAny) {
 export function structuredObserve(
   original: IAny,
   attrs: {
-    set: (this: attrStrucutre, value: any) => any;
-    get: (this: attrStrucutre) => any;
+    set: (this: attrStructure, value: any) => any;
+    get: (this: attrStructure) => any;
   }
 ) {
   if (!attrs.get) {
-    attrs.get = function (this: attrStrucutre) {
+    attrs.get = function (this: attrStructure) {
       return this.value;
     };
   }
@@ -171,10 +171,10 @@ export function structuredObserve(
 }
 export function createDOMTree(root: Element, props: IAny) {
   structuredObserve(props, {
-    set(value) {
-      console.log(value);
+    set(this: attrStructure, value: any) {
+      this.parent.ref[this.key] = value;
     },
-    get() {
+    get(this: attrStructure) {
       return this.value;
     },
   });
@@ -182,8 +182,9 @@ export function createDOMTree(root: Element, props: IAny) {
   const base = root
     ? createAndAdd(rest.tagName, rest, root)
     : createElement(rest);
+  props.ref = base;
   for (let child of children) {
-    createAndAdd(child.tagName, child, base);
+    child.ref = createAndAdd(child.tagName, child, base);
     if (child.children) {
       createDOMTree(base, child);
     }
@@ -191,7 +192,7 @@ export function createDOMTree(root: Element, props: IAny) {
   return base;
 }
 export function createUI(root: Element) {
-  const tree = createDOMTree(root, {
+  const virtual = {
     tagName: 'div',
     className: 'title',
     children: [
@@ -207,6 +208,8 @@ export function createUI(root: Element) {
         tagName: 'p',
       },
     ],
-  });
+  };
+  const tree = createDOMTree(root, virtual);
+  console.log(virtual)
   console.log(tree);
 }
