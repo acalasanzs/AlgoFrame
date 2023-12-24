@@ -1,13 +1,13 @@
-interface attrStructure {
+export interface attrStructure {
   value: any;
   parent: IAny;
   key: string;
 }
-interface structuredObservation {
+export interface structuredObservation {
   set: (this: attrStructure, value: any) => any;
   get: (this: attrStructure) => any;
 }
-interface structuredObject {
+export interface structuredObject {
   [x: string]: structuredObservation;
 }
 export function convertWrite(
@@ -54,10 +54,10 @@ export function createAndAdd(tag: string, attrs: IAny, root: Element) {
   Object.assign(el, rest);
   return root.appendChild(el);
 }
-interface IAny {
+export interface IAny {
   [x: string]: any;
 }
-interface IStr {
+export interface IStr {
   [x: string]: string;
 }
 export function createBoxes(root: Element, boxes: number, id = true) {
