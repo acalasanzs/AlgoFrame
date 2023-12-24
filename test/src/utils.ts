@@ -137,7 +137,7 @@ export function structuredObserve(
     };
   }
 
-  function getToConvert(obj) {
+  function getToConvert(obj: IAny) {
     return convertWrite(
       obj,
       {
@@ -190,26 +190,4 @@ export function createDOMTree(root: Element, props: IAny) {
     }
   }
   return base;
-}
-export function createUI(root: Element) {
-  const virtual = {
-    tagName: 'div',
-    className: 'title',
-    children: [
-      {
-        tagName: 'h1',
-        textContent: 'Bezier Easing',
-      },
-      {
-        tagName: 'h2',
-        textContent: '()',
-      },
-      {
-        tagName: 'p',
-      },
-    ],
-  };
-  const tree = createDOMTree(root, virtual);
-  console.log(virtual)
-  console.log(tree);
 }

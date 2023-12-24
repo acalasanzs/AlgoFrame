@@ -1,7 +1,8 @@
 import { nestedKeyframe, valueKeyframe } from '@/timeline';
 import './style.css';
-import { createBoxes, createUI } from './utils';
+import { createBoxes, createDOMTree } from './utils';
 import { Animate, Sequence } from '@';
+import { FrameStats } from '@/utils';
 // import {Animate} from "@";
 const basic = new Sequence(
   false,
@@ -25,11 +26,33 @@ const second = new Sequence(1000, [
   new nestedKeyframe(first.clone(), 1, 'ratio'),
 ]);
 const root = document.getElementById('app')!;
-function trash({ progress }) {
+
+function trash({ progress }: FrameStats) {
   // console.log(progress)
 }
 // const boxes = 5;
-
+function createUI(root: Element) {
+  const virtual = {
+    tagName: 'div',
+    className: 'title',
+    children: [
+      {
+        tagName: 'h1',
+        textContent: 'Bezier Easing',
+      },
+      {
+        tagName: 'h2',
+        textContent: '()',
+      },
+      {
+        tagName: 'p',
+      },
+    ],
+  };
+  const tree = createDOMTree(root, virtual);
+  console.log(virtual);
+  console.log(tree);
+}
 // const boxElements = createBoxes(root, boxes);
 createUI(root);
 const theBox = createBoxes(root, 5);
