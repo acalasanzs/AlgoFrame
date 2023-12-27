@@ -31,9 +31,7 @@ const aNormalThing = new Sequence(1400, [
   new valueKeyframe(100, .5, 'ratio'),
   new valueKeyframe(0, 1, 'ratio'),
 ]);
-aNormalThing.extendToReverse({
-  mode: "shift"
-});
+
 const root = document.getElementById('app')!;
 
 function trash({ progress }: FrameStats) {
@@ -60,7 +58,7 @@ const virtual: IAny = {
 function createUI(root: Element, virtual: IAny) {
   /* const tree =  */createDOMTree(root, virtual);
 }
-console.log(virtual)
+// console.log(virtual)
 // const boxElements = createBoxes(root, boxes);
 createUI(root, virtual);
 
@@ -98,6 +96,18 @@ function version6() {
       delay: 0,
     },
   });
-
-  console.log(aNormalThing)
+/*   aNormalThing.extendToReverse({
+    mode: 'pad',
+    value: 100,
+  }); */
+  aNormalThing.extendToReverse({
+    mode: 'shift',
+  });
+  console.log(aNormalThing.keyframes.map((k) => [k.timing, k.value]));
+  animation.run(({value}) => {
+    if(value > 100) {
+      debugger;
+    }
+    theBox[0].style.transform = `translateX(${value}px)`;
+  });
 }
