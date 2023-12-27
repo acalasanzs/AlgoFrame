@@ -1,4 +1,5 @@
 import { nestedKeyframe, valueKeyframe } from '@/timeline';
+import {ChannelBlock} from "@/timeline/channels";
 import './style.css';
 import { createBoxes, createDOMTree, IAny } from './utils';
 import { Animate, Sequence } from '@';
@@ -25,6 +26,14 @@ const second = new Sequence(1000, [
   new nestedKeyframe(first.clone(), 0.5, 'ratio'),
   new nestedKeyframe(first.clone(), 1, 'ratio'),
 ]);
+const aNormalThing = new Sequence(1400, [
+  new valueKeyframe(0, 0, 'ratio'),
+  new valueKeyframe(100, .5, 'ratio'),
+  new valueKeyframe(0, 1, 'ratio'),
+]);
+aNormalThing.extendToReverse({
+  mode: "shift"
+});
 const root = document.getElementById('app')!;
 
 function trash({ progress }: FrameStats) {
@@ -79,4 +88,16 @@ function version5() {
     animation.run(console.log);
 } */
 
-version5();
+// version5();
+version6();
+function version6() {
+  const animation = new Animate({
+    sequence: aNormalThing,
+    easing: 'linear',
+    timing: {
+      delay: 0,
+    },
+  });
+
+  console.log(aNormalThing)
+}
