@@ -103,11 +103,10 @@ function version6() {
   aNormalThing.extendToReverse({
     mode: 'shift',
   });
-  console.log(aNormalThing.keyframes.map((k) => [k.timing, k.value]));
-  animation.run(({value}) => {
-    if(value > 100) {
-      debugger;
-    }
+  console.log(aNormalThing.keyframes);
+  window["normal"] = aNormalThing;
+  animation.run(({value, progress, currentTime}) => {
+    console.log(value, progress, currentTime)
     theBox[0].style.transform = `translateX(${value}px)`;
   });
 }
