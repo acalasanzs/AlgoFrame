@@ -101,7 +101,8 @@ function version6() {
     value: 100,
   }); */
   aNormalThing.extendToReverse({
-    mode: 'shift',
+    mode: 'pad',
+    value: 1000
   });
   console.log(aNormalThing.keyframes);
   window["normal"] = aNormalThing;
