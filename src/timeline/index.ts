@@ -179,7 +179,13 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     }
   }
   isLastKeyframe(time: number): boolean {
-        return !this.current!.triggered && this.run.length == 1 && this.current!.time(1) == time;
+      return (
+        (!this.current!.triggered &&
+          time >= this.next!.time(1) - this.current!.time(1) &&
+          this.run[this.run.length - 1].time(1) !== 1) ||
+        (time >= this.run[this.run.length - 1].time(1) &&
+          this.run[this.run.length - 1].time(1) === 1)
+      );
   }
   getKeyframeForTime(
     time: number,
@@ -265,6 +271,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   type: 'nested' | 'simple' = 'simple';
   taken: number[] = [];
   callback: Function | null = null;
+  finallyTriggered: boolean = false;
   constructor(
     duration: number | false,
     public keyframes: (valueKeyframe | nestedKeyframe)[],
@@ -277,8 +284,9 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       const { progress } = all;
       let { keyframe: currentKeyframe, end: next } =
         this.getKeyframeForTime(progress);
-      if (next) {
+      if (next && !this.finallyTriggered) {
         return this.finallyCallback?.bind(this)();
+        this.finallyTriggered = true;
       }
       if (!currentKeyframe) return;
       if (currentKeyframe instanceof nestedKeyframe) {
@@ -288,6 +296,8 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       }
     };
     this.finallyCallback = function () {
+      if(this.finallyTriggered) return;
+      this.finallyTriggered = true;
       let { keyframe: currentKeyframe } =
         this.getKeyframeForTime(1);
       if (!currentKeyframe) return;
