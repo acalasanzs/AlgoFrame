@@ -179,10 +179,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     }
   }
   isLastKeyframe(time: number): boolean {
-    return (
-      !this.current!.triggered &&
-      time >= this.next!.time(1) - this.current!.time(1)
-    );
+        return !this.current!.triggered && this.run.length == 1 && this.current!.time(1) == time;
   }
   getKeyframeForTime(
     time: number,
@@ -496,8 +493,6 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   public extendToReverse(safe: safePad | safeShift) {
     let copy: Sequence = new Sequence(this.duration+1, this.reverseKeyframes(), this.easing, this.callback, this.finallyCallback);
     this.extendToSequence(copy, safe);
-    console.log(this.keyframes)
-    console.log(this.test(0), copy.test(0));
     return this;
   }
   // public reset(): void in abstract parent class

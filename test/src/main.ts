@@ -87,7 +87,7 @@ function version5() {
 } */
 
 // version5();
-version6();
+// version6();
 function version6() {
   const animation = new Animate({
     sequence: aNormalThing,
@@ -104,10 +104,32 @@ function version6() {
     mode: 'pad',
     value: 1000
   });
-  console.log(aNormalThing.keyframes);
+  console.log(aNormalThing.keyframes.map((keyframe) => keyframe.value));
   window["normal"] = aNormalThing;
   animation.run(({value, progress, currentTime}) => {
-    console.log(value, progress, currentTime)
     theBox[0].style.transform = `translateX(${value}px)`;
   });
 }
+function version7() {
+  const extendedManual = new Sequence(3800, [
+    new valueKeyframe(0, 0, 'miliseconds'),
+    new valueKeyframe(100, 700, 'miliseconds'),
+    new valueKeyframe(0, 1400, 'miliseconds'),
+    new valueKeyframe(0, 2300, 'miliseconds'),
+    new valueKeyframe(0, 2800, 'miliseconds'),
+    new valueKeyframe(100, 3200, 'miliseconds'),
+    new valueKeyframe(0, 3800, 'miliseconds'),
+  ], 'linear', undefined, () => console.log('END'));
+  const animation = new Animate({
+    sequence: extendedManual,
+    easing: 'linear',
+    timing: {
+      delay: 0,
+    },
+  });
+  animation.run(({value, progress, currentTime}) => {
+    console.log(extendedManual.run.map((keyframe) => keyframe.value))
+    theBox[0].style.transform = `translateX(${value}px)`;
+  });
+}
+version7();
