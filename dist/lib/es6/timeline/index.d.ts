@@ -1,6 +1,6 @@
-import { Preset } from "../utils";
-import { _keyframe, IObjectKeyframe, nestedKeyframe, valueKeyframe, __valueKeyframe, ISimpleKeyframe, safePad, safeShift, normalKeyframes } from "./utils";
-export * from "./utils";
+import { Preset } from '../utils';
+import { _keyframe, IObjectKeyframe, nestedKeyframe, valueKeyframe, __valueKeyframe, ISimpleKeyframe, safePad, safeShift, normalKeyframes } from './utils';
+export * from './utils';
 export declare abstract class KeyChanger<Keyframe extends _keyframe> {
     keyframes: Keyframe[];
     duration: number;
@@ -19,15 +19,23 @@ export declare abstract class KeyChanger<Keyframe extends _keyframe> {
     protected currentAsSequence(object: IObjectKeyframe, progress: number, end: number): number | undefined;
     static lerp(x: number, y: number, a: number): number;
     test(progress: number, miliseconds?: boolean, runAdaptative?: boolean, nextValue?: ISimpleKeyframe): number | undefined;
+    isLastKeyframe(time: number): boolean;
+    getKeyframeForTime(time: number, miliseconds?: boolean): {
+        keyframe: Keyframe | null;
+        end: boolean;
+    };
     getAbsoluteStartValue(sequence: Sequence): number;
     getAbsoluteEndKeyframe(sequence: Sequence): valueKeyframe;
 }
 export declare class Sequence extends KeyChanger<normalKeyframes> {
     keyframes: (valueKeyframe | nestedKeyframe)[];
-    callback: Function | null;
-    type: "nested" | "simple";
+    Ocallback: Function | null;
+    finallyCallback: Function | null;
+    type: 'nested' | 'simple';
     taken: number[];
-    constructor(duration: number | false, keyframes: (valueKeyframe | nestedKeyframe)[], easing?: Preset, callback?: Function | null);
+    callback: Function | null;
+    finallyTriggered: boolean;
+    constructor(duration: number | false, keyframes: (valueKeyframe | nestedKeyframe)[], easing?: Preset, Ocallback?: Function | null, finallyCallback?: Function | null);
     protected init(keyframes: typeof this.keyframes): void;
     static passKeyframe(k: any | nestedKeyframe | valueKeyframe): valueKeyframe | nestedKeyframe;
     static is_value(object: any): object is __valueKeyframe;
@@ -40,8 +48,10 @@ export declare class Sequence extends KeyChanger<normalKeyframes> {
      *
      * @param keyframe - A valid AlgoFrame's keyframe object
      */
-    method?: "push" | "unshift", ...keyframes: normalKeyframes[]): Sequence;
+    method?: 'push' | 'unshift', ...keyframes: normalKeyframes[]): Sequence;
     extendToSequence(seq: Sequence, safe: safePad | safeShift): this;
     reset(): void;
     clone(): Sequence;
+    reverseKeyframes(keyframes?: normalKeyframes[]): normalKeyframes[];
+    extendToReverse(safe: safePad | safeShift): this;
 }

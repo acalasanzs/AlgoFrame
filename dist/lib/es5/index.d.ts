@@ -3,7 +3,7 @@ import { Framer, Controller, Animator, animationCallback, Preset } from './utils
 export declare const sensibility: number;
 type timeReferences = {
     duration?: number;
-    delay: number;
+    delay?: number;
 };
 type controls = {
     FPS?: number;
@@ -13,8 +13,9 @@ type options = {
     sequence: Sequence;
     easing?: Preset;
     controls?: controls;
-    timing: timeReferences;
+    timing?: timeReferences;
 };
+export { Sequence };
 export declare class Animate {
     frame: Framer;
     control: Controller;
@@ -26,4 +27,3 @@ export declare class Animate {
     precision(value: number): this;
     run(callback?: animationCallback): this;
 }
-export {};

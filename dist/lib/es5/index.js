@@ -1,5 +1,7 @@
+import { Sequence } from './timeline';
 import { Framer, Controller, Animator, Refresher, passPreset, } from './utils';
 export const sensibility = 0.9;
+export { Sequence };
 export class Animate {
     constructor(options) {
         // Frame properties
@@ -15,8 +17,8 @@ export class Animate {
             this.frame.FPS = controls.FPS; // also implicitily declares Framer._precision
         if (controls === null || controls === void 0 ? void 0 : controls.loop)
             this.control.loop = controls.loop;
-        this.frame.start.time = timing.delay;
-        this.frame.duration = timing.duration || sequence.duration;
+        this.frame.start.time = (timing === null || timing === void 0 ? void 0 : timing.delay) || 0;
+        this.frame.duration = (timing === null || timing === void 0 ? void 0 : timing.duration) || sequence.duration;
     }
     finally(callback) {
         this.control.finally = callback;
@@ -31,6 +33,8 @@ export class Animate {
         return this;
     }
     run(callback) {
+        if (this.frame.sequence.duration !== this.frame.duration)
+            this.frame.duration = this.frame.sequence.duration;
         let condition, seg;
         if (callback) {
             this.control.callback = callback;
@@ -57,23 +61,19 @@ export class Animate {
             this.frame.last.time.refresh(timestamp);
         }
         function animate(timestamp) {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e, _f, _g, _h;
             refresh.call(this, timestamp);
             let runtime = null, relativeProgress = null, easedProgress = null;
             this.control.sent = false;
             const send = () => {
+                var _a, _b;
                 this.control.sent = true;
                 this.frame.value = this.frame.sequence.test(Math.min(easedProgress, 1));
+                // TODO: Add a recursvie callback inside Sequence
+                (_b = (_a = this.frame.sequence).callback) === null || _b === void 0 ? void 0 : _b.call(_a, this.frame.stats());
+                // console.log(this.frame.sequence)        // END
                 this.control.callback(this.frame.stats());
             };
-            if (this.frame.start.animationTime) {
-                // console.log(this.frame.start.animationTime - timestamp);
-                runtime = timestamp - this.frame.start.animationTime;
-                relativeProgress = runtime / this.frame.duration;
-                easedProgress = this.engine.easing(relativeProgress);
-                this.progress = Math.min(easedProgress, 1);
-                this.frame.progress = Math.min(easedProgress, 1);
-            }
             // console.log(this.frame.start.time);
             if (!this.frame.start.animationTime && this.frame.start.time === 0) {
                 this.frame.start.animationTime = timestamp;
@@ -91,6 +91,14 @@ export class Animate {
                 requestAnimationFrame(animate.bind(this));
                 return;
             }
+            if (this.frame.start.animationTime) {
+                // console.log(this.frame.start.animationTime - timestamp);
+                runtime = timestamp - this.frame.start.animationTime;
+                relativeProgress = runtime / this.frame.duration;
+                easedProgress = this.engine.easing(relativeProgress);
+                this.progress = Math.min(easedProgress, 1);
+                this.frame.progress = Math.min(easedProgress, 1);
+            }
             if (condition) {
                 this.frame.count = seg;
                 this.frame.frame++;
@@ -98,7 +106,7 @@ export class Animate {
                 send();
             }
             if (!this.control.stop) {
-                if (runtime && runtime < this.frame.duration) {
+                if (typeof runtime === 'number' && runtime < this.frame.duration) {
                     requestAnimationFrame(animate.bind(this));
                 }
                 else if (runtime &&
@@ -113,12 +121,14 @@ export class Animate {
                     if (this.control.loop)
                         requestAnimationFrame(animate.bind(this));
                     (_b = (_a = this.control).finally) === null || _b === void 0 ? void 0 : _b.call(_a);
+                    (_d = (_c = this.frame.sequence).finallyCallback) === null || _d === void 0 ? void 0 : _d.call(_c);
                 }
                 else if (!this.control.completed) {
                     this.control.completed = true;
                     if (this.control.loop)
                         requestAnimationFrame(animate.bind(this));
-                    (_d = (_c = this.control).finally) === null || _d === void 0 ? void 0 : _d.call(_c);
+                    (_f = (_e = this.control).finally) === null || _f === void 0 ? void 0 : _f.call(_e);
+                    (_h = (_g = this.frame.sequence).finallyCallback) === null || _h === void 0 ? void 0 : _h.call(_g);
                 }
             }
             if (this.frame.frame === 0)
@@ -127,7 +137,4 @@ export class Animate {
         requestAnimationFrame(animate.bind(this));
         return this;
     }
-}
-class AlgoFrame {
-    constructor() { }
 }

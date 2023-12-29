@@ -1,17 +1,7 @@
-"use strict";
-/* import {
-  _keyframe,
-  ObjectKeyframe,
-  Sequence,
-  KeyChanger,
-  nestedKeyframe,
-} from '.';
-import { Preset } from '../../utils';
-import { timeIntervals } from './utils';
-
+export {};
 //                                            seq   seq   seq
 //.repeat(times:number) in sequence |---------****-****---***----------|
-export class ChannelBlock extends _keyframe implements ObjectKeyframe {
+/* export class ChannelBlock extends _keyframe implements IObjectKeyframe {
   public size!: number;
   // public timing: number = 0;
   constructor(
@@ -29,29 +19,32 @@ export class ChannelBlock extends _keyframe implements ObjectKeyframe {
   public time() {
     return super.time(this.duration);
   }
-}
-export class ChannelSequence extends KeyChanger<ChannelBlock> {
+} */
+/* export class ChannelSequence extends KeyChanger<nestedKeyframe> {
   size: number;
   start: number;
   end: number;
 
-  constructor(public blocks: ChannelBlock[], easing: Preset = 'linear') {
+  constructor(public blocks: nestedKeyframe[], easing: Preset = 'linear') {
     const { max, min } = timeIntervals(blocks);
     blocks.forEach(b => this.run.push(b));
-    super(max, easing);
+    super(max, easing, blocks);
     this.size = max - min;
     this.start = min;
     this.end = max;
   }
-  protected reset(): void {
+  init() {
+    
+  }
+  reset(): void {
     this.blocks.forEach(k => this.run.push(k));
   }
   clone() {
     let orig = this;
     return Object.assign(Object.create(Object.getPrototypeOf(orig)), orig);
   }
-}
-export class ChannelsTimeline {
+} */
+/* export class Timeline {
   //AllRun? to all channels simultaneously
   // Return a nested object of all the results in a given time?
   // So in that case, call every AlgoFrame Sequence/timeline better.
@@ -83,5 +76,4 @@ export class ChannelsTimeline {
   }
   protected currentAsSequence(object: nestedKeyframe, progress: number) {}
   protected reset(): void {}
-}
- */
+} */

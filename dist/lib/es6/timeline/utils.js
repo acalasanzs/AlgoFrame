@@ -45,6 +45,7 @@ class _keyframe {
         this.delay = delay;
         this.hold = hold;
         this.start = start;
+        this.triggered = false;
         if (start < 0) {
             throw new RangeError('Negative start times are not implemented yet');
         }
@@ -71,8 +72,8 @@ class _keyframe {
             : duration * timing;
     }
 }
-_keyframe.instances = 0;
 exports._keyframe = _keyframe;
+_keyframe.instances = 0;
 class valueKeyframe extends _keyframe {
     constructor(value, timing, type = 'miliseconds', delay, hold = false) {
         super(timing, type, delay, hold);

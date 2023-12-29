@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Animator = exports.Refresher = exports.Controller = exports.Initiator = exports.Framer = exports.passPreset = exports.EasingFunctions = void 0;
 class EasingFunctions {
 }
+exports.EasingFunctions = EasingFunctions;
 // no easing; no acceleration
 EasingFunctions.linear = t => t;
 // accelerating from zero velocity
@@ -29,7 +30,6 @@ EasingFunctions.easeInQuint = t => t * t * t * t * t;
 EasingFunctions.easeOutQuint = t => 1 + --t * t * t * t * t;
 // acceleration until halfway; then deceleration
 EasingFunctions.easeInOutQuint = t => t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
-exports.EasingFunctions = EasingFunctions;
 function passPreset(preset) {
     if (typeof preset !== 'function') {
         return EasingFunctions[preset];

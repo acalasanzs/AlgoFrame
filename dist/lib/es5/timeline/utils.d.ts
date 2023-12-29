@@ -32,6 +32,7 @@ export declare class _keyframe implements IBaseKeyframe {
     static instances: number;
     readonly id: number;
     duration: number;
+    triggered: boolean;
     constructor(timing: number, type?: 'ratio' | 'miliseconds', delay?: number, hold?: boolean, start?: number);
     time(duration?: number): number;
 }

@@ -32,13 +32,14 @@ export function ratioAndMilisecons(ratio, miliseconds, duration) {
      */
     return ratio * duration + miliseconds;
 }
-class _keyframe {
+export class _keyframe {
     constructor(timing, type = 'ratio', delay = 0, hold = false, start = 0) {
         this.timing = timing;
         this.type = type;
         this.delay = delay;
         this.hold = hold;
         this.start = start;
+        this.triggered = false;
         if (start < 0) {
             throw new RangeError('Negative start times are not implemented yet');
         }
@@ -66,7 +67,6 @@ class _keyframe {
     }
 }
 _keyframe.instances = 0;
-export { _keyframe };
 export class valueKeyframe extends _keyframe {
     constructor(value, timing, type = 'miliseconds', delay, hold = false) {
         super(timing, type, delay, hold);
