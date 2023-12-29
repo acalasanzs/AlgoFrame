@@ -54,6 +54,7 @@ export class Animate {
     return this;
   }
   public run(callback?: animationCallback) {
+    if(this.frame.sequence.duration !== this.frame.duration) this.frame.duration = this.frame.sequence.duration;
     let condition: boolean, seg: number;
     if (callback) {
       this.control.callback = callback;
@@ -83,6 +84,7 @@ export class Animate {
       }
 
     function animate(this: Animate, timestamp: number) {
+      
       refresh.call(this, timestamp);
       let runtime: number | null = null,
         relativeProgress: number | null = null,

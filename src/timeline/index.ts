@@ -399,6 +399,8 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     return this;
   }
   public extendToSequence(seq: Sequence, safe: safePad | safeShift) {
+    // i.e. concatanate sequences
+    // You need to specify if you want to replace the last keyframe of the current this Sequence so the animation can make sense, or, in otherwise, add a apdding to the this animation finish
     if (seq.object === this.object)
       throw new Error('Cannot reextend to my own self');
     let safePad = (safe as any).value * 2;
@@ -409,11 +411,17 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     seq.keyframes.forEach((k, i) => {
       const safing = i < seq.keyframes.length - 1 ? 1 : 0;
       const safeOffset = safePad ? safing : 0;
-      k.timing =
-        k.timing +
-        (k.duration + this.duration + safeOffset * safePad) *
-          (k.duration / (this.duration + k.duration));
-      k.duration += this.duration;
+      if (k.type === 'ratio') {
+        k.timing = k.time(seq.duration + this.duration);
+        k.type = "miliseconds";
+      } else {
+        const durationRatio = k.duration / (seq.duration + k.duration);
+        const timingOffset = (k.duration + this.duration + safeOffset * safePad) * durationRatio;
+        k.timing = k.timing + Math.ceil(timingOffset);
+      }
+
+      k.duration +=
+        this.duration + Math.floor(safePad * (k.duration / (seq.duration + k.duration)));
       if (!safing && safe) {
         k.timing += 1;
       }
@@ -422,8 +430,9 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       // safeShift
       this.keyframes.pop();
     }
-    this.keyframes.forEach(k => {
-      k.duration += this.duration;
+    this.keyframes.forEach((k,i) => {
+      k.duration +=
+        this.duration + Math.ceil(safePad * (k.duration / (seq.duration + k.duration)));
     });
     this.keyframes.forEach(k => {
       console.log(k.duration);
@@ -431,7 +440,9 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     /*     const display = (seq: Sequence) =>
       seq.keyframes.map(k => [k.time(k.duration), k.duration]);
     console.log(display(seq), display(this)); */
-    this.addKeyframes('push', ...seq.keyframes);
+    console.log(seq.keyframes)
+    this.addKeyframes('push', ...seq.keyframes.sort((a, b) => a.timing - b.timing));
+    console.log(this)
     return this;
   }
   public reset(): void {
@@ -457,6 +468,37 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     );
 
     return copy;
+  }
+  public reverseKeyframes(keyframes: normalKeyframes[] = this.keyframes) {
+    return keyframes
+      .map((kf, i) => {
+        let replacement: normalKeyframes;
+        if (kf instanceof nestedKeyframe) {
+          replacement = new nestedKeyframe(
+            kf.obj,
+            this.duration - kf.timing,
+            kf.type,
+            kf.delay
+          );
+        } else {
+          replacement = new valueKeyframe(
+            kf.value,
+            this.duration - kf.timing,
+            kf.type,
+            kf.delay
+          );
+        }
+        // replacement.duration = kf.duration;
+        return replacement;
+      })
+      .reverse();
+  }
+  public extendToReverse(safe: safePad | safeShift) {
+    let copy: Sequence = new Sequence(this.duration+1, this.reverseKeyframes(), this.easing, this.callback, this.finallyCallback);
+    this.extendToSequence(copy, safe);
+    console.log(this.keyframes)
+    console.log(this.test(0), copy.test(0));
+    return this;
   }
   // public reset(): void in abstract parent class
 }
