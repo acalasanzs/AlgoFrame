@@ -101,8 +101,7 @@ function version6() {
     value: 100,
   }); */
   aNormalThing.extendToReverse({
-    mode: 'pad',
-    value: 1000
+    mode: 'shift',
   });
   console.log(aNormalThing.keyframes.map((keyframe) => keyframe.value));
   window["normal"] = aNormalThing;
@@ -128,8 +127,8 @@ function version7() {
     },
   });
   animation.run(({value, progress, currentTime}) => {
-    console.log(extendedManual.run.map((keyframe) => keyframe.value))
+    // console.log(extendedManual.run.map((keyframe) => keyframe.value))
     theBox[0].style.transform = `translateX(${value}px)`;
   });
 }
-version7();
+version6();

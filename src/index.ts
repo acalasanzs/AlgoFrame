@@ -163,6 +163,3 @@ export class Animate {
     return this;
   }
 }
-class AlgoFrame {
-  constructor() {}
-}
