@@ -30,7 +30,7 @@ With AlgoFrame 5 `algoframe@5.1.2` there are a vast variety of posibilities and 
 
 This README provides an overview of the library's methods and animation breakthroughs.
 
-## Methods
+## **Animate** Methods
 # constructor(options: options)
 The constructor method initializes the Animate class with the provided options. The options object includes the following properties:
 
@@ -41,6 +41,18 @@ timing: Timing references for the animation, including duration and delay.
 finally(callback: () => void)
 The finally method sets a callback function to be executed when the animation is completed or stopped. The callback function should not take any arguments.
 
+- controls: An object based on the `controls` type of the options object in the constructor method. It provides additional control options for the animation, such as frames per second (FPS) and loop settings.
+
+        type controls = {
+            FPS?: number;
+            loop?: boolean;
+        };
+- timing: An object based on the `timeReferences` type of the options object in the constructor method. It includes the following properties:
+
+        type timeReferences = {
+            duration?: number;
+            delay?: number;
+        };
 - break()
 The break method stops the animation from progressing further. This can be useful if you want to pause or interrupt the animation.
 
@@ -49,6 +61,39 @@ The precision method sets the precision value for the animation. The precision v
 
 - run(callback?: animationCallback)
 The run method starts the animation. It takes an optional callback function that will be called on each animation frame. The callback function should take a single argument, which is an object containing animation statistics.
+
+# **Sequence** Methods
+
+The Sequence class in AlgoFrame is an extension of the KeyChanger class. It is used to manage and control sequences of animations. Here's a breakdown of its methods:
+
+# Constructor
+The constructor initializes a new Sequence instance. It takes five parameters:
+
+- duration: The duration of the sequence.
+- keyframes: An array of keyframes for the sequence.
+- easing: The easing function for the sequence.
+- Ocallback: A callback function that is called during the sequence.
+- finallyCallback: A callback function that is called when the sequence finishes.
+init
+The init method initializes the sequence. It takes an array of keyframes as a parameter.
+
+- passKeyframe
+The passKeyframe method checks if a keyframe is an instance of nestedKeyframe or valueKeyframe and returns it. If not, it creates a new instance of valueKeyframe or nestedKeyframe based on the properties of the keyframe.
+
+- addKeyframes
+The addKeyframes method adds new keyframes to the sequence. It takes a method ('push' or 'unshift') and an array of keyframes as parameters.
+
+- extendToSequence
+The extendToSequence method extends the current sequence with another sequence. It takes a Sequence instance and a safePad or safeShift as parameters.
+
+- clone
+The clone method creates a copy of the sequence.
+
+- reverseKeyframes
+The reverseKeyframes method reverses the order of the keyframes in the sequence.
+
+- extendToReverse
+The extendToReverse method extends the current sequence with its reverse. It takes a safePad or safeShift as a parameter.
 
 # Animation Breakthroughs
 AlgoFrame introduces several breakthroughs in animation techniques, including:
