@@ -1,6 +1,6 @@
 {
   "name": "algoframe",
-  "version": "5.1.2",
+  "version": "5.1.3",
   "description": "A TypeScript comprehensive and modulated libary for doing algebraic animation with requestAnimatioFrame natively, even with Bezier and Sequences",
   "main": "index.js",
   "scripts": {
