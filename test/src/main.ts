@@ -1,9 +1,8 @@
-import { nestedKeyframe, valueKeyframe } from '@/timeline';
-import {ChannelBlock} from "@/timeline/channels";
+import { nestedKeyframe, valueKeyframe } from 'algoframe/timeline';
 import './style.css';
 import { createBoxes, createDOMTree, IAny } from './utils';
-import { Animate, Sequence } from '@';
-import { FrameStats } from '@/utils';
+import { Animate, Sequence } from 'algoframe';
+import { FrameStats } from 'algoframe/utils';
 // import {Animate} from "@";
 const basic = new Sequence(
   false,
