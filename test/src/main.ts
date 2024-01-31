@@ -1,8 +1,8 @@
-import { nestedKeyframe, valueKeyframe } from 'algoframe/timeline';
+import { nestedKeyframe, valueKeyframe } from './src/timeline';
 import './style.css';
 import { createBoxes, createDOMTree, IAny } from './utils';
-import { Animate, Sequence } from 'algoframe';
-import { FrameStats } from 'algoframe/utils';
+import { Animate, Sequence } from './src';
+import { FrameStats } from './src/utils';
 // import {Animate} from "@";
 const basic = new Sequence(
   false,
@@ -76,7 +76,7 @@ function version5() {
       delay: 0,
     },
   });
-  // animation.run(({ progress }) => console.log(progress));
+   animation.run(({ value }) => console.log(value));
   console.log(second);
   console.log(animation);
 }
@@ -130,4 +130,4 @@ function version7() {
     theBox[0].style.transform = `translateX(${value}px)`;
   });
 }
-version6();
+version5();
