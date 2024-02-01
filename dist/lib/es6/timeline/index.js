@@ -78,6 +78,8 @@ class KeyChanger {
         let res;
         if (rProgress <= 1) {
             // console.log(object.obj);
+            object.obj.reset();
+            object.obj.nextTime();
             res = object.obj.test(rProgress, undefined, true);
             return res;
         }
@@ -110,6 +112,9 @@ class KeyChanger {
                     : (progress - this.current.time(1)) / a;
                 // console.log(String([this.current.time(1), next.time(1)]));
                 const lerp = KeyChanger.lerp(this.current.value, next.value, next.hold ? 0 : kProgress);
+                if (lerp < 0) {
+                    debugger;
+                }
                 // debugger;
                 // console.log(this.current, next);
                 return lerp;
@@ -212,11 +217,11 @@ exports.KeyChanger = KeyChanger;
 //    Adaptative Sequence duration DONE
 // P.D.: That's not the as AlgoFrame.timeline, which each timing 'sequence' has its own function rather a numeric value in a Sequence
 class Sequence extends KeyChanger {
-    constructor(duration, keyframes, easing = 'linear', Ocallback = null, finallyCallback = null) {
+    constructor(duration, keyframes, easing = 'linear', Ocallback = null, ofinallyCallback = null) {
         super(duration, easing, keyframes);
         this.keyframes = keyframes;
         this.Ocallback = Ocallback;
-        this.finallyCallback = finallyCallback;
+        this.ofinallyCallback = ofinallyCallback;
         this.type = 'simple';
         this.taken = [];
         this.callback = null;
@@ -239,6 +244,7 @@ class Sequence extends KeyChanger {
             }
         };
         this.finallyCallback = function () {
+            var _a;
             if (this.finallyTriggered)
                 return;
             this.finallyTriggered = true;
@@ -249,7 +255,7 @@ class Sequence extends KeyChanger {
                 return currentKeyframe.obj.finallyCallback.bind(currentKeyframe.obj)();
             }
             else {
-                return finallyCallback === null || finallyCallback === void 0 ? void 0 : finallyCallback.bind(this)();
+                return (_a = this.ofinallyCallback) === null || _a === void 0 ? void 0 : _a.bind(this)();
             }
         };
         // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
@@ -359,7 +365,7 @@ class Sequence extends KeyChanger {
             const safeOffset = safePad ? safing : 0;
             if (k.type === 'ratio') {
                 k.timing = k.time(seq.duration + this.duration);
-                k.type = "miliseconds";
+                k.type = 'miliseconds';
             }
             else {
                 const durationRatio = k.duration / (seq.duration + k.duration);
@@ -367,7 +373,8 @@ class Sequence extends KeyChanger {
                 k.timing = k.timing + Math.ceil(timingOffset);
             }
             k.duration +=
-                this.duration + Math.floor(safePad * (k.duration / (seq.duration + k.duration)));
+                this.duration +
+                    Math.floor(safePad * (k.duration / (seq.duration + k.duration)));
             if (!safing && safe) {
                 k.timing += 1;
             }
@@ -378,7 +385,8 @@ class Sequence extends KeyChanger {
         }
         this.keyframes.forEach((k, i) => {
             k.duration +=
-                this.duration + Math.ceil(safePad * (k.duration / (seq.duration + k.duration)));
+                this.duration +
+                    Math.ceil(safePad * (k.duration / (seq.duration + k.duration)));
         });
         this.keyframes.forEach(k => {
             console.log(k.duration);

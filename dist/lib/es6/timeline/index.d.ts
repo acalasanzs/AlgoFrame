@@ -30,12 +30,13 @@ export declare abstract class KeyChanger<Keyframe extends _keyframe> {
 export declare class Sequence extends KeyChanger<normalKeyframes> {
     keyframes: (valueKeyframe | nestedKeyframe)[];
     Ocallback: Function | null;
-    finallyCallback: Function | null;
+    ofinallyCallback: Function | null;
     type: 'nested' | 'simple';
     taken: number[];
     callback: Function | null;
     finallyTriggered: boolean;
-    constructor(duration: number | false, keyframes: (valueKeyframe | nestedKeyframe)[], easing?: Preset, Ocallback?: Function | null, finallyCallback?: Function | null);
+    finallyCallback: Function;
+    constructor(duration: number | false, keyframes: (valueKeyframe | nestedKeyframe)[], easing?: Preset, Ocallback?: Function | null, ofinallyCallback?: Function | null);
     protected init(keyframes: typeof this.keyframes): void;
     static passKeyframe(k: any | nestedKeyframe | valueKeyframe): valueKeyframe | nestedKeyframe;
     static is_value(object: any): object is __valueKeyframe;
