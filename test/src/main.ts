@@ -76,7 +76,9 @@ function version5() {
       delay: 0,
     },
   });
-   animation.run(({ value }) => console.log(value));
+   animation.run(({ value }) => {
+    console.log(value)
+   });
   console.log(second);
   console.log(animation);
 }

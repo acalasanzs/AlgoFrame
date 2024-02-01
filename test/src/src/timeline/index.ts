@@ -95,6 +95,8 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     let res!: number;
     if (rProgress <= 1) {
       // console.log(object.obj);
+      object.obj.reset();
+      object.obj.nextTime();
       res = object.obj.test(rProgress, undefined, true) as number;
       return res;
     }
@@ -141,6 +143,9 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
           next.value,
           next.hold ? 0 : kProgress
         );
+        if(lerp < 0) {
+          debugger;
+        }
         // debugger;
         // console.log(this.current, next);
         return lerp;

@@ -80,7 +80,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
   public restart() {
     while (this.run.length) {
       this.run.pop()!.triggered = false;
-    } 
+    }
     this.reset();
   }
   protected abstract init(keyframes: Keyframe[]): void;
@@ -95,6 +95,8 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     let res!: number;
     if (rProgress <= 1) {
       // console.log(object.obj);
+      object.obj.reset();
+      object.obj.nextTime();
       res = object.obj.test(rProgress, undefined, true) as number;
       return res;
     }
@@ -141,6 +143,9 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
           next.value,
           next.hold ? 0 : kProgress
         );
+        if(lerp < 0) {
+          debugger;
+        }
         // debugger;
         // console.log(this.current, next);
         return lerp;
@@ -179,13 +184,13 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     }
   }
   isLastKeyframe(time: number): boolean {
-      return (
-        (!this.current!.triggered &&
-          time >= this.next!.time(1) - this.current!.time(1) &&
-          this.run[this.run.length - 1].time(1) !== 1) ||
-        (time >= this.run[this.run.length - 1].time(1) &&
-          this.run[this.run.length - 1].time(1) === 1)
-      );
+    return (
+      (!this.current!.triggered &&
+        time >= this.next!.time(1) - this.current!.time(1) &&
+        this.run[this.run.length - 1].time(1) !== 1) ||
+      (time >= this.run[this.run.length - 1].time(1) &&
+        this.run[this.run.length - 1].time(1) === 1)
+    );
   }
   getKeyframeForTime(
     time: number,
@@ -286,6 +291,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       let { keyframe: currentKeyframe, end: next } =
         this.getKeyframeForTime(progress);
       if (next && !this.finallyTriggered) {
+        
         return this.finallyCallback?.bind(this)();
         this.finallyTriggered = true;
       }
@@ -297,16 +303,14 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       }
     };
     this.finallyCallback = function () {
-      if(this.finallyTriggered) return;
+      if (this.finallyTriggered) return;
       this.finallyTriggered = true;
-      let { keyframe: currentKeyframe } =
-        this.getKeyframeForTime(1);
-      
+      let { keyframe: currentKeyframe } = this.getKeyframeForTime(1);
+
       if (!currentKeyframe) return;
       if (currentKeyframe instanceof nestedKeyframe) {
         return currentKeyframe.obj.finallyCallback!.bind(currentKeyframe.obj)();
       } else {
-        debugger;
         return this.ofinallyCallback?.bind(this)();
       }
     };
@@ -423,15 +427,17 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       const safeOffset = safePad ? safing : 0;
       if (k.type === 'ratio') {
         k.timing = k.time(seq.duration + this.duration);
-        k.type = "miliseconds";
+        k.type = 'miliseconds';
       } else {
         const durationRatio = k.duration / (seq.duration + k.duration);
-        const timingOffset = (k.duration + this.duration + safeOffset * safePad) * durationRatio;
+        const timingOffset =
+          (k.duration + this.duration + safeOffset * safePad) * durationRatio;
         k.timing = k.timing + Math.ceil(timingOffset);
       }
 
       k.duration +=
-        this.duration + Math.floor(safePad * (k.duration / (seq.duration + k.duration)));
+        this.duration +
+        Math.floor(safePad * (k.duration / (seq.duration + k.duration)));
       if (!safing && safe) {
         k.timing += 1;
       }
@@ -440,9 +446,10 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       // safeShift
       this.keyframes.pop();
     }
-    this.keyframes.forEach((k,i) => {
+    this.keyframes.forEach((k, i) => {
       k.duration +=
-        this.duration + Math.ceil(safePad * (k.duration / (seq.duration + k.duration)));
+        this.duration +
+        Math.ceil(safePad * (k.duration / (seq.duration + k.duration)));
     });
     this.keyframes.forEach(k => {
       console.log(k.duration);
@@ -450,9 +457,12 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     /*     const display = (seq: Sequence) =>
       seq.keyframes.map(k => [k.time(k.duration), k.duration]);
     console.log(display(seq), display(this)); */
-    console.log(seq.keyframes)
-    this.addKeyframes('push', ...seq.keyframes.sort((a, b) => a.timing - b.timing));
-    console.log(this)
+    console.log(seq.keyframes);
+    this.addKeyframes(
+      'push',
+      ...seq.keyframes.sort((a, b) => a.timing - b.timing)
+    );
+    console.log(this);
     return this;
   }
   public reset(): void {
@@ -504,7 +514,13 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       .reverse();
   }
   public extendToReverse(safe: safePad | safeShift) {
-    let copy: Sequence = new Sequence(this.duration+1, this.reverseKeyframes(), this.easing, this.callback, this.finallyCallback);
+    let copy: Sequence = new Sequence(
+      this.duration + 1,
+      this.reverseKeyframes(),
+      this.easing,
+      this.callback,
+      this.finallyCallback
+    );
     this.extendToSequence(copy, safe);
     return this;
   }
