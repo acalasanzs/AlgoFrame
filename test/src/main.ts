@@ -15,19 +15,31 @@ const basic = new Sequence(
   undefined,
   () => console.log('END BASIC')
 );
-const first = new Sequence(false, [
-  new nestedKeyframe(basic.clone(), 0, 'ratio'),
-  new nestedKeyframe(basic.clone(), 0.5, 'ratio'),
-  new nestedKeyframe(basic.clone(), 1, 'ratio'),
-]);
-const second = new Sequence(1000, [
-  new nestedKeyframe(first.clone(), 0, 'ratio'),
-  new nestedKeyframe(first.clone(), 0.5, 'ratio'),
-  new nestedKeyframe(first.clone(), 1, 'ratio'),
-]);
+const first = new Sequence(
+  false,
+  [
+    new nestedKeyframe(basic.clone(), 0, 'ratio'),
+    new nestedKeyframe(basic.clone(), 0.5, 'ratio'),
+    new nestedKeyframe(basic.clone(), 1, 'ratio'),
+  ],
+  undefined,
+  undefined,
+  () => console.log('END FIRST')
+);
+const second = new Sequence(
+  1000,
+  [
+    new nestedKeyframe(first.clone(), 0, 'ratio'),
+    new nestedKeyframe(first.clone(), 0.5, 'ratio'),
+    new nestedKeyframe(first.clone(), 1, 'ratio'),
+  ],
+  undefined,
+  undefined,
+  () => console.log('END SECOND')
+);
 const aNormalThing = new Sequence(1400, [
   new valueKeyframe(0, 0, 'ratio'),
-  new valueKeyframe(100, .5, 'ratio'),
+  new valueKeyframe(100, 0.5, 'ratio'),
   new valueKeyframe(0, 1, 'ratio'),
 ]);
 
@@ -55,7 +67,7 @@ const virtual: IAny = {
   ],
 };
 function createUI(root: Element, virtual: IAny) {
-  /* const tree =  */createDOMTree(root, virtual);
+  /* const tree =  */ createDOMTree(root, virtual);
 }
 // console.log(virtual)
 // const boxElements = createBoxes(root, boxes);
@@ -76,9 +88,9 @@ function version5() {
       delay: 0,
     },
   });
-   animation.run(({ value }) => {
-    console.log(value)
-   });
+  animation.run(({ value }) => {
+    console.log(value);
+  });
   console.log(second);
   console.log(animation);
 }
@@ -97,29 +109,35 @@ function version6() {
       delay: 0,
     },
   });
-/*   aNormalThing.extendToReverse({
+  /*   aNormalThing.extendToReverse({
     mode: 'pad',
     value: 100,
   }); */
   aNormalThing.extendToReverse({
     mode: 'shift',
   });
-  console.log(aNormalThing.keyframes.map((keyframe) => keyframe.value));
-  window["normal"] = aNormalThing;
-  animation.run(({value, progress, currentTime}) => {
+  console.log(aNormalThing.keyframes.map(keyframe => keyframe.value));
+  window['normal'] = aNormalThing;
+  animation.run(({ value, progress, currentTime }) => {
     theBox[0].style.transform = `translateX(${value}px)`;
   });
 }
 function version7() {
-  const extendedManual = new Sequence(3800, [
-    new valueKeyframe(0, 0, 'miliseconds'),
-    new valueKeyframe(100, 700, 'miliseconds'),
-    new valueKeyframe(0, 1400, 'miliseconds'),
-    new valueKeyframe(0, 2300, 'miliseconds'),
-    new valueKeyframe(0, 2800, 'miliseconds'),
-    new valueKeyframe(100, 3200, 'miliseconds'),
-    new valueKeyframe(0, 3800, 'miliseconds'),
-  ], 'linear', undefined, () => console.log('END'));
+  const extendedManual = new Sequence(
+    3800,
+    [
+      new valueKeyframe(0, 0, 'miliseconds'),
+      new valueKeyframe(100, 700, 'miliseconds'),
+      new valueKeyframe(0, 1400, 'miliseconds'),
+      new valueKeyframe(0, 2300, 'miliseconds'),
+      new valueKeyframe(0, 2800, 'miliseconds'),
+      new valueKeyframe(100, 3200, 'miliseconds'),
+      new valueKeyframe(0, 3800, 'miliseconds'),
+    ],
+    'linear',
+    undefined,
+    () => console.log('END')
+  );
   const animation = new Animate({
     sequence: extendedManual,
     easing: 'linear',
@@ -127,7 +145,7 @@ function version7() {
       delay: 0,
     },
   });
-  animation.run(({value, progress, currentTime}) => {
+  animation.run(({ value, progress, currentTime }) => {
     // console.log(extendedManual.run.map((keyframe) => keyframe.value))
     theBox[0].style.transform = `translateX(${value}px)`;
   });

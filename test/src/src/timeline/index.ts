@@ -84,6 +84,12 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     this.reset();
   }
   protected abstract init(keyframes: Keyframe[]): void;
+  protected rProgress(object: IBaseKeyframe, progress: number, end: number) {
+    let res = (progress - object.time(1)) / (end - object.time(1));
+    object.obj.reset();
+    object.obj.nextTime();
+    return res;
+  }
   // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
   protected currentAsSequence(
     object: IObjectKeyframe,
@@ -91,12 +97,10 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     end: number
   ): number | undefined {
     // console.log((progress - object.time(1)) / (end - object.time(1)));
-    const rProgress = (progress - object.time(1)) / (end - object.time(1));
+    const rProgress = this.rProgress(object, progress, end);
     let res!: number;
     if (rProgress <= 1) {
       // console.log(object.obj);
-      object.obj.reset();
-      object.obj.nextTime();
       res = object.obj.test(rProgress, undefined, true) as number;
       return res;
     }
@@ -143,7 +147,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
           next.value,
           next.hold ? 0 : kProgress
         );
-        if(lerp < 0) {
+        if (lerp < 0) {
           debugger;
         }
         // debugger;
@@ -278,6 +282,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   callback: Function | null = null;
   finallyTriggered: boolean = false;
   finallyCallback!: Function;
+  lastLimitKeyframe: boolean = false;
   constructor(
     duration: number | false,
     public keyframes: (valueKeyframe | nestedKeyframe)[],
@@ -286,23 +291,35 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     public ofinallyCallback: Function | null = null
   ) {
     super(duration, easing, keyframes);
+    
     this.callback = function (all: FrameStats) {
       const { progress } = all;
       let { keyframe: currentKeyframe, end: next } =
         this.getKeyframeForTime(progress);
+
       if (next && !this.finallyTriggered) {
-        
-        return this.finallyCallback?.bind(this)();
         this.finallyTriggered = true;
+        return this.finallyCallback?.bind(this)();
       }
       if (!currentKeyframe) return;
       if (currentKeyframe instanceof nestedKeyframe) {
-        return currentKeyframe.obj.callback!.bind(currentKeyframe.obj)(all);
+        
+
+        return  currentKeyframe.obj.callback!.bind(currentKeyframe.obj)({
+          ...all,
+          progress: this.rProgress(
+            currentKeyframe,
+            progress,
+            1
+          ),
+        });
       } else {
+        
         return Ocallback?.bind(this)(all);
       }
     };
     this.finallyCallback = function () {
+      console.log("end")
       if (this.finallyTriggered) return;
       this.finallyTriggered = true;
       let { keyframe: currentKeyframe } = this.getKeyframeForTime(1);
