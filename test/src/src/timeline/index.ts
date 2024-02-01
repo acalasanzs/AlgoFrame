@@ -84,8 +84,11 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     this.reset();
   }
   protected abstract init(keyframes: Keyframe[]): void;
-  protected rProgress(object: IBaseKeyframe, progress: number, end: number) {
-    let res = (progress - object.time(1)) / (end - object.time(1));
+  protected rProgressValue(object: IBaseKeyframe, progress: number, end: number) {
+    return (progress - object.time(1)) / (end - object.time(1));
+  }
+  protected rProgress(object: IObjectKeyframe, progress: number, end: number) {
+    let res = this.rProgressValue(object, progress, end);
     object.obj.reset();
     object.obj.nextTime();
     return res;
@@ -282,7 +285,9 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   callback: Function | null = null;
   finallyTriggered: boolean = false;
   finallyCallback!: Function;
-  lastLimitKeyframe: boolean = false;
+  firstTimeRun: boolean = true;
+  lastRunLength: boolean = false;
+  exchange: boolean = false;
   constructor(
     duration: number | false,
     public keyframes: (valueKeyframe | nestedKeyframe)[],
@@ -296,15 +301,16 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       const { progress } = all;
       let { keyframe: currentKeyframe, end: next } =
         this.getKeyframeForTime(progress);
-
-      if (next && !this.finallyTriggered) {
+        
+      
+      if (next && !this.finallyTriggered || (this.lastRunLength)) {
         this.finallyTriggered = true;
+        this.lastRunLength = false;
+        this.firstTimeRun = true;
         return this.finallyCallback?.bind(this)();
       }
       if (!currentKeyframe) return;
       if (currentKeyframe instanceof nestedKeyframe) {
-        
-
         return  currentKeyframe.obj.callback!.bind(currentKeyframe.obj)({
           ...all,
           progress: this.rProgress(
@@ -314,7 +320,13 @@ export class Sequence extends KeyChanger<normalKeyframes> {
           ),
         });
       } else {
-        
+        if (!this.firstTimeRun && currentKeyframe?.time(1) === 0) {
+          this.lastRunLength = true;
+        }
+        if (progress > 0 && currentKeyframe?.time(1) === 0 && !this.exchange){
+          this.firstTimeRun = false;
+          this.exchange = true;
+        }
         return Ocallback?.bind(this)(all);
       }
     };
