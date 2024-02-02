@@ -13,7 +13,9 @@ const basic = new Sequence(
   ],
   'linear',
   undefined,
-  () => console.log('END BASIC')
+  () => {
+    console.log("END BASIC")
+  }
 );
 const first = new Sequence(
   false,
@@ -89,7 +91,7 @@ function version5() {
     },
   });
   animation.run(({ value }) => {
-    console.log(value);
+    // console.log(value);
   });
   console.log(second);
   console.log(animation);

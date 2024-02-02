@@ -84,11 +84,11 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     this.reset();
   }
   protected abstract init(keyframes: Keyframe[]): void;
-  protected rProgressValue(object: IBaseKeyframe, progress: number, end: number) {
+  static rProgressValue(object: IBaseKeyframe, progress: number, end: number) {
     return (progress - object.time(1)) / (end - object.time(1));
   }
-  protected rProgress(object: IObjectKeyframe, progress: number, end: number) {
-    let res = this.rProgressValue(object, progress, end);
+  static rProgress(object: IObjectKeyframe, progress: number, end: number) {
+    let res = KeyChanger.rProgressValue(object, progress, end);
     object.obj.reset();
     object.obj.nextTime();
     return res;
@@ -100,7 +100,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     end: number
   ): number | undefined {
     // console.log((progress - object.time(1)) / (end - object.time(1)));
-    const rProgress = this.rProgress(object, progress, end);
+    const rProgress = KeyChanger.rProgress(object, progress, end);
     let res!: number;
     if (rProgress <= 1) {
       // console.log(object.obj);
@@ -159,7 +159,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       } else if (isComplex(next) && isSimple(this.current)) {
         // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
         const nextValueFromObj = new valueKeyframe(
-          this.getAbsoluteStartValue(next.obj as Sequence),
+          KeyChanger.getAbsoluteStartValue(next.obj as Sequence),
           next.time(1),
           'ratio'
         );
@@ -259,19 +259,32 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       };
     }
   }
-  getAbsoluteStartValue(sequence: Sequence): number {
+  static getAbsoluteStartValue(sequence: KeyChanger<normalKeyframes>): number {
     let last = sequence.current;
     while (last instanceof nestedKeyframe) {
       last = sequence.current;
     }
     return last!.value;
   }
-  getAbsoluteEndKeyframe(sequence: Sequence): valueKeyframe {
+  static getAbsoluteEndKeyframe(
+    sequence: KeyChanger<normalKeyframes>
+  ): valueKeyframe {
     let last = sequence.run[sequence.run.length - 1];
     while (last instanceof nestedKeyframe) {
       last = sequence.run[sequence.run.length - 1];
     }
     return last;
+  }
+  static getAbsoluteTime(sequence: Sequence, prog: number): number {
+    let last = sequence.getKeyframeForTime(prog).keyframe;
+    while (last instanceof nestedKeyframe) {
+      if(!last){
+        break
+      }
+      last = last.obj.getKeyframeForTime(prog).keyframe;
+      prog = KeyChanger.rProgressValue(last, prog, 1);
+    }
+    return prog;
   }
 }
 
@@ -285,9 +298,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   callback: Function | null = null;
   finallyTriggered: boolean = false;
   finallyCallback!: Function;
-  firstTimeRun: boolean = true;
-  lastRunLength: boolean = false;
-  exchange: boolean = false;
+  nextCallback: boolean = false;
   constructor(
     duration: number | false,
     public keyframes: (valueKeyframe | nestedKeyframe)[],
@@ -296,51 +307,35 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     public ofinallyCallback: Function | null = null
   ) {
     super(duration, easing, keyframes);
-    
-    this.callback = function (all: FrameStats) {
+
+    this.callback = (all: FrameStats) => {
       const { progress } = all;
       let { keyframe: currentKeyframe, end: next } =
         this.getKeyframeForTime(progress);
-        
-      
-      if (next && !this.finallyTriggered || (this.lastRunLength)) {
-        this.finallyTriggered = true;
-        this.lastRunLength = false;
-        this.firstTimeRun = true;
-        return this.finallyCallback?.bind(this)();
-      }
+
       if (!currentKeyframe) return;
+      console.log(KeyChanger.getAbsoluteTime(this, progress), progress)
+      if (next && !this.finallyTriggered) {
+        return requestAnimationFrame(() => this.finallyCallback());
+      }
       if (currentKeyframe instanceof nestedKeyframe) {
-        return  currentKeyframe.obj.callback!.bind(currentKeyframe.obj)({
-          ...all,
-          progress: this.rProgress(
-            currentKeyframe,
-            progress,
-            1
-          ),
-        });
+        let rProg = KeyChanger.rProgress(currentKeyframe, progress, 1);
+        return currentKeyframe.obj.callback?.(all);
       } else {
-        if (!this.firstTimeRun && currentKeyframe?.time(1) === 0) {
-          this.lastRunLength = true;
-        }
-        if (progress > 0 && currentKeyframe?.time(1) === 0 && !this.exchange){
-          this.firstTimeRun = false;
-          this.exchange = true;
-        }
         return Ocallback?.bind(this)(all);
       }
     };
-    this.finallyCallback = function () {
-      console.log("end")
+    this.finallyCallback = () => {
       if (this.finallyTriggered) return;
       this.finallyTriggered = true;
       let { keyframe: currentKeyframe } = this.getKeyframeForTime(1);
 
       if (!currentKeyframe) return;
       if (currentKeyframe instanceof nestedKeyframe) {
-        return currentKeyframe.obj.finallyCallback!.bind(currentKeyframe.obj)();
+        ofinallyCallback?.bind(currentKeyframe.obj)();
+        return currentKeyframe.obj.finallyCallback();
       } else {
-        return this.ofinallyCallback?.bind(this)();
+        ofinallyCallback?.bind(this)();
       }
     };
 
@@ -441,7 +436,12 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     this.init(this.keyframes);
     return this;
   }
-  public extendToSequence(seq: Sequence, safe: safePad | safeShift) {
+  public extendToSequence(
+    seq: Sequence,
+    safe: safePad | safeShift = {
+      mode: 'shift',
+    }
+  ) {
     // i.e. concatanate sequences
     // You need to specify if you want to replace the last keyframe of the current this Sequence so the animation can make sense, or, in otherwise, add a apdding to the this animation finish
     if (seq.object === this.object)
@@ -496,6 +496,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   }
   public reset(): void {
     this.keyframes.forEach(k => this.run.push(k));
+    this.finallyTriggered = false;
   }
   public clone(): Sequence {
     const keyframes = this.keyframes.map(k => {
