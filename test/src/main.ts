@@ -44,7 +44,6 @@ const aNormalThing = new Sequence(1400, [
   new valueKeyframe(100, 0.5, 'ratio'),
   new valueKeyframe(0, 1, 'ratio'),
 ]);
-
 const root = document.getElementById('app')!;
 
 function trash({ progress }: FrameStats) {
@@ -91,8 +90,8 @@ function version5() {
     },
   });
   animation.run(({ value }) => {
-    // console.log(value);
-  });
+    console.log(value);
+  }).finally(() => console.log('END'));
   console.log(second);
   console.log(animation);
 }

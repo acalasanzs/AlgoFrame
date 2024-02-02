@@ -149,12 +149,12 @@ export class Animate {
           this.control.completed = true;
           if (this.control.loop) requestAnimationFrame(animate.bind(this));
           this.control.finally?.();
-          this.frame.sequence.finallyCallback?.();
+          // this.frame.sequence.ofinallyCallback?.();
         } else if (!this.control.completed) {
           this.control.completed = true;
           if (this.control.loop) requestAnimationFrame(animate.bind(this));
           this.control.finally?.();
-          this.frame.sequence.finallyCallback?.();
+          this.frame.sequence.ofinallyCallback?.();
         }
       }
       if (this.frame.frame === 0) this.control._start();

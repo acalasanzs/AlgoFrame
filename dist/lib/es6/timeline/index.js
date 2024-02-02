@@ -71,15 +71,22 @@ class KeyChanger {
         }
         this.reset();
     }
+    static rProgressValue(object, progress, end) {
+        return (progress - object.time(1)) / (end - object.time(1));
+    }
+    static rProgress(object, progress, end) {
+        let res = KeyChanger.rProgressValue(object, progress, end);
+        object.obj.reset();
+        object.obj.nextTime();
+        return res;
+    }
     // This is called when in this.test(), this.current is of type nestedKeyframe, so treat de return as a nested timeline call.
     currentAsSequence(object, progress, end) {
         // console.log((progress - object.time(1)) / (end - object.time(1)));
-        const rProgress = (progress - object.time(1)) / (end - object.time(1));
+        const rProgress = KeyChanger.rProgress(object, progress, end);
         let res;
         if (rProgress <= 1) {
             // console.log(object.obj);
-            object.obj.reset();
-            object.obj.nextTime();
             res = object.obj.test(rProgress, undefined, true);
             return res;
         }
@@ -99,10 +106,15 @@ class KeyChanger {
         else if (miliseconds)
             throw new Error('miliseconds mode not allowe when adaptative');
         if (next && this.current) {
+            let past = this.current.obj;
+            let pastFinally = past === null || past === void 0 ? void 0 : past.callFinally.bind(past);
+            let callPast = false;
             while (next.time(1) <= progress && !(next.time(1) === 1)) {
                 this.nextTime(); //bug-proof
                 next = this.next;
+                callPast = true;
             }
+            callPast && (pastFinally === null || pastFinally === void 0 ? void 0 : pastFinally());
             if ((0, utils_2.isSimple)(next) && (0, utils_2.isSimple)(this.current)) {
                 progress = Math.min(this.easing(progress), miliseconds ? this.duration : 1);
                 const a = next.time(1) - this.current.time(1);
@@ -112,17 +124,18 @@ class KeyChanger {
                     : (progress - this.current.time(1)) / a;
                 // console.log(String([this.current.time(1), next.time(1)]));
                 const lerp = KeyChanger.lerp(this.current.value, next.value, next.hold ? 0 : kProgress);
-                if (lerp < 0) {
-                    debugger;
-                }
+                // if (lerp < 0) {
+                //   debugger;
+                // }
                 // debugger;
                 // console.log(this.current, next);
                 return lerp;
             }
             else if ((0, utils_2.isComplex)(next) && (0, utils_2.isSimple)(this.current)) {
                 // return (this.current as nestedKeyframe).obj.test(progress - this.current.time);
-                const nextValueFromObj = new utils_2.valueKeyframe(this.getAbsoluteStartValue(next.obj), next.time(1), 'ratio');
+                const nextValueFromObj = new utils_2.valueKeyframe(KeyChanger.getAbsoluteStartValue(next.obj), next.time(1), 'ratio');
                 nextValueFromObj.duration = this.duration;
+                pastFinally === null || pastFinally === void 0 ? void 0 : pastFinally();
                 return this.test(progress, undefined, undefined, nextValueFromObj
                 // this.next.obj.run[0].value
                 );
@@ -196,14 +209,14 @@ class KeyChanger {
             };
         }
     }
-    getAbsoluteStartValue(sequence) {
+    static getAbsoluteStartValue(sequence) {
         let last = sequence.current;
         while (last instanceof utils_2.nestedKeyframe) {
             last = sequence.current;
         }
         return last.value;
     }
-    getAbsoluteEndKeyframe(sequence) {
+    static getAbsoluteEndKeyframe(sequence) {
         let last = sequence.run[sequence.run.length - 1];
         while (last instanceof utils_2.nestedKeyframe) {
             last = sequence.run[sequence.run.length - 1];
@@ -226,39 +239,37 @@ class Sequence extends KeyChanger {
         this.taken = [];
         this.callback = null;
         this.finallyTriggered = false;
-        this.callback = function (all) {
-            var _a;
+        this.callback = (all) => {
+            var _a, _b;
             const { progress } = all;
             let { keyframe: currentKeyframe, end: next } = this.getKeyframeForTime(progress);
-            if (next && !this.finallyTriggered) {
-                return (_a = this.finallyCallback) === null || _a === void 0 ? void 0 : _a.bind(this)();
-                this.finallyTriggered = true;
-            }
             if (!currentKeyframe)
                 return;
+            if (next && !this.finallyTriggered) {
+                return requestAnimationFrame(this.callFinally.bind(this));
+            }
             if (currentKeyframe instanceof utils_2.nestedKeyframe) {
-                return currentKeyframe.obj.callback.bind(currentKeyframe.obj)(all);
+                // let rProg = KeyChanger.rProgress(currentKeyframe, progress, 1);
+                return (_b = (_a = currentKeyframe.obj).callback) === null || _b === void 0 ? void 0 : _b.call(_a, all);
             }
             else {
                 return Ocallback === null || Ocallback === void 0 ? void 0 : Ocallback.bind(this)(all);
             }
         };
-        this.finallyCallback = function () {
-            var _a;
-            if (this.finallyTriggered)
-                return;
-            this.finallyTriggered = true;
-            let { keyframe: currentKeyframe } = this.getKeyframeForTime(1);
+        // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
+    }
+    callFinally(ts) {
+        var _a;
+        if (this.finallyTriggered)
+            return;
+        this.finallyTriggered = true;
+        let { keyframe: currentKeyframe } = this.getKeyframeForTime(1);
+        if (currentKeyframe instanceof utils_2.nestedKeyframe) {
             if (!currentKeyframe)
                 return;
-            if (currentKeyframe instanceof utils_2.nestedKeyframe) {
-                return currentKeyframe.obj.finallyCallback.bind(currentKeyframe.obj)();
-            }
-            else {
-                return (_a = this.ofinallyCallback) === null || _a === void 0 ? void 0 : _a.bind(this)();
-            }
-        };
-        // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
+            currentKeyframe.obj.callFinally(ts);
+        }
+        (_a = this.ofinallyCallback) === null || _a === void 0 ? void 0 : _a.call(this);
     }
     init(keyframes) {
         // if (window['debug']) debugger;
@@ -311,7 +322,8 @@ class Sequence extends KeyChanger {
         try {
             this.nextTime();
         }
-        catch (_a) {
+        catch (e) {
+            debugger;
             throw new Error('Identical time signatures on keyframes are not allowed on a single animation channel');
         }
     }
@@ -350,7 +362,9 @@ class Sequence extends KeyChanger {
         this.init(this.keyframes);
         return this;
     }
-    extendToSequence(seq, safe) {
+    extendToSequence(seq, safe = {
+        mode: 'shift',
+    }) {
         // i.e. concatanate sequences
         // You need to specify if you want to replace the last keyframe of the current this Sequence so the animation can make sense, or, in otherwise, add a apdding to the this animation finish
         if (seq.object === this.object)
@@ -401,6 +415,7 @@ class Sequence extends KeyChanger {
     }
     reset() {
         this.keyframes.forEach(k => this.run.push(k));
+        this.finallyTriggered = false;
     }
     clone() {
         const keyframes = this.keyframes.map(k => {
@@ -411,7 +426,7 @@ class Sequence extends KeyChanger {
             }
             return (0, utils_2.replicate)(k);
         });
-        let copy = new Sequence(this.duration, keyframes, this.easing, this.callback, this.finallyCallback);
+        let copy = new Sequence(this.duration, keyframes, this.easing, this.callback, this.ofinallyCallback);
         return copy;
     }
     reverseKeyframes(keyframes = this.keyframes) {
@@ -430,7 +445,7 @@ class Sequence extends KeyChanger {
             .reverse();
     }
     extendToReverse(safe) {
-        let copy = new Sequence(this.duration + 1, this.reverseKeyframes(), this.easing, this.callback, this.finallyCallback);
+        let copy = new Sequence(this.duration + 1, this.reverseKeyframes(), this.easing, this.callback, this.ofinallyCallback);
         this.extendToSequence(copy, safe);
         return this;
     }

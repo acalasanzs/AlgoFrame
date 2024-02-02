@@ -64,7 +64,7 @@ class Animate {
             this.frame.last.time.refresh(timestamp);
         }
         function animate(timestamp) {
-            var _a, _b, _c, _d, _e, _f, _g, _h;
+            var _a, _b, _c, _d, _e, _f;
             refresh.call(this, timestamp);
             let runtime = null, relativeProgress = null, easedProgress = null;
             this.control.sent = false;
@@ -124,14 +124,14 @@ class Animate {
                     if (this.control.loop)
                         requestAnimationFrame(animate.bind(this));
                     (_b = (_a = this.control).finally) === null || _b === void 0 ? void 0 : _b.call(_a);
-                    (_d = (_c = this.frame.sequence).finallyCallback) === null || _d === void 0 ? void 0 : _d.call(_c);
+                    // this.frame.sequence.ofinallyCallback?.();
                 }
                 else if (!this.control.completed) {
                     this.control.completed = true;
                     if (this.control.loop)
                         requestAnimationFrame(animate.bind(this));
-                    (_f = (_e = this.control).finally) === null || _f === void 0 ? void 0 : _f.call(_e);
-                    (_h = (_g = this.frame.sequence).finallyCallback) === null || _h === void 0 ? void 0 : _h.call(_g);
+                    (_d = (_c = this.control).finally) === null || _d === void 0 ? void 0 : _d.call(_c);
+                    (_f = (_e = this.frame.sequence).ofinallyCallback) === null || _f === void 0 ? void 0 : _f.call(_e);
                 }
             }
             if (this.frame.frame === 0)

@@ -29,7 +29,6 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
   easing: (t: number) => number;
   object = Symbol();
   changer!: () => any;
-
   constructor(
     duration: number | false,
     easing: Preset = 'linear',
@@ -46,6 +45,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     this.easing = passPreset(easing);
     this.init(keyframes);
   }
+  protected abstract callFinally(ts?: number): void;
   protected nextTime(): void {
     if (!this.run.length) {
       this.next = null;
@@ -129,10 +129,15 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     else if (miliseconds)
       throw new Error('miliseconds mode not allowe when adaptative');
     if (next && this.current) {
+      let past = (this.current as unknown as IObjectKeyframe).obj;
+      let pastFinally = past?.callFinally.bind(past);
+      let callPast: boolean = false;
       while (next!.time(1) <= progress && !(next!.time(1) === 1)) {
         this.nextTime(); //bug-proof
         next = this.next;
+        callPast = true;
       }
+      callPast && pastFinally?.();
       if (isSimple(next) && isSimple(this.current)) {
         progress = Math.min(
           this.easing(progress),
@@ -150,9 +155,9 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
           next.value,
           next.hold ? 0 : kProgress
         );
-        if (lerp < 0) {
-          debugger;
-        }
+        // if (lerp < 0) {
+        //   debugger;
+        // }
         // debugger;
         // console.log(this.current, next);
         return lerp;
@@ -164,6 +169,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
           'ratio'
         );
         nextValueFromObj.duration = this.duration;
+        pastFinally?.();
         return this.test(
           progress,
           undefined,
@@ -275,17 +281,6 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     }
     return last;
   }
-  static getAbsoluteTime(sequence: Sequence, prog: number): number {
-    let last = sequence.getKeyframeForTime(prog).keyframe;
-    while (last instanceof nestedKeyframe) {
-      if(!last){
-        break
-      }
-      last = last.obj.getKeyframeForTime(prog).keyframe;
-      prog = KeyChanger.rProgressValue(last, prog, 1);
-    }
-    return prog;
-  }
 }
 
 // TODO:
@@ -297,8 +292,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
   taken: number[] = [];
   callback: Function | null = null;
   finallyTriggered: boolean = false;
-  finallyCallback!: Function;
-  nextCallback: boolean = false;
+
   constructor(
     duration: number | false,
     public keyframes: (valueKeyframe | nestedKeyframe)[],
@@ -307,39 +301,34 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     public ofinallyCallback: Function | null = null
   ) {
     super(duration, easing, keyframes);
-
     this.callback = (all: FrameStats) => {
       const { progress } = all;
       let { keyframe: currentKeyframe, end: next } =
         this.getKeyframeForTime(progress);
 
       if (!currentKeyframe) return;
-      console.log(KeyChanger.getAbsoluteTime(this, progress), progress)
       if (next && !this.finallyTriggered) {
-        return requestAnimationFrame(() => this.finallyCallback());
+        return requestAnimationFrame(this.callFinally.bind(this));
       }
       if (currentKeyframe instanceof nestedKeyframe) {
-        let rProg = KeyChanger.rProgress(currentKeyframe, progress, 1);
+        // let rProg = KeyChanger.rProgress(currentKeyframe, progress, 1);
         return currentKeyframe.obj.callback?.(all);
       } else {
         return Ocallback?.bind(this)(all);
       }
     };
-    this.finallyCallback = () => {
-      if (this.finallyTriggered) return;
-      this.finallyTriggered = true;
-      let { keyframe: currentKeyframe } = this.getKeyframeForTime(1);
-
-      if (!currentKeyframe) return;
-      if (currentKeyframe instanceof nestedKeyframe) {
-        ofinallyCallback?.bind(currentKeyframe.obj)();
-        return currentKeyframe.obj.finallyCallback();
-      } else {
-        ofinallyCallback?.bind(this)();
-      }
-    };
 
     // Pushes and Checks if all events are of type nestedKeyframe or _keyframe
+  }
+  protected callFinally(ts?: number | undefined): void {
+    if (this.finallyTriggered) return;
+    this.finallyTriggered = true;
+    let { keyframe: currentKeyframe } = this.getKeyframeForTime(1);
+    if (currentKeyframe instanceof nestedKeyframe) {
+      if (!currentKeyframe) return;
+      currentKeyframe.obj.callFinally(ts);
+    }
+    this.ofinallyCallback?.();
   }
   protected init(keyframes: typeof this.keyframes) {
     // if (window['debug']) debugger;
@@ -394,7 +383,8 @@ export class Sequence extends KeyChanger<normalKeyframes> {
     }
     try {
       this.nextTime();
-    } catch {
+    } catch (e) {
+      debugger;
       throw new Error(
         'Identical time signatures on keyframes are not allowed on a single animation channel'
       );
@@ -514,7 +504,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       keyframes as any,
       this.easing,
       this.callback,
-      this.finallyCallback
+      this.ofinallyCallback
     );
 
     return copy;
@@ -549,7 +539,7 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       this.reverseKeyframes(),
       this.easing,
       this.callback,
-      this.finallyCallback
+      this.ofinallyCallback
     );
     this.extendToSequence(copy, safe);
     return this;
