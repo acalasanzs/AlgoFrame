@@ -32,7 +32,7 @@ export function ratioAndMilisecons(ratio, miliseconds, duration) {
      */
     return ratio * duration + miliseconds;
 }
-export class _keyframe {
+class _keyframe {
     constructor(timing, type = 'ratio', delay = 0, hold = false, start = 0) {
         this.timing = timing;
         this.type = type;
@@ -67,6 +67,7 @@ export class _keyframe {
     }
 }
 _keyframe.instances = 0;
+export { _keyframe };
 export class valueKeyframe extends _keyframe {
     constructor(value, timing, type = 'miliseconds', delay, hold = false) {
         super(timing, type, delay, hold);

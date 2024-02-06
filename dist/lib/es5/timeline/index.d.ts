@@ -13,7 +13,7 @@ export declare abstract class KeyChanger<Keyframe extends _keyframe> {
     changer: () => any;
     constructor(duration: number | false, easing: Preset | undefined, keyframes: Keyframe[]);
     protected abstract callFinally(ts?: number): void;
-    protected nextTime(): void;
+    nextTime(): void;
     abstract reset(): void;
     restart(): void;
     protected abstract init(keyframes: Keyframe[]): void;

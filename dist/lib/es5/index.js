@@ -121,6 +121,8 @@ export class Animate {
                     if (this.control.loop)
                         requestAnimationFrame(animate.bind(this));
                     (_b = (_a = this.control).finally) === null || _b === void 0 ? void 0 : _b.call(_a);
+                    this.frame.sequence.reset();
+                    this.frame.sequence.nextTime();
                     // this.frame.sequence.ofinallyCallback?.();
                 }
                 else if (!this.control.completed) {

@@ -72,6 +72,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       // console.log(this.current?.time(1), this.next.time(1), this.run);
     } else {
       this.restart();
+      this.nextTime();
     }
     this.changer?.();
     this.run.shift();

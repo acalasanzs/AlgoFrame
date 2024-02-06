@@ -72,8 +72,8 @@ class _keyframe {
             : duration * timing;
     }
 }
-exports._keyframe = _keyframe;
 _keyframe.instances = 0;
+exports._keyframe = _keyframe;
 class valueKeyframe extends _keyframe {
     constructor(value, timing, type = 'miliseconds', delay, hold = false) {
         super(timing, type, delay, hold);

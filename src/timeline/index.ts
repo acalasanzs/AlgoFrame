@@ -46,7 +46,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
     this.init(keyframes);
   }
   protected abstract callFinally(ts?: number): void;
-  protected nextTime(): void {
+  public nextTime(): void {
     if (!this.run.length) {
       this.next = null;
       return;
@@ -72,6 +72,7 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       // console.log(this.current?.time(1), this.next.time(1), this.run);
     } else {
       this.restart();
+      
     }
     this.changer?.();
     this.run.shift();

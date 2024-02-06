@@ -155,6 +155,7 @@ export class Animate {
           if (this.control.loop) requestAnimationFrame(animate.bind(this));
           this.control.finally?.();
           this.frame.sequence.ofinallyCallback?.();
+          
         }
       }
       if (this.frame.frame === 0) this.control._start();
