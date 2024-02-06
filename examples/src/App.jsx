@@ -36,10 +36,12 @@ function App() {
       new Animate({
         sequence: timeline,
         timing: {
-          delay: delay
+          delay: delay,
         },
         controls: {
-          loop: true
+          loop: false,
+          FPS: 60
+
         }
       }).run()
       delay += delayValue;
