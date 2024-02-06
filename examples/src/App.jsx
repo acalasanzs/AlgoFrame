@@ -1,17 +1,50 @@
 import Box from './Box';
 import Slider from './Slider';
-import { Animate, Sequence } from 'algoframe';
-import { valueKeyframe, nestedKeyframe } from 'algoframe/timeline';
-import { useState } from 'react';
+import { Animate, Sequence } from '../../src';
+import { valueKeyframe, nestedKeyframe } from '../../src/timeline';
+import { useEffect, useState } from 'react';
 function App() {
-  const [boxes, setBoxes] = useState(1);
+  useEffect(()=>{
+    console.log(document.querySelectorAll('.box'));
+    const from0to100 = new Sequence(800, [
+      new valueKeyframe(0, 0, 'ratio'),
+      new valueKeyframe(100, 1, 'ratio'),
+    ]);
+    const delayValue = 150;
+    let delay = 0;
+    const boxes = document.querySelectorAll(".box");
+    boxes.forEach((box,i) => {
+      
+      const timeline = new Sequence(
+        800,
+        [
+          new valueKeyframe(0, 0, 'ratio'),
+          new valueKeyframe(100, 0.5, 'ratio'),
+          new valueKeyframe(0, 1, 'ratio'),
+        ],
+        'easeInOutQuad',
+        ({ value }) => {
+          if(value > 100) {
+            debugger
+          }
+          box.style.transform = `translateX(${value}%)`;
+        }
+      );
+      
+      new Animate({
+        sequence: timeline,
+        
+        controls: {
+          loop: true
+        }
+      }).run()
+    });
+  //  const animation =  new Animate();
+  })
   return (
     <>
       <div className="flex">
-        <Slider value={boxes} setValue={(value) => setBoxes(parseInt(value))} min={1} max={15} />
-        <Box many={boxes} />
-        <Slider value={boxes} setValue={setBoxes} />
-        <Box many={2} />
+        <Box many={9} />
       </div>
     </>
   );

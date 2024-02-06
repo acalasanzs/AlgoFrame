@@ -54,13 +54,14 @@ export class Animate {
     return this;
   }
   public run(callback?: animationCallback) {
-    if(this.frame.sequence.duration !== this.frame.duration) this.frame.duration = this.frame.sequence.duration;
+    if (this.frame.sequence.duration !== this.frame.duration)
+      this.frame.duration = this.frame.sequence.duration;
     let condition: boolean, seg: number;
     if (callback) {
       this.control.callback = callback;
     }
-    if (!this.control.callback)
-      throw new Error('Main callback is required for the animation');
+    // if (!this.control.callback)
+    //   throw new Error('Main callback is required for the animation');
     this.frame.last.time = new Refresher();
     this.frame.last.frameRate = this.frame.last.frameRate
       ? this.frame.last.frameRate
@@ -75,16 +76,15 @@ export class Animate {
       if (this.frame._FPS) {
         seg = Math.floor(
           (timestamp - this.frame.start.time) / this.frame.delay
-          );
-          condition = Boolean(seg > this.frame.count);
-        } else {
-          condition = true;
-        }
-        this.frame.last.time.refresh(timestamp);
+        );
+        condition = Boolean(seg > this.frame.count);
+      } else {
+        condition = true;
       }
+      this.frame.last.time.refresh(timestamp);
+    }
 
     function animate(this: Animate, timestamp: number) {
-      
       refresh.call(this, timestamp);
       let runtime: number | null = null,
         relativeProgress: number | null = null,
@@ -95,26 +95,28 @@ export class Animate {
         this.frame.value = this.frame.sequence.test(
           Math.min(easedProgress!, 1)
         ) as number;
+        if(this.frame.value > 100) {
+          debugger
+        }
         // TODO: Add a recursvie callback inside Sequence
         this.frame.sequence.callback?.(this.frame.stats());
         // console.log(this.frame.sequence)        // END
-        this.control.callback(this.frame.stats());
+        this.control.callback?.(this.frame.stats());
       };
       // console.log(this.frame.start.time);
       if (!this.frame.start.animationTime && this.frame.start.time === 0) {
         this.frame.start.animationTime = timestamp;
-        
       } else if (this.frame.start.time > 0) {
         this.frame.start.animationTime = timestamp;
-        
+
         let last: number = 0;
         if (typeof this.frame.last.time.last === 'number') {
           last = this.frame.last.time.last;
         }
         this.frame.start.time =
-        this.frame.start.time - last < last * sensibility
-        ? 0
-        : this.frame.start.time - last;
+          this.frame.start.time - last < last * sensibility
+            ? 0
+            : this.frame.start.time - last;
         requestAnimationFrame(animate.bind(this));
         return;
       }
@@ -147,17 +149,15 @@ export class Animate {
 
           send();
           this.control.completed = true;
+          
           if (this.control.loop) requestAnimationFrame(animate.bind(this));
           this.control.finally?.();
-          this.frame.sequence.reset();
-          this.frame.sequence.nextTime();
           // this.frame.sequence.ofinallyCallback?.();
         } else if (!this.control.completed) {
           this.control.completed = true;
           if (this.control.loop) requestAnimationFrame(animate.bind(this));
           this.control.finally?.();
           this.frame.sequence.ofinallyCallback?.();
-          
         }
       }
       if (this.frame.frame === 0) this.control._start();

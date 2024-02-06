@@ -140,6 +140,10 @@ export abstract class KeyChanger<Keyframe extends _keyframe> {
       }
       callPast && pastFinally?.();
       if (isSimple(next) && isSimple(this.current)) {
+        if(this.current.time(1) > progress) {
+          this.reset();
+          this.nextTime();
+        }
         progress = Math.min(
           this.easing(progress),
           miliseconds ? this.duration : 1
@@ -357,10 +361,11 @@ export class Sequence extends KeyChanger<normalKeyframes> {
       this.run.push(first);
     }
     if (final.time(1) < 1) {
-      if (final instanceof nestedKeyframe)
-        throw new Error(
-          "Cannot set last keyframe as nested sequence, it's impossible"
-        );
+      // debugger
+      // if (final instanceof nestedKeyframe)
+      //   throw new Error(
+      //     "Cannot set last keyframe as nested sequence, it's impossible"
+      //   );
       const last = new valueKeyframe(final.value, 1, 'ratio');
       last.duration = this.duration;
       this.keyframes.push(last);
