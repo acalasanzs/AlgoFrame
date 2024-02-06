@@ -10,7 +10,7 @@ function App() {
       new valueKeyframe(0, 0, 'ratio'),
       new valueKeyframe(100, 1, 'ratio'),
     ]);
-    const delayValue = 150;
+    let delayValue = 10;
     let delay = 1500;
     const boxes = document.querySelectorAll(".box");
     boxes.forEach((box,i) => {
@@ -24,7 +24,9 @@ function App() {
         ],
         'easeInOutQuad',
         ({ value }) => {
-          box.style.transform = `translateX(${value}%)`;
+          box.style.marginLeft = `calc(${value}% - ${
+            box.offsetWidth * (value / 100)
+          }px)`;
         }
       );
       
@@ -38,13 +40,14 @@ function App() {
         }
       }).run()
       delay += delayValue;
+      delayValue += 10;
     });
   //  const animation =  new Animate();
   })
   return (
     <>
       <div className="flex">
-        <Box many={9} />
+        <Box many={15} />
       </div>
     </>
   );
