@@ -39,8 +39,8 @@ export class Animate {
         if (callback) {
             this.control.callback = callback;
         }
-        if (!this.control.callback)
-            throw new Error('Main callback is required for the animation');
+        // if (!this.control.callback)
+        //   throw new Error('Main callback is required for the animation');
         this.frame.last.time = new Refresher();
         this.frame.last.frameRate = this.frame.last.frameRate
             ? this.frame.last.frameRate
@@ -66,13 +66,16 @@ export class Animate {
             let runtime = null, relativeProgress = null, easedProgress = null;
             this.control.sent = false;
             const send = () => {
-                var _a, _b;
+                var _a, _b, _c, _d;
                 this.control.sent = true;
                 this.frame.value = this.frame.sequence.test(Math.min(easedProgress, 1));
+                if (this.frame.value > 100) {
+                    debugger;
+                }
                 // TODO: Add a recursvie callback inside Sequence
                 (_b = (_a = this.frame.sequence).callback) === null || _b === void 0 ? void 0 : _b.call(_a, this.frame.stats());
                 // console.log(this.frame.sequence)        // END
-                this.control.callback(this.frame.stats());
+                (_d = (_c = this.control).callback) === null || _d === void 0 ? void 0 : _d.call(_c, this.frame.stats());
             };
             // console.log(this.frame.start.time);
             if (!this.frame.start.animationTime && this.frame.start.time === 0) {
@@ -121,8 +124,6 @@ export class Animate {
                     if (this.control.loop)
                         requestAnimationFrame(animate.bind(this));
                     (_b = (_a = this.control).finally) === null || _b === void 0 ? void 0 : _b.call(_a);
-                    this.frame.sequence.reset();
-                    this.frame.sequence.nextTime();
                     // this.frame.sequence.ofinallyCallback?.();
                 }
                 else if (!this.control.completed) {

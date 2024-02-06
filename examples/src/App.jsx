@@ -1,7 +1,7 @@
 import Box from './Box';
 import Slider from './Slider';
-import { Animate, Sequence } from '../../src';
-import { valueKeyframe, nestedKeyframe } from '../../src/timeline';
+import { Animate, Sequence } from 'algoframe';
+import { valueKeyframe, nestedKeyframe } from 'algoframe/timeline';
 import { useEffect, useState } from 'react';
 function App() {
   useEffect(()=>{
@@ -24,20 +24,20 @@ function App() {
         ],
         'easeInOutQuad',
         ({ value }) => {
-          if(value > 100) {
-            debugger
-          }
           box.style.transform = `translateX(${value}%)`;
         }
       );
       
       new Animate({
         sequence: timeline,
-        
+        timing: {
+          delay: delay
+        },
         controls: {
           loop: true
         }
       }).run()
+      delay += delayValue;
     });
   //  const animation =  new Animate();
   })

@@ -116,6 +116,10 @@ class KeyChanger {
             }
             callPast && (pastFinally === null || pastFinally === void 0 ? void 0 : pastFinally());
             if ((0, utils_2.isSimple)(next) && (0, utils_2.isSimple)(this.current)) {
+                if (this.current.time(1) > progress) {
+                    this.reset();
+                    this.nextTime();
+                }
                 progress = Math.min(this.easing(progress), miliseconds ? this.duration : 1);
                 const a = next.time(1) - this.current.time(1);
                 const trace = progress / a;
@@ -295,12 +299,16 @@ class Sequence extends KeyChanger {
             this.run.push(first);
         }
         if (final.time(1) < 1) {
-            if (final instanceof utils_2.nestedKeyframe)
-                throw new Error("Cannot set last keyframe as nested sequence, it's impossible");
-            const last = new utils_2.valueKeyframe(final.value, 1, 'ratio');
-            last.duration = this.duration;
-            this.keyframes.push(last);
-            this.run.push(last);
+            // debugger
+            if (final instanceof utils_2.nestedKeyframe) {
+                console.warn('Nested keyframe at the end of the sequence is not recommended');
+            }
+            else {
+                const last = new utils_2.valueKeyframe(final.value, 1, 'ratio');
+                last.duration = this.duration;
+                this.keyframes.push(last);
+                this.run.push(last);
+            }
         }
         this.keyframes.forEach((k, i) => {
             k.duration = this.duration;
@@ -403,14 +411,14 @@ class Sequence extends KeyChanger {
                     Math.ceil(safePad * (k.duration / (seq.duration + k.duration)));
         });
         this.keyframes.forEach(k => {
-            console.log(k.duration);
+            // console.log(k.duration);
         });
         /*     const display = (seq: Sequence) =>
           seq.keyframes.map(k => [k.time(k.duration), k.duration]);
         console.log(display(seq), display(this)); */
-        console.log(seq.keyframes);
+        // console.log(seq.keyframes);
         this.addKeyframes('push', ...seq.keyframes.sort((a, b) => a.timing - b.timing));
-        console.log(this);
+        // console.log(this);
         return this;
     }
     reset() {
