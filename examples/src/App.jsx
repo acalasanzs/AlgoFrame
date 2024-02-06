@@ -11,7 +11,7 @@ function App() {
       new valueKeyframe(100, 1, 'ratio'),
     ]);
     const delayValue = 150;
-    let delay = 0;
+    let delay = 1500;
     const boxes = document.querySelectorAll(".box");
     boxes.forEach((box,i) => {
       
