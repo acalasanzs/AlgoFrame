@@ -6,13 +6,10 @@ import { useEffect, useState } from 'react';
 function App() {
   useEffect(()=>{
     console.log(document.querySelectorAll('.box'));
-    const from0to100 = new Sequence(800, [
-      new valueKeyframe(0, 0, 'ratio'),
-      new valueKeyframe(100, 1, 'ratio'),
-    ]);
-    let delayValue = 10;
+    let delayValue = 80;
     let delay = 1500;
     const boxes = document.querySelectorAll(".box");
+    let changer = 1;
     boxes.forEach((box,i) => {
       
       const timeline = new Sequence(
@@ -27,6 +24,12 @@ function App() {
           box.style.marginLeft = `calc(${value}% - ${
             box.offsetWidth * (value / 100)
           }px)`;
+          if(value > 50) {
+            changer = -1;
+          }else{
+            changer = 1;
+          }
+          box.style.transform = `rotate(${value * 3.6/2}deg) scale(${1-value / 100/2*changer})`;
         }
       );
       
